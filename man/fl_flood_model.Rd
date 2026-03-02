@@ -35,3 +35,18 @@ Convenience wrapper that calls \code{\link[=fl_flood_surface]{fl_flood_surface()
 in sequence, returning a multi-layer \code{SpatRaster} with the flood surface
 elevation, flood depth, and a binary flooded mask.
 }
+\examples{
+dem <- terra::rast(system.file("testdata/dem.tif", package = "flooded"))
+streams <- sf::st_read(
+  system.file("testdata/streams.gpkg", package = "flooded"),
+  quiet = TRUE
+)
+stream_r <- fl_stream_rasterize(streams, dem, field = "upstream_area_ha")
+precip_r <- fl_stream_rasterize(streams, dem, field = "map_upstream")
+flood <- fl_flood_model(dem, stream_r, flood_factor = 6, precip = precip_r)
+
+# Three layers: flood_surface, flood_depth, flooded
+names(flood)
+terra::plot(flood[["flood_depth"]], main = "Flood depth (m)")
+
+}

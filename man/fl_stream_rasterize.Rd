@@ -32,3 +32,13 @@ overlap a cell, the maximum value is kept.
 The output CRS matches \code{template}. If \code{streams} and \code{template} have
 different CRS, \code{streams} is reprojected to match.
 }
+\examples{
+dem <- terra::rast(system.file("testdata/dem.tif", package = "flooded"))
+streams <- sf::st_read(
+  system.file("testdata/streams.gpkg", package = "flooded"),
+  quiet = TRUE
+)
+stream_r <- fl_stream_rasterize(streams, dem, field = "upstream_area_ha")
+terra::plot(stream_r, main = "Upstream area (ha)")
+
+}

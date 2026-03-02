@@ -13,6 +13,21 @@
 #' @return A `SpatRaster` with the same grid as `x`. Only patches touching
 #'   at least one anchor cell are retained.
 #'
+#' @examples
+#' dem <- terra::rast(system.file("testdata/dem.tif", package = "flooded"))
+#' slope <- terra::rast(system.file("testdata/slope.tif", package = "flooded"))
+#' streams <- sf::st_read(
+#'   system.file("testdata/streams.gpkg", package = "flooded"),
+#'   quiet = TRUE
+#' )
+#' stream_r <- fl_stream_rasterize(streams, dem, field = "upstream_area_ha")
+#' gentle <- fl_mask(slope, threshold = 9, operator = "<=")
+#'
+#' # Keep only gentle-slope patches that touch a stream
+#' connected <- fl_patch_conn(gentle, stream_r)
+#' terra::plot(connected, col = c("grey90", "darkgreen"),
+#'      main = "Gentle slopes connected to streams")
+#'
 #' @export
 fl_patch_conn <- function(x, anchor, directions = 4L) {
   stopifnot(

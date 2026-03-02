@@ -21,6 +21,15 @@
 #' The output CRS matches `template`. If `streams` and `template` have
 #' different CRS, `streams` is reprojected to match.
 #'
+#' @examples
+#' dem <- terra::rast(system.file("testdata/dem.tif", package = "flooded"))
+#' streams <- sf::st_read(
+#'   system.file("testdata/streams.gpkg", package = "flooded"),
+#'   quiet = TRUE
+#' )
+#' stream_r <- fl_stream_rasterize(streams, dem, field = "upstream_area_ha")
+#' terra::plot(stream_r, main = "Upstream area (ha)")
+#'
 #' @export
 fl_stream_rasterize <- function(streams, template, field = "channel_width") {
   stopifnot(

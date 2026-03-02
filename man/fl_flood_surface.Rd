@@ -45,3 +45,17 @@ If your stream raster contains channel width instead of contributing area,
 the regression still produces a relative flood surface — the absolute
 depth will differ but the spatial pattern is preserved.
 }
+\examples{
+dem <- terra::rast(system.file("testdata/dem.tif", package = "flooded"))
+streams <- sf::st_read(
+  system.file("testdata/streams.gpkg", package = "flooded"),
+  quiet = TRUE
+)
+stream_r <- fl_stream_rasterize(streams, dem, field = "upstream_area_ha")
+precip_r <- fl_stream_rasterize(streams, dem, field = "map_upstream")
+
+# With precipitation — realistic flood surface
+surface <- fl_flood_surface(dem, stream_r, flood_factor = 6, precip = precip_r)
+terra::plot(surface, main = "Flood surface elevation (m)")
+
+}

@@ -26,3 +26,14 @@ Distance is computed with \code{\link[terra:distance]{terra::distance()}} which 
 distance from the nearest non-\code{NA} cell. Feature cells themselves receive
 distance \code{0} and are always included in the mask.
 }
+\examples{
+dem <- terra::rast(system.file("testdata/dem.tif", package = "flooded"))
+streams <- sf::st_read(
+  system.file("testdata/streams.gpkg", package = "flooded"),
+  quiet = TRUE
+)
+stream_r <- fl_stream_rasterize(streams, dem, field = "upstream_area_ha")
+corridor <- fl_mask_distance(stream_r, threshold = 1000)
+terra::plot(corridor, col = c("grey90", "steelblue"), main = "Within 1 km of stream")
+
+}

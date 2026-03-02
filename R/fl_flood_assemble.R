@@ -9,6 +9,17 @@
 #'
 #' @return A `SpatRaster` with `1` where any input is `1`, `0` otherwise.
 #'
+#' @examples
+#' slope <- terra::rast(system.file("testdata/slope.tif", package = "flooded"))
+#'
+#' # Two masks with different thresholds
+#' gentle <- fl_mask(slope, threshold = 5, operator = "<=")
+#' moderate <- fl_mask(slope, threshold = 15, operator = "<=")
+#'
+#' # Union: cells meeting either criterion
+#' combined <- fl_flood_assemble(gentle, moderate)
+#' terra::plot(combined, col = c("grey90", "steelblue"), main = "Assembled masks")
+#'
 #' @export
 fl_flood_assemble <- function(...) {
   layers <- list(...)

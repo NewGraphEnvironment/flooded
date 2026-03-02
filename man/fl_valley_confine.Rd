@@ -76,6 +76,22 @@ Adapted from the USDA Valley Confinement Algorithm Toolbox (BlueGeo
 implementation by Devin Cairns, MIT license) and bcfishpass lateral
 habitat assembly (Simon Norris, Apache 2.0).
 }
+\examples{
+dem <- terra::rast(system.file("testdata/dem.tif", package = "flooded"))
+streams <- sf::st_read(
+  system.file("testdata/streams.gpkg", package = "flooded"),
+  quiet = TRUE
+)
+precip_r <- fl_stream_rasterize(streams, dem, field = "map_upstream")
+
+valleys <- fl_valley_confine(
+  dem, streams,
+  field = "upstream_area_ha",
+  precip = precip_r
+)
+terra::plot(valleys, col = c("grey90", "darkgreen"), main = "Unconfined valleys")
+
+}
 \seealso{
 \code{\link[=fl_mask]{fl_mask()}}, \code{\link[=fl_cost_distance]{fl_cost_distance()}}, \code{\link[=fl_flood_model]{fl_flood_model()}},
 \code{\link[=fl_patch_rm]{fl_patch_rm()}}

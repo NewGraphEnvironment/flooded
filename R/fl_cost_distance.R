@@ -20,6 +20,17 @@
 #'
 #' Cells that are `NA` in `friction` are impassable barriers.
 #'
+#' @examples
+#' dem <- terra::rast(system.file("testdata/dem.tif", package = "flooded"))
+#' slope <- terra::rast(system.file("testdata/slope.tif", package = "flooded"))
+#' streams <- sf::st_read(
+#'   system.file("testdata/streams.gpkg", package = "flooded"),
+#'   quiet = TRUE
+#' )
+#' stream_r <- fl_stream_rasterize(streams, dem, field = "upstream_area_ha")
+#' cost <- fl_cost_distance(slope, stream_r)
+#' terra::plot(cost, main = "Cost distance from streams", range = c(0, 5000))
+#'
 #' @export
 fl_cost_distance <- function(friction, streams) {
   stopifnot(

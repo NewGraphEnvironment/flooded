@@ -22,6 +22,8 @@ streams <- sf::st_read("streams.gpkg")
 valleys <- fl_valley_confine(dem, streams, field = "upstream_area_ha")
 ```
 
+See the [Valley confinement on Neexdzii Kwah](https://newgraphenvironment.github.io/flooded/articles/valley-confinement.html) vignette for a full walkthrough with bundled test data.
+
 ## Functions
 
 | Function | Purpose |

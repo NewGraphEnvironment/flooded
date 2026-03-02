@@ -24,3 +24,19 @@ Identifies connected patches of \code{1}-valued cells and keeps only those that
 overlap with anchor features (e.g., stream cells). Disconnected patches
 are set to \code{0}.
 }
+\examples{
+dem <- terra::rast(system.file("testdata/dem.tif", package = "flooded"))
+slope <- terra::rast(system.file("testdata/slope.tif", package = "flooded"))
+streams <- sf::st_read(
+  system.file("testdata/streams.gpkg", package = "flooded"),
+  quiet = TRUE
+)
+stream_r <- fl_stream_rasterize(streams, dem, field = "upstream_area_ha")
+gentle <- fl_mask(slope, threshold = 9, operator = "<=")
+
+# Keep only gentle-slope patches that touch a stream
+connected <- fl_patch_conn(gentle, stream_r)
+terra::plot(connected, col = c("grey90", "darkgreen"),
+     main = "Gentle slopes connected to streams")
+
+}

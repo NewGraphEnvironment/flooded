@@ -12,6 +12,14 @@
 #' @return A `SpatRaster` with the same grid as `x`. Small patches are set to
 #'   `0`; all other values are unchanged.
 #'
+#' @examples
+#' slope <- terra::rast(system.file("testdata/slope.tif", package = "flooded"))
+#' gentle <- fl_mask(slope, threshold = 9, operator = "<=")
+#'
+#' # Remove patches smaller than 5000 m²
+#' cleaned <- fl_patch_rm(gentle, min_area = 5000)
+#' terra::plot(cleaned, col = c("grey90", "darkgreen"), main = "Large gentle-slope patches")
+#'
 #' @export
 fl_patch_rm <- function(x, min_area, directions = 4L) {
   stopifnot(

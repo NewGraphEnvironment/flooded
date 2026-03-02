@@ -40,3 +40,16 @@ results for this application.
 The interpolation domain is limited to cells within \code{max_width / 2} of
 the nearest stream cell to avoid extrapolating into distant terrain.
 }
+\examples{
+dem <- terra::rast(system.file("testdata/dem.tif", package = "flooded"))
+streams <- sf::st_read(
+  system.file("testdata/streams.gpkg", package = "flooded"),
+  quiet = TRUE
+)
+stream_r <- fl_stream_rasterize(streams, dem, field = "upstream_area_ha")
+precip_r <- fl_stream_rasterize(streams, dem, field = "map_upstream")
+surface <- fl_flood_surface(dem, stream_r, precip = precip_r)
+depth <- fl_flood_depth(dem, surface, max_width = 2000, streams = stream_r)
+terra::plot(depth, main = "Flood depth (m)")
+
+}

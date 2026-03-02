@@ -14,6 +14,20 @@
 #'     \item{flooded}{Binary mask: `1` where `flood_depth > 0`, `0` at streams, `NA` elsewhere.}
 #'   }
 #'
+#' @examples
+#' dem <- terra::rast(system.file("testdata/dem.tif", package = "flooded"))
+#' streams <- sf::st_read(
+#'   system.file("testdata/streams.gpkg", package = "flooded"),
+#'   quiet = TRUE
+#' )
+#' stream_r <- fl_stream_rasterize(streams, dem, field = "upstream_area_ha")
+#' precip_r <- fl_stream_rasterize(streams, dem, field = "map_upstream")
+#' flood <- fl_flood_model(dem, stream_r, flood_factor = 6, precip = precip_r)
+#'
+#' # Three layers: flood_surface, flood_depth, flooded
+#' names(flood)
+#' terra::plot(flood[["flood_depth"]], main = "Flood depth (m)")
+#'
 #' @export
 fl_flood_model <- function(dem, streams, flood_factor = 6, precip = 1,
                            max_width = 2000) {

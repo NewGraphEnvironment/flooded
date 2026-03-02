@@ -11,6 +11,15 @@
 #' @return A `SpatRaster` with the same grid as `x`. Cells overlapping any
 #'   exclusion mask are set to `0`.
 #'
+#' @examples
+#' slope <- terra::rast(system.file("testdata/slope.tif", package = "flooded"))
+#' gentle <- fl_mask(slope, threshold = 9, operator = "<=")
+#'
+#' # Trim: remove cells on slopes > 5% (a stricter exclusion mask)
+#' steep <- fl_mask(slope, threshold = 5, operator = ">")
+#' trimmed <- fl_flood_trim(gentle, steep)
+#' terra::plot(trimmed, col = c("grey90", "darkgreen"), main = "Trimmed by steep slopes")
+#'
 #' @export
 fl_flood_trim <- function(x, ...) {
   masks <- list(...)

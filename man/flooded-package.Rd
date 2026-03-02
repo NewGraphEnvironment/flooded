@@ -6,6 +6,8 @@
 \alias{flooded-package}
 \title{flooded: Portable Floodplain Delineation from DEM and Stream Network}
 \description{
+\if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
+
 Delineate floodplains from digital elevation models and stream networks using the Valley Confinement Algorithm (VCA). Combines slope thresholding, cost-distance analysis, and flood surface modelling to identify unconfined valleys. Ported from the bcfishpass lateral habitat pipeline (Python) with origins in the USDA VCA Toolbox and BlueGeo.
 }
 \seealso{

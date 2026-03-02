@@ -12,10 +12,9 @@
 #'   not met). `NA` cells in `x` remain `NA`.
 #'
 #' @examples
-#' \dontrun{
-#' slope <- terra::terrain(dem, "slope", unit = "percent")
+#' slope <- terra::rast(system.file("testdata/slope.tif", package = "flooded"))
 #' gentle <- fl_mask(slope, threshold = 9, operator = "<=")
-#' }
+#' terra::plot(gentle, col = c("grey90", "darkgreen"), main = "Slope <= 9%")
 #'
 #' @export
 fl_mask <- function(x, threshold, operator = "<=") {
