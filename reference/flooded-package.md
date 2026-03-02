@@ -12,6 +12,8 @@ Useful links:
 
 - <https://github.com/NewGraphEnvironment/flooded>
 
+- <https://newgraphenvironment.github.io/flooded/>
+
 - Report bugs at <https://github.com/NewGraphEnvironment/flooded/issues>
 
 ## Author
