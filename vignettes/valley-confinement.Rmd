@@ -38,6 +38,8 @@ streams <- st_read(
 
 cat("DEM:", ncol(dem), "x", nrow(dem), "pixels at", res(dem)[1], "m\n")
 cat("Streams:", nrow(streams), "segments\n")
+cat("Upstream area range:", range(streams$upstream_area_ha), "ha\n")
+cat("Mean annual precip range:", range(streams$map_upstream), "mm\n")
 ```
 
 ```{r plot-dem, fig.cap = "DEM with stream network overlay."}
@@ -47,22 +49,46 @@ plot(st_geometry(streams), add = TRUE, col = "blue", lwd = 1.5)
 
 ## Step 1: Rasterize streams
 
-Burn the stream network onto the DEM grid using channel width as the cell
-value. Any numeric attribute works — upstream contributing area is the VCA
-default, but channel width is what we have in this dataset.
+Burn the stream network onto the DEM grid using upstream contributing area as
+the cell value. This is what the VCA bankfull regression expects — it estimates
+flood depth from contributing area in hectares.
 
 ```{r rasterize}
-stream_r <- fl_stream_rasterize(streams, dem, field = "channel_width")
+stream_r <- fl_stream_rasterize(streams, dem, field = "upstream_area_ha")
 ```
 
-```{r plot-streams, fig.cap = "Rasterized streams coloured by channel width (m)."}
-plot(stream_r, main = "Channel width (m)")
+```{r plot-streams, fig.cap = "Rasterized streams coloured by upstream area (ha)."}
+plot(stream_r, main = "Upstream area (ha)")
 ```
 
-## Step 2: Individual mask components
+## Step 2: Precipitation
 
-The VCA combines four spatial criteria. Let's inspect each one before
-combining them.
+The VCA bankfull regression has a precipitation term that strongly controls
+flood depth:
+
+```
+bankfull_width = (upstream_area ^ 0.280) * 0.196 * (precip ^ 0.355)
+bankfull_depth = bankfull_width ^ 0.607 * 0.145
+flood_depth    = bankfull_depth * flood_factor
+```
+
+With `precip = 1` (the default), the precipitation term drops out and flood
+depths are dramatically underestimated. For the Bulkley mainstem
+(`upstream_area_ha ~ 110,000`), the difference is ~2 m vs ~8 m flood depth.
+
+The test data includes `map_upstream` — mean annual precipitation (mm) from
+fwapg/ClimateBC, carried as a stream attribute. We rasterize it alongside
+the streams to create a spatially varying precipitation surface at stream
+cells.
+
+```{r precip}
+precip_r <- fl_stream_rasterize(streams, dem, field = "map_upstream")
+cat("Precip at stream cells:", range(values(precip_r), na.rm = TRUE), "mm\n")
+```
+
+## Step 3: Individual mask components
+
+The VCA combines four spatial criteria. Let's inspect each one.
 
 ### Slope mask
 
@@ -113,12 +139,13 @@ plot(st_geometry(streams), add = TRUE, col = "blue", lwd = 0.8)
 
 ### Flood model
 
-The bankfull regression estimates flood depth from channel width (or
-contributing area), interpolates the water surface outward from streams, and
+The bankfull regression estimates flood depth from upstream contributing area
+and precipitation, interpolates the water surface outward from streams, and
 identifies cells below the flood surface.
 
 ```{r flood-model}
-flood <- fl_flood_model(dem, stream_r, flood_factor = 6, max_width = 2000)
+flood <- fl_flood_model(dem, stream_r, flood_factor = 6, precip = precip_r,
+                        max_width = 2000)
 cat("Flooded cells:", sum(values(flood[["flooded"]]) == 1, na.rm = TRUE), "\n")
 ```
 
@@ -129,19 +156,24 @@ plot(depth, main = "Flood depth (m)")
 plot(st_geometry(streams), add = TRUE, col = "blue", lwd = 0.8)
 ```
 
-## Step 3: Full VCA pipeline
+## Step 4: Full VCA pipeline
 
 `fl_valley_confine()` chains all the above (slope + distance + cost + flood
 masks), applies morphological cleanup (closing, hole filling, small patch
 removal, majority filter), and returns a binary valley raster.
 
+Note the `precip` argument — without it, flood depths are ~4x too shallow
+and the resulting valley is significantly narrower.
+
 ```{r vca}
 valleys <- fl_valley_confine(
   dem, streams,
+  field = "upstream_area_ha",
   slope_threshold = 9,
   max_width = 2000,
   cost_threshold = 2500,
-  flood_factor = 6
+  flood_factor = 6,
+  precip = precip_r
 )
 
 n_valley <- sum(values(valleys) == 1, na.rm = TRUE)
@@ -155,7 +187,7 @@ plot(valleys, col = c("grey90", "darkgreen"),
 plot(st_geometry(streams), add = TRUE, col = "blue", lwd = 1.2)
 ```
 
-## Step 4: Post-processing
+## Step 5: Post-processing
 
 ### Connect to streams
 
@@ -177,8 +209,8 @@ plot(st_geometry(streams), add = TRUE, col = "blue", lwd = 1.2)
 ### Trim with exclusion masks
 
 `fl_flood_trim()` subtracts user-supplied masks. For example, you could trim
-by urban areas, steep terrain, or waterbodies. Here we demonstrate by
-removing cells on slopes > 5% (a stricter threshold).
+by urban areas, steep terrain, railways, or waterbodies. Here we demonstrate
+by removing cells on slopes > 5% (a stricter threshold).
 
 ```{r trim}
 steep_mask <- fl_mask(slope, threshold = 5, operator = ">")
@@ -200,12 +232,33 @@ assembled <- fl_flood_assemble(connected, flooded_mask)
 cat("Assembled cells:", sum(values(assembled) == 1, na.rm = TRUE), "\n")
 ```
 
-## Summary
+## Precipitation matters
 
-The full pipeline runs in a few seconds on this 800 x 648 (518k cell) test
-dataset. For larger areas, `fl_valley_confine()` benefits from cropping the
-DEM to a stream corridor first — the `max_width` parameter implicitly
-constrains the analysis domain.
+The VCA bankfull regression includes a precipitation term (`precip ^ 0.355`)
+that scales flood depth with local climate. In BC, `map_upstream` (mean
+annual precipitation in mm) is available as a stream attribute from fwapg
+(the Freshwater Atlas Postgres layer). For other jurisdictions, any gridded
+precipitation product will work — rasterize it to the DEM grid and pass it
+as the `precip` argument.
+
+Omitting precipitation (`precip = 1`, the default) underestimates flood depth
+by roughly 4x in wet climates (~500 mm MAP). This produces a valley that is
+about half the width of the correct result:
+
+```{r precip-comparison}
+valleys_no_precip <- fl_valley_confine(
+  dem, streams, field = "upstream_area_ha",
+  precip = 1
+)
+
+n_no <- sum(values(valleys_no_precip) == 1, na.rm = TRUE)
+cat("Without precip:", n_no, "cells (",
+    round(100 * n_no / ncell(dem), 1), "%)\n")
+cat("With precip:   ", n_valley, "cells (",
+    round(100 * n_valley / ncell(dem), 1), "%)\n")
+```
+
+## Summary
 
 Key tuning parameters:
 
@@ -215,5 +268,6 @@ Key tuning parameters:
 | `max_width` | 2000 m | Analysis corridor width |
 | `cost_threshold` | 2500 | Higher = valley extends further up hillslopes |
 | `flood_factor` | 6 | Higher = deeper flood, more floodplain |
+| `precip` | 1 | MAP in mm — critical for realistic flood depth |
 | `size_threshold` | 5000 m² | Minimum valley patch area |
 | `hole_threshold` | 2500 m² | Maximum hole size to fill |

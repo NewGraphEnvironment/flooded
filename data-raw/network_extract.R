@@ -72,9 +72,10 @@ sql <- glue::glue("
   )
   -- Mainstem: DRM range
   SELECT s.segmented_stream_id, s.blue_line_key, s.waterbody_key,
-         s.downstream_route_measure, s.gnis_name, s.stream_order,
-         s.channel_width, s.mapping_code, s.rearing, s.spawning, s.access,
-         s.geom
+         s.downstream_route_measure, s.upstream_area_ha,
+         s.map_upstream, s.gnis_name,
+         s.stream_order, s.channel_width, s.mapping_code, s.rearing,
+         s.spawning, s.access, s.geom
   FROM bcfishpass.streams_co_vw s
   WHERE s.blue_line_key = {mouth_blk}
     AND s.downstream_route_measure >= {mouth_drm}
@@ -85,9 +86,10 @@ sql <- glue::glue("
 
   -- Tributaries: upstream of mouth, not upstream of cutoff
   SELECT s.segmented_stream_id, s.blue_line_key, s.waterbody_key,
-         s.downstream_route_measure, s.gnis_name, s.stream_order,
-         s.channel_width, s.mapping_code, s.rearing, s.spawning, s.access,
-         s.geom
+         s.downstream_route_measure, s.upstream_area_ha,
+         s.map_upstream, s.gnis_name,
+         s.stream_order, s.channel_width, s.mapping_code, s.rearing,
+         s.spawning, s.access, s.geom
   FROM bcfishpass.streams_co_vw s, mouth m
   WHERE s.watershed_group_code = 'BULK'
     AND s.blue_line_key != {mouth_blk}
