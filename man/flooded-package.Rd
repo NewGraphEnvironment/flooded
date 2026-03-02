@@ -14,6 +14,7 @@ Delineate floodplains from digital elevation models and stream networks using th
 Useful links:
 \itemize{
   \item \url{https://github.com/NewGraphEnvironment/flooded}
+  \item \url{https://newgraphenvironment.github.io/flooded/}
   \item Report bugs at \url{https://github.com/NewGraphEnvironment/flooded/issues}
 }
 
