@@ -1,0 +1,34 @@
+Package: flooded
+Title: Portable Floodplain Delineation from DEM and Stream Network
+Version: 0.0.0.9000
+Authors@R: c(
+    person("Allan", "Irvine", , "al@newgraphenvironment.com", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-3495-2128")),
+    person("Devin", "Cairns", role = "cph",
+           comment = "Valley Confinement Algorithm (MIT license, Blue Geosimulation)"),
+    person("Simon", "Norris", role = "cph",
+           comment = "Lateral habitat assembly (Apache 2.0, smnorris/bcfishpass)")
+    )
+Description: Delineate floodplains from digital elevation models and stream
+    networks using the Valley Confinement Algorithm (VCA). Combines slope
+    thresholding, cost-distance analysis, and flood surface modelling to
+    identify unconfined valleys. Ported from the bcfishpass lateral habitat
+    pipeline (Python) with origins in the USDA VCA Toolbox and BlueGeo.
+License: MIT + file LICENSE
+URL: https://github.com/NewGraphEnvironment/flooded
+BugReports: https://github.com/NewGraphEnvironment/flooded/issues
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Depends:
+    R (>= 4.1)
+Imports:
+    terra,
+    sf
+Suggests:
+    whitebox,
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown
+Config/testthat/edition: 3
+VignetteBuilder: knitr
