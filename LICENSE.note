@@ -22,11 +22,13 @@ This package includes code adapted from two sources:
    OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 
-2. Lateral habitat assembly — Simon Norris (smnorris/bcfishpass)
+2. Lateral habitat assembly — bcfishpass
    License: Apache License 2.0
    Source: https://github.com/smnorris/bcfishpass
 
-   Copyright Simon Norris
+   Copyright 2025 Simon Norris, Canadian Wildlife Federation,
+                  Province of British Columbia, New Graph Environment,
+                  bcfishpass contributers
 
    Licensed under the Apache License, Version 2.0. You may obtain a copy
    of the License at http://www.apache.org/licenses/LICENSE-2.0

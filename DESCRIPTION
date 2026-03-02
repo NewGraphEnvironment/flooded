@@ -7,7 +7,13 @@ Authors@R: c(
     person("Devin", "Cairns", role = "cph",
            comment = "Valley Confinement Algorithm (MIT license, Blue Geosimulation)"),
     person("Simon", "Norris", role = "cph",
-           comment = "Lateral habitat assembly (Apache 2.0, smnorris/bcfishpass)")
+           comment = "bcfishpass lateral habitat assembly (Apache 2.0)"),
+    person("Canadian Wildlife Federation", role = "cph",
+           comment = "bcfishpass (Apache 2.0)"),
+    person("Province of British Columbia", role = "cph",
+           comment = "bcfishpass (Apache 2.0)"),
+    person("New Graph Environment", role = "cph",
+           comment = "bcfishpass (Apache 2.0)")
     )
 Description: Delineate floodplains from digital elevation models and stream
     networks using the Valley Confinement Algorithm (VCA). Combines slope
