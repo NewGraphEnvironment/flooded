@@ -1,0 +1,219 @@
+---
+title: "Valley confinement on Neexdzii Kwah"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Valley confinement on Neexdzii Kwah}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 6,
+  dpi = 150
+)
+```
+
+This vignette walks through the full `flooded` pipeline on a section of
+Neexdzii Kwah (Bulkley River) near Topley, BC. The test data covers ~8 km of
+mainstem plus tributaries (Richfield Creek, Cesford Creek, Robert Hatch Creek)
+at 10 m resolution.
+
+## Load data
+
+```{r load}
+library(flooded)
+library(terra)
+library(sf)
+
+dem <- rast(system.file("testdata/dem.tif", package = "flooded"))
+slope <- rast(system.file("testdata/slope.tif", package = "flooded"))
+streams <- st_read(
+  system.file("testdata/streams.gpkg", package = "flooded"),
+  quiet = TRUE
+)
+
+cat("DEM:", ncol(dem), "x", nrow(dem), "pixels at", res(dem)[1], "m\n")
+cat("Streams:", nrow(streams), "segments\n")
+```
+
+```{r plot-dem, fig.cap = "DEM with stream network overlay."}
+plot(dem, main = "Elevation (m)")
+plot(st_geometry(streams), add = TRUE, col = "blue", lwd = 1.5)
+```
+
+## Step 1: Rasterize streams
+
+Burn the stream network onto the DEM grid using channel width as the cell
+value. Any numeric attribute works — upstream contributing area is the VCA
+default, but channel width is what we have in this dataset.
+
+```{r rasterize}
+stream_r <- fl_stream_rasterize(streams, dem, field = "channel_width")
+```
+
+```{r plot-streams, fig.cap = "Rasterized streams coloured by channel width (m)."}
+plot(stream_r, main = "Channel width (m)")
+```
+
+## Step 2: Individual mask components
+
+The VCA combines four spatial criteria. Let's inspect each one before
+combining them.
+
+### Slope mask
+
+Cells with slope <= 9% (the VCA default) represent potentially flat valley
+floor.
+
+```{r slope-mask}
+mask_slope <- fl_mask(slope, threshold = 9, operator = "<=")
+cat("Gentle slope:", sum(values(mask_slope) == 1, na.rm = TRUE), "cells\n")
+```
+
+```{r plot-slope-mask, fig.cap = "Slope mask: green = slope <= 9%."}
+plot(mask_slope, col = c("grey90", "darkgreen"), main = "Slope <= 9%",
+     legend = FALSE)
+plot(st_geometry(streams), add = TRUE, col = "blue", lwd = 0.8)
+```
+
+### Distance mask
+
+Cells within 1000 m of a stream (half the default `max_width = 2000`).
+
+```{r distance-mask}
+mask_dist <- fl_mask_distance(stream_r, threshold = 1000)
+cat("Within 1 km:", sum(values(mask_dist) == 1, na.rm = TRUE), "cells\n")
+```
+
+```{r plot-dist-mask, fig.cap = "Distance mask: corridor within 1 km of streams."}
+plot(mask_dist, col = c("grey90", "steelblue"), main = "Within 1 km of stream",
+     legend = FALSE)
+plot(st_geometry(streams), add = TRUE, col = "blue", lwd = 0.8)
+```
+
+### Cost distance
+
+Accumulated cost (slope-weighted) distance from streams. The VCA default
+threshold is 2500.
+
+```{r cost-distance}
+cost <- fl_cost_distance(slope, stream_r)
+mask_cost <- fl_mask(cost, threshold = 2500, operator = "<")
+cat("Cost < 2500:", sum(values(mask_cost) == 1, na.rm = TRUE), "cells\n")
+```
+
+```{r plot-cost, fig.cap = "Cost distance from streams. Warm colours = high cost."}
+plot(cost, main = "Cost distance", range = c(0, 5000))
+plot(st_geometry(streams), add = TRUE, col = "blue", lwd = 0.8)
+```
+
+### Flood model
+
+The bankfull regression estimates flood depth from channel width (or
+contributing area), interpolates the water surface outward from streams, and
+identifies cells below the flood surface.
+
+```{r flood-model}
+flood <- fl_flood_model(dem, stream_r, flood_factor = 6, max_width = 2000)
+cat("Flooded cells:", sum(values(flood[["flooded"]]) == 1, na.rm = TRUE), "\n")
+```
+
+```{r plot-flood, fig.cap = "Flood model: depth above terrain (m)."}
+depth <- flood[["flood_depth"]]
+depth[depth == 0] <- NA
+plot(depth, main = "Flood depth (m)")
+plot(st_geometry(streams), add = TRUE, col = "blue", lwd = 0.8)
+```
+
+## Step 3: Full VCA pipeline
+
+`fl_valley_confine()` chains all the above (slope + distance + cost + flood
+masks), applies morphological cleanup (closing, hole filling, small patch
+removal, majority filter), and returns a binary valley raster.
+
+```{r vca}
+valleys <- fl_valley_confine(
+  dem, streams,
+  slope_threshold = 9,
+  max_width = 2000,
+  cost_threshold = 2500,
+  flood_factor = 6
+)
+
+n_valley <- sum(values(valleys) == 1, na.rm = TRUE)
+cat("Valley cells:", n_valley, "/", ncell(valleys),
+    "(", round(100 * n_valley / ncell(valleys), 1), "%)\n")
+```
+
+```{r plot-valleys, fig.cap = "Unconfined valleys (green) with stream network."}
+plot(valleys, col = c("grey90", "darkgreen"),
+     main = "Unconfined valleys", legend = FALSE)
+plot(st_geometry(streams), add = TRUE, col = "blue", lwd = 1.2)
+```
+
+## Step 4: Post-processing
+
+### Connect to streams
+
+Keep only valley patches that touch a stream cell — removes isolated flat
+areas disconnected from the network.
+
+```{r patch-conn}
+connected <- fl_patch_conn(valleys, stream_r)
+cat("Connected valley cells:",
+    sum(values(connected) == 1, na.rm = TRUE), "\n")
+```
+
+```{r plot-connected, fig.cap = "Valley patches connected to streams."}
+plot(connected, col = c("grey90", "darkgreen"),
+     main = "Connected valleys", legend = FALSE)
+plot(st_geometry(streams), add = TRUE, col = "blue", lwd = 1.2)
+```
+
+### Trim with exclusion masks
+
+`fl_flood_trim()` subtracts user-supplied masks. For example, you could trim
+by urban areas, steep terrain, or waterbodies. Here we demonstrate by
+removing cells on slopes > 5% (a stricter threshold).
+
+```{r trim}
+steep_mask <- fl_mask(slope, threshold = 5, operator = ">")
+trimmed <- fl_flood_trim(connected, steep_mask)
+cat("After trimming steep cells:",
+    sum(values(trimmed) == 1, na.rm = TRUE), "\n")
+```
+
+### Assemble multiple layers
+
+`fl_flood_assemble()` unions multiple binary rasters. This is useful when
+combining outputs from different flood models or data sources.
+
+```{r assemble}
+# Example: union the connected valleys with a wider flood-only mask
+flooded_mask <- flood[["flooded"]]
+flooded_mask <- ifel(is.na(flooded_mask), 0L, flooded_mask)
+assembled <- fl_flood_assemble(connected, flooded_mask)
+cat("Assembled cells:", sum(values(assembled) == 1, na.rm = TRUE), "\n")
+```
+
+## Summary
+
+The full pipeline runs in a few seconds on this 800 x 648 (518k cell) test
+dataset. For larger areas, `fl_valley_confine()` benefits from cropping the
+DEM to a stream corridor first — the `max_width` parameter implicitly
+constrains the analysis domain.
+
+Key tuning parameters:
+
+| Parameter | Default | Effect |
+|-----------|---------|--------|
+| `slope_threshold` | 9% | Higher = more valley floor included |
+| `max_width` | 2000 m | Analysis corridor width |
+| `cost_threshold` | 2500 | Higher = valley extends further up hillslopes |
+| `flood_factor` | 6 | Higher = deeper flood, more floodplain |
+| `size_threshold` | 5000 m² | Minimum valley patch area |
+| `hole_threshold` | 2500 m² | Maximum hole size to fill |
