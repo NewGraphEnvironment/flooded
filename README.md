@@ -10,7 +10,7 @@ Delineate unconfined valleys and floodplain extent using the Valley Confinement 
 pak::pak("NewGraphEnvironment/flooded")
 ```
 
-## Quick start
+## Example
 
 ```r
 library(flooded)
@@ -18,29 +18,19 @@ library(flooded)
 dem <- terra::rast("dem.tif")
 streams <- sf::st_read("streams.gpkg")
 
-# full pipeline — one call
-valleys <- fl_valley_confine(dem, streams, field = "upstream_area_ha")
+# delineate valleys — one call
+valleys <- fl_valley_confine(
+  dem, streams,
+  field = "upstream_area_ha",
+  precip = precip_r  # mean annual precipitation (mm) — critical for depth
+)
+
+# convert to polygons for GIS
+valleys_poly <- fl_valley_poly(valleys)
+sf::st_write(valleys_poly, "valleys.gpkg")
 ```
 
-See the [Valley confinement on Neexdzii Kwah](https://newgraphenvironment.github.io/flooded/articles/valley-confinement.html) vignette for a full walkthrough with bundled test data.
-
-## Functions
-
-| Function | Purpose |
-|----------|---------|
-| `fl_valley_confine()` | Full VCA pipeline (orchestrator) |
-| `fl_stream_rasterize()` | Burn streams onto DEM grid |
-| `fl_cost_distance()` | Slope-weighted distance from streams |
-| `fl_flood_surface()` | Bankfull regression → water surface elevation |
-| `fl_flood_depth()` | Interpolate surface outward, subtract DEM |
-| `fl_flood_model()` | Wraps surface + depth + binary mask |
-| `fl_mask()` | Generic binary mask (threshold + operator) |
-| `fl_mask_distance()` | Euclidean distance corridor mask |
-| `fl_patch_conn()` | Keep patches connected to streams |
-| `fl_patch_rm()` | Remove patches below size threshold |
-| `fl_flood_assemble()` | Union multiple floodplain layers |
-| `fl_flood_trim()` | Subtract exclusion masks (roads, urban, etc.) |
-| `fl_valley_poly()` | Convert binary valley raster to sf polygons |
+See the [Valley confinement vignette](https://newgraphenvironment.github.io/flooded/articles/valley-confinement.html) for a full walkthrough with bundled test data, and the [function reference](https://newgraphenvironment.github.io/flooded/reference/) for individual components.
 
 ## Bankfull regression
 
