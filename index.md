@@ -46,6 +46,7 @@ vignette for a full walkthrough with bundled test data.
 | [`fl_patch_rm()`](https://newgraphenvironment.github.io/flooded/reference/fl_patch_rm.md)                 | Remove patches below size threshold           |
 | [`fl_flood_assemble()`](https://newgraphenvironment.github.io/flooded/reference/fl_flood_assemble.md)     | Union multiple floodplain layers              |
 | [`fl_flood_trim()`](https://newgraphenvironment.github.io/flooded/reference/fl_flood_trim.md)             | Subtract exclusion masks (roads, urban, etc.) |
+| [`fl_valley_poly()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_poly.md)           | Convert binary valley raster to sf polygons   |
 
 ## Bankfull regression
 

@@ -26,3 +26,5 @@
   : Rasterize a stream network onto a DEM grid
 - [`fl_valley_confine()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_confine.md)
   : Delineate unconfined valleys using the Valley Confinement Algorithm
+- [`fl_valley_poly()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_poly.md)
+  : Convert a binary valley raster to polygons
