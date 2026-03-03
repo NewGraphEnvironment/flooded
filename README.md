@@ -40,6 +40,7 @@ See the [Valley confinement on Neexdzii Kwah](https://newgraphenvironment.github
 | `fl_patch_rm()` | Remove patches below size threshold |
 | `fl_flood_assemble()` | Union multiple floodplain layers |
 | `fl_flood_trim()` | Subtract exclusion masks (roads, urban, etc.) |
+| `fl_valley_poly()` | Convert binary valley raster to sf polygons |
 
 ## Bankfull regression
 
