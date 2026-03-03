@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="index.html">flooded</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -74,7 +74,7 @@
 <code class="sourceCode R"><span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"NewGraphEnvironment/flooded"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="quick-start">Quick start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
+<h2 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>
 </h2>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/NewGraphEnvironment/flooded" class="external-link">flooded</a></span><span class="op">)</span></span>
@@ -82,73 +82,17 @@
 <span><span class="va">dem</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="st">"dem.tif"</span><span class="op">)</span></span>
 <span><span class="va">streams</span> <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span><span class="st">"streams.gpkg"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># full pipeline — one call</span></span>
-<span><span class="va">valleys</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/fl_valley_confine.html">fl_valley_confine</a></span><span class="op">(</span><span class="va">dem</span>, <span class="va">streams</span>, field <span class="op">=</span> <span class="st">"upstream_area_ha"</span><span class="op">)</span></span></code></pre></div>
-<p>See the <a href="https://newgraphenvironment.github.io/flooded/articles/valley-confinement.html">Valley confinement on Neexdzii Kwah</a> vignette for a full walkthrough with bundled test data.</p>
-</div>
-<div class="section level2">
-<h2 id="functions">Functions<a class="anchor" aria-label="anchor" href="#functions"></a>
-</h2>
-<table class="table">
-<thead><tr class="header">
-<th>Function</th>
-<th>Purpose</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td><code><a href="reference/fl_valley_confine.html">fl_valley_confine()</a></code></td>
-<td>Full VCA pipeline (orchestrator)</td>
-</tr>
-<tr class="even">
-<td><code><a href="reference/fl_stream_rasterize.html">fl_stream_rasterize()</a></code></td>
-<td>Burn streams onto DEM grid</td>
-</tr>
-<tr class="odd">
-<td><code><a href="reference/fl_cost_distance.html">fl_cost_distance()</a></code></td>
-<td>Slope-weighted distance from streams</td>
-</tr>
-<tr class="even">
-<td><code><a href="reference/fl_flood_surface.html">fl_flood_surface()</a></code></td>
-<td>Bankfull regression → water surface elevation</td>
-</tr>
-<tr class="odd">
-<td><code><a href="reference/fl_flood_depth.html">fl_flood_depth()</a></code></td>
-<td>Interpolate surface outward, subtract DEM</td>
-</tr>
-<tr class="even">
-<td><code><a href="reference/fl_flood_model.html">fl_flood_model()</a></code></td>
-<td>Wraps surface + depth + binary mask</td>
-</tr>
-<tr class="odd">
-<td><code><a href="reference/fl_mask.html">fl_mask()</a></code></td>
-<td>Generic binary mask (threshold + operator)</td>
-</tr>
-<tr class="even">
-<td><code><a href="reference/fl_mask_distance.html">fl_mask_distance()</a></code></td>
-<td>Euclidean distance corridor mask</td>
-</tr>
-<tr class="odd">
-<td><code><a href="reference/fl_patch_conn.html">fl_patch_conn()</a></code></td>
-<td>Keep patches connected to streams</td>
-</tr>
-<tr class="even">
-<td><code><a href="reference/fl_patch_rm.html">fl_patch_rm()</a></code></td>
-<td>Remove patches below size threshold</td>
-</tr>
-<tr class="odd">
-<td><code><a href="reference/fl_flood_assemble.html">fl_flood_assemble()</a></code></td>
-<td>Union multiple floodplain layers</td>
-</tr>
-<tr class="even">
-<td><code><a href="reference/fl_flood_trim.html">fl_flood_trim()</a></code></td>
-<td>Subtract exclusion masks (roads, urban, etc.)</td>
-</tr>
-<tr class="odd">
-<td><code><a href="reference/fl_valley_poly.html">fl_valley_poly()</a></code></td>
-<td>Convert binary valley raster to sf polygons</td>
-</tr>
-</tbody>
-</table>
+<span><span class="co"># delineate valleys — one call</span></span>
+<span><span class="va">valleys</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/fl_valley_confine.html">fl_valley_confine</a></span><span class="op">(</span></span>
+<span>  <span class="va">dem</span>, <span class="va">streams</span>,</span>
+<span>  field <span class="op">=</span> <span class="st">"upstream_area_ha"</span>,</span>
+<span>  precip <span class="op">=</span> <span class="va">precip_r</span>  <span class="co"># mean annual precipitation (mm) — critical for depth</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># convert to polygons for GIS</span></span>
+<span><span class="va">valleys_poly</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/fl_valley_poly.html">fl_valley_poly</a></span><span class="op">(</span><span class="va">valleys</span><span class="op">)</span></span>
+<span><span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_write.html" class="external-link">st_write</a></span><span class="op">(</span><span class="va">valleys_poly</span>, <span class="st">"valleys.gpkg"</span><span class="op">)</span></span></code></pre></div>
+<p>See the <a href="https://newgraphenvironment.github.io/flooded/articles/valley-confinement.html">Valley confinement vignette</a> for a full walkthrough with bundled test data, and the <a href="https://newgraphenvironment.github.io/flooded/reference/">function reference</a> for individual components.</p>
 </div>
 <div class="section level2">
 <h2 id="bankfull-regression">Bankfull regression<a class="anchor" aria-label="anchor" href="#bankfull-regression"></a>
@@ -158,6 +102,14 @@
 <span><span class="va">bankfull_depth</span> <span class="op">=</span> <span class="va">bankfull_width</span> <span class="op">^</span> <span class="fl">0.607</span> <span class="op">*</span> <span class="fl">0.145</span></span>
 <span><span class="va">flood_depth</span>    <span class="op">=</span> <span class="va">bankfull_depth</span> <span class="op">*</span> <span class="va">flood_factor</span></span></code></pre>
 <p>Both <code>upstream_area</code> (hectares) and <code>precip</code> (mean annual precipitation, mm) are important — omitting precipitation underestimates flood depth by ~4x.</p>
+</div>
+<div class="section level2">
+<h2 id="performance">Performance<a class="anchor" aria-label="anchor" href="#performance"></a>
+</h2>
+<p>Set <code>terra</code> threads before running the pipeline to enable multi-core processing:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/terraOptions.html" class="external-link">terraOptions</a></span><span class="op">(</span>threads <span class="op">=</span> <span class="fl">12</span><span class="op">)</span>  <span class="co"># adjust to your machine</span></span></code></pre></div>
+<p>On an Apple M4 Max, this cuts a ~2,700 km² watershed (27M cells at 10 m) from ~3.5 min to ~1 min.</p>
 </div>
 <div class="section level2">
 <h2 id="origins">Origins<a class="anchor" aria-label="anchor" href="#origins"></a>

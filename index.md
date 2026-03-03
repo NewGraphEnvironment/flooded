@@ -14,7 +14,7 @@ anywhere.
 pak::pak("NewGraphEnvironment/flooded")
 ```
 
-## Quick start
+## Example
 
 ``` r
 library(flooded)
@@ -22,31 +22,23 @@ library(flooded)
 dem <- terra::rast("dem.tif")
 streams <- sf::st_read("streams.gpkg")
 
-# full pipeline — one call
-valleys <- fl_valley_confine(dem, streams, field = "upstream_area_ha")
+# delineate valleys — one call
+valleys <- fl_valley_confine(
+  dem, streams,
+  field = "upstream_area_ha",
+  precip = precip_r  # mean annual precipitation (mm) — critical for depth
+)
+
+# convert to polygons for GIS
+valleys_poly <- fl_valley_poly(valleys)
+sf::st_write(valleys_poly, "valleys.gpkg")
 ```
 
-See the [Valley confinement on Neexdzii
-Kwah](https://newgraphenvironment.github.io/flooded/articles/valley-confinement.html)
-vignette for a full walkthrough with bundled test data.
-
-## Functions
-
-| Function                                                                                                  | Purpose                                       |
-|-----------------------------------------------------------------------------------------------------------|-----------------------------------------------|
-| [`fl_valley_confine()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_confine.md)     | Full VCA pipeline (orchestrator)              |
-| [`fl_stream_rasterize()`](https://newgraphenvironment.github.io/flooded/reference/fl_stream_rasterize.md) | Burn streams onto DEM grid                    |
-| [`fl_cost_distance()`](https://newgraphenvironment.github.io/flooded/reference/fl_cost_distance.md)       | Slope-weighted distance from streams          |
-| [`fl_flood_surface()`](https://newgraphenvironment.github.io/flooded/reference/fl_flood_surface.md)       | Bankfull regression → water surface elevation |
-| [`fl_flood_depth()`](https://newgraphenvironment.github.io/flooded/reference/fl_flood_depth.md)           | Interpolate surface outward, subtract DEM     |
-| [`fl_flood_model()`](https://newgraphenvironment.github.io/flooded/reference/fl_flood_model.md)           | Wraps surface + depth + binary mask           |
-| [`fl_mask()`](https://newgraphenvironment.github.io/flooded/reference/fl_mask.md)                         | Generic binary mask (threshold + operator)    |
-| [`fl_mask_distance()`](https://newgraphenvironment.github.io/flooded/reference/fl_mask_distance.md)       | Euclidean distance corridor mask              |
-| [`fl_patch_conn()`](https://newgraphenvironment.github.io/flooded/reference/fl_patch_conn.md)             | Keep patches connected to streams             |
-| [`fl_patch_rm()`](https://newgraphenvironment.github.io/flooded/reference/fl_patch_rm.md)                 | Remove patches below size threshold           |
-| [`fl_flood_assemble()`](https://newgraphenvironment.github.io/flooded/reference/fl_flood_assemble.md)     | Union multiple floodplain layers              |
-| [`fl_flood_trim()`](https://newgraphenvironment.github.io/flooded/reference/fl_flood_trim.md)             | Subtract exclusion masks (roads, urban, etc.) |
-| [`fl_valley_poly()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_poly.md)           | Convert binary valley raster to sf polygons   |
+See the [Valley confinement
+vignette](https://newgraphenvironment.github.io/flooded/articles/valley-confinement.html)
+for a full walkthrough with bundled test data, and the [function
+reference](https://newgraphenvironment.github.io/flooded/reference/) for
+individual components.
 
 ## Bankfull regression
 
@@ -60,6 +52,18 @@ at stream cells:
 Both `upstream_area` (hectares) and `precip` (mean annual precipitation,
 mm) are important — omitting precipitation underestimates flood depth by
 ~4x.
+
+## Performance
+
+Set `terra` threads before running the pipeline to enable multi-core
+processing:
+
+``` r
+terra::terraOptions(threads = 12)  # adjust to your machine
+```
+
+On an Apple M4 Max, this cuts a ~2,700 km² watershed (27M cells at 10 m)
+from ~3.5 min to ~1 min.
 
 ## Origins
 

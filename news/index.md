@@ -1,5 +1,6 @@
 # Changelog
 
-## flooded (development version)
+## flooded 0.1.0
 
-- Initial package scaffold.
+- Initial release. Valley Confinement Algorithm (VCA) pipeline for
+  floodplain delineation from DEM and stream network.

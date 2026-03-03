@@ -300,6 +300,25 @@ cat("With precip:   ", n_valley, "cells (",
 #> With precip:    55420 cells ( 10.7 %)
 ```
 
+## Performance
+
+Several `terra` operations inside
+[`fl_valley_confine()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_confine.md)
+support multi-threading (focal filters, distance calculations, raster
+math). Set threads before running:
+
+``` r
+terra::terraOptions(threads = 12)  # adjust to your machine
+```
+
+On an Apple M4 Max (16 cores, 12 performance), this reduced a Neexdzii
+Kwah run (~2,700 km², 27M cells, 1165 stream segments) from ~3.5 minutes
+to ~1 minute. The remaining time is dominated by
+[`terra::costDist()`](https://rspatial.github.io/terra/reference/costDist.html)
+and
+[`terra::interpIDW()`](https://rspatial.github.io/terra/reference/interpIDW.html),
+which are single-threaded.
+
 ## Summary
 
 Key tuning parameters:

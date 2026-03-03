@@ -103,12 +103,26 @@ Adapted from the USDA Valley Confinement Algorithm Toolbox (BlueGeo
 implementation by Devin Cairns, MIT license) and bcfishpass lateral
 habitat assembly (Simon Norris, Apache 2.0).
 
+### Performance
+
+Several internal operations (focal filters, distance calculations,
+raster math) support multi-threading via
+[`terra::terraOptions()`](https://rspatial.github.io/terra/reference/terraOptions.html).
+Set threads before calling this function to speed up processing on large
+rasters:
+
+    terra::terraOptions(threads = 12)
+
+On an Apple M4 Max (16 cores), 12 threads reduced runtime from ~3.5
+minutes to ~1 minute for a 27M-cell raster (~2,700 km² at 10 m).
+
 ## See also
 
 [`fl_mask()`](https://newgraphenvironment.github.io/flooded/reference/fl_mask.md),
 [`fl_cost_distance()`](https://newgraphenvironment.github.io/flooded/reference/fl_cost_distance.md),
 [`fl_flood_model()`](https://newgraphenvironment.github.io/flooded/reference/fl_flood_model.md),
-[`fl_patch_rm()`](https://newgraphenvironment.github.io/flooded/reference/fl_patch_rm.md)
+[`fl_patch_rm()`](https://newgraphenvironment.github.io/flooded/reference/fl_patch_rm.md),
+[`fl_valley_poly()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_poly.md)
 
 ## Examples
 

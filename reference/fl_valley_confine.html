@@ -11,7 +11,7 @@ unconfined valley bottoms."><meta property="og:image" content="https://newgraphe
 
     <a class="navbar-brand me-2" href="../index.html">flooded</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -133,12 +133,23 @@ confined / hillslope, <code>NA</code> = outside analysis extent.</p>
 <li><p>Majority filter (3x3) to smooth edges</p></li>
 </ul><p>Adapted from the USDA Valley Confinement Algorithm Toolbox (BlueGeo
 implementation by Devin Cairns, MIT license) and bcfishpass lateral
-habitat assembly (Simon Norris, Apache 2.0).</p>
+habitat assembly (Simon Norris, Apache 2.0).</p><div class="section">
+<h3 id="performance">Performance<a class="anchor" aria-label="anchor" href="#performance"></a></h3>
+
+
+<p>Several internal operations (focal filters, distance calculations, raster
+math) support multi-threading via <code><a href="https://rspatial.github.io/terra/reference/terraOptions.html" class="external-link">terra::terraOptions()</a></code>. Set threads
+before calling this function to speed up processing on large rasters:</p>
+<p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>terra<span class="sc">::</span><span class="fu">terraOptions</span>(<span class="at">threads =</span> <span class="dv">12</span>)</span></code></pre><p></p></div>
+<p>On an Apple M4 Max (16 cores), 12 threads reduced runtime from ~3.5
+minutes to ~1 minute for a 27M-cell raster (~2,700 km² at 10 m).</p>
+</div>
+
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="fl_mask.html">fl_mask()</a></code>, <code><a href="fl_cost_distance.html">fl_cost_distance()</a></code>, <code><a href="fl_flood_model.html">fl_flood_model()</a></code>,
-<code><a href="fl_patch_rm.html">fl_patch_rm()</a></code></p></div>
+<code><a href="fl_patch_rm.html">fl_patch_rm()</a></code>, <code><a href="fl_valley_poly.html">fl_valley_poly()</a></code></p></div>
     </div>
 
     <div class="section level2">
