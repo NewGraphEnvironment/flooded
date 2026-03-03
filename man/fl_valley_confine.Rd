@@ -75,6 +75,18 @@ The combined mask then undergoes morphological cleanup:
 Adapted from the USDA Valley Confinement Algorithm Toolbox (BlueGeo
 implementation by Devin Cairns, MIT license) and bcfishpass lateral
 habitat assembly (Simon Norris, Apache 2.0).
+\subsection{Performance}{
+
+Several internal operations (focal filters, distance calculations, raster
+math) support multi-threading via \code{\link[terra:terraOptions]{terra::terraOptions()}}. Set threads
+before calling this function to speed up processing on large rasters:
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{terra::terraOptions(threads = 12)
+}\if{html}{\out{</div>}}
+
+On an Apple M4 Max (16 cores), 12 threads reduced runtime from ~3.5
+minutes to ~1 minute for a 27M-cell raster (~2,700 km² at 10 m).
+}
 }
 \examples{
 dem <- terra::rast(system.file("testdata/dem.tif", package = "flooded"))
@@ -94,5 +106,5 @@ terra::plot(valleys, col = c("grey90", "darkgreen"), main = "Unconfined valleys"
 }
 \seealso{
 \code{\link[=fl_mask]{fl_mask()}}, \code{\link[=fl_cost_distance]{fl_cost_distance()}}, \code{\link[=fl_flood_model]{fl_flood_model()}},
-\code{\link[=fl_patch_rm]{fl_patch_rm()}}
+\code{\link[=fl_patch_rm]{fl_patch_rm()}}, \code{\link[=fl_valley_poly]{fl_valley_poly()}}
 }

@@ -54,6 +54,16 @@ flood_depth    = bankfull_depth * flood_factor
 
 Both `upstream_area` (hectares) and `precip` (mean annual precipitation, mm) are important — omitting precipitation underestimates flood depth by ~4x.
 
+## Performance
+
+Set `terra` threads before running the pipeline to enable multi-core processing:
+
+```r
+terra::terraOptions(threads = 12)  # adjust to your machine
+```
+
+On an Apple M4 Max, this cuts a ~2,700 km² watershed (27M cells at 10 m) from ~3.5 min to ~1 min.
+
 ## Origins
 
 Adapted from:

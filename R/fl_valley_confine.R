@@ -41,8 +41,21 @@
 #' implementation by Devin Cairns, MIT license) and bcfishpass lateral
 #' habitat assembly (Simon Norris, Apache 2.0).
 #'
+#' ## Performance
+#'
+#' Several internal operations (focal filters, distance calculations, raster
+#' math) support multi-threading via [terra::terraOptions()]. Set threads
+#' before calling this function to speed up processing on large rasters:
+#'
+#' ```
+#' terra::terraOptions(threads = 12)
+#' ```
+#'
+#' On an Apple M4 Max (16 cores), 12 threads reduced runtime from ~3.5
+#' minutes to ~1 minute for a 27M-cell raster (~2,700 km² at 10 m).
+#'
 #' @seealso [fl_mask()], [fl_cost_distance()], [fl_flood_model()],
-#'   [fl_patch_rm()]
+#'   [fl_patch_rm()], [fl_valley_poly()]
 #'
 #' @examples
 #' dem <- terra::rast(system.file("testdata/dem.tif", package = "flooded"))
