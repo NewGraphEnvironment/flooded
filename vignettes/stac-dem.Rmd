@@ -1,0 +1,205 @@
+---
+title: "Bring your own DEM via STAC"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Bring your own DEM via STAC}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 6,
+  dpi = 150
+)
+```
+
+`flooded` works with any DEM — it doesn't require a specific source. This
+vignette demonstrates fetching 1 m lidar tiles from a STAC catalog and
+comparing the resulting floodplain with the bundled 10 m DEM.
+
+We use the same Neexdzii Kwah test area (Bulkley River near Topley, BC) as
+the main vignette, but source the DEM from
+[stac-dem-bc](https://images.a11s.one/) — a STAC collection of BC provincial
+lidar DEMs.
+
+## Setup
+
+```{r load}
+library(flooded)
+library(terra)
+library(sf)
+library(rstac)
+library(gdalcubes)
+
+terra::terraOptions(threads = 12)
+```
+
+## Bundled 10 m baseline
+
+First, load the bundled test data and run the VCA to establish a baseline.
+
+```{r baseline}
+dem_10m <- rast(system.file("testdata/dem.tif", package = "flooded"))
+slope_10m <- rast(system.file("testdata/slope.tif", package = "flooded"))
+streams <- st_read(
+  system.file("testdata/streams.gpkg", package = "flooded"),
+  quiet = TRUE
+)
+
+precip_r <- fl_stream_rasterize(streams, dem_10m, field = "map_upstream")
+
+valleys_10m <- fl_valley_confine(
+  dem_10m, streams,
+  field = "upstream_area_ha",
+  slope = slope_10m,
+  slope_threshold = 9,
+  max_width = 2000,
+  cost_threshold = 2500,
+  flood_factor = 6,
+  precip = precip_r
+)
+
+n_10m <- sum(values(valleys_10m) == 1, na.rm = TRUE)
+cat("10 m DEM valley cells:", n_10m, "/", ncell(valleys_10m),
+    "(", round(100 * n_10m / ncell(valleys_10m), 1), "%)\n")
+```
+
+## Fetch 1 m lidar DEM from STAC
+
+Query the `stac-dem-bc` collection for tiles intersecting our test area.
+We filter to 2019 tiles only (1 m lidar).
+
+```{r stac-query}
+# Test area bounding box in WGS84
+# terra ext() gives xmin,xmax,ymin,ymax — STAC needs xmin,ymin,xmax,ymax
+dem_wgs <- project(dem_10m, "EPSG:4326")
+e <- ext(dem_wgs)
+bbox <- c(e$xmin, e$ymin, e$xmax, e$ymax)
+
+# Query STAC
+items <- stac("https://images.a11s.one/") |>
+  stac_search(
+    collections = "stac-dem-bc",
+    bbox = bbox,
+    datetime = "2019-01-01T00:00:00Z/2019-12-31T23:59:59Z"
+  ) |>
+  post_request() |>
+  items_fetch()
+
+cat("STAC items found:", length(items$features), "\n")
+for (f in items$features) cat(" ", f$id, "\n")
+```
+
+## Mosaic and crop with gdalcubes
+
+Use `gdalcubes` to mosaic the STAC tiles and reproject to BC Albers
+(EPSG:3005), matching the test area extent. We use 5 m resolution as a
+practical compromise — finer than the bundled 10 m, but fast enough to build
+in a vignette. For production work, set `dx = 1, dy = 1` for full 1 m
+resolution.
+
+```{r mosaic}
+# Build gdalcubes image collection from STAC items
+col <- stac_image_collection(items$features, asset_names = "image")
+
+# Define target cube — same extent as bundled DEM, 5 m resolution
+e <- ext(dem_10m)
+stac_res <- 5  # use 1 for full resolution (100x more cells, ~25 min fetch)
+v <- cube_view(
+  srs = "EPSG:3005",
+  extent = list(
+    left = e$xmin, right = e$xmax,
+    bottom = e$ymin, top = e$ymax,
+    t0 = "2019-01-01", t1 = "2019-12-31"
+  ),
+  dx = stac_res, dy = stac_res, dt = "P1Y",
+  aggregation = "first",
+  resampling = "bilinear"
+)
+
+# write_tif creates a directory with timestamped TIF(s) inside
+cube <- raster_cube(col, v)
+out_dir <- tempfile()
+write_tif(cube, out_dir)
+dem_stac_path <- list.files(out_dir, pattern = "\\.tif$", full.names = TRUE)[1]
+dem_stac <- rast(dem_stac_path)
+
+cat(stac_res, "m DEM:", ncol(dem_stac), "x", nrow(dem_stac), "pixels\n")
+cat("Resolution:", res(dem_stac), "m\n")
+```
+
+## Derive slope
+
+```{r slope}
+slope_stac <- terra::terrain(dem_stac, v = "slope", unit = "degrees")
+# Convert to percent slope to match flooded convention
+slope_stac <- tan(slope_stac * pi / 180) * 100
+```
+
+## Run VCA on STAC DEM
+
+```{r vca-stac}
+# Rasterize streams onto the STAC DEM grid
+precip_stac <- fl_stream_rasterize(streams, dem_stac, field = "map_upstream")
+
+valleys_stac <- fl_valley_confine(
+  dem_stac, streams,
+  field = "upstream_area_ha",
+  slope = slope_stac,
+  slope_threshold = 9,
+  max_width = 2000,
+  cost_threshold = 2500,
+  flood_factor = 6,
+  precip = precip_stac
+)
+
+n_stac <- sum(values(valleys_stac) == 1, na.rm = TRUE)
+cat(stac_res, "m DEM valley cells:", n_stac, "/", ncell(valleys_stac),
+    "(", round(100 * n_stac / ncell(valleys_stac), 1), "%)\n")
+```
+
+## Compare
+
+```{r compare}
+# Resample STAC result to 10 m grid for visual comparison
+valleys_stac_10 <- resample(valleys_stac, dem_10m, method = "near")
+
+# Area comparison
+area_10m <- n_10m * res(dem_10m)[1] * res(dem_10m)[2] / 1e6
+area_stac <- sum(values(valleys_stac_10) == 1, na.rm = TRUE) *
+  res(dem_10m)[1] * res(dem_10m)[2] / 1e6
+
+cat("Valley area (bundled 10 m DEM):", round(area_10m, 2), "km²\n")
+cat("Valley area (STAC", stac_res, "m DEM):", round(area_stac, 2), "km²\n")
+```
+
+```{r plot-compare, fig.width = 10, fig.height = 5, fig.cap = "Valley delineation from bundled 10 m DEM (left) vs STAC lidar DEM (right)."}
+par(mfrow = c(1, 2))
+plot(valleys_10m, col = c("grey90", "darkgreen"),
+     main = "Bundled 10 m DEM", legend = FALSE)
+plot(st_geometry(streams), add = TRUE, col = "blue", lwd = 1)
+
+plot(valleys_stac_10, col = c("grey90", "darkgreen"),
+     main = paste0("STAC lidar ", stac_res, " m DEM"), legend = FALSE)
+plot(st_geometry(streams), add = TRUE, col = "blue", lwd = 1)
+```
+
+## Summary
+
+Higher resolution DEMs capture finer terrain features — narrow terraces,
+incised channels, and small benches that a 10 m DEM smooths over. The
+tradeoff is compute time: 1 m grids have 100x more cells than 10 m grids for
+the same extent.
+
+The `flooded` pipeline is DEM-agnostic. Any source works:
+
+| Source | Resolution | Access |
+|--------|-----------|--------|
+| Bundled test data | 10 m | `system.file("testdata/", package = "flooded")` |
+| stac-dem-bc (this vignette) | 1–5 m | `rstac` + `gdalcubes` |
+| BC Data Catalogue (WCS) | 25 m | `bcdata get-dem` (Python CLI) |
+| bcfishpass habitat_lateral | 10 m | Pre-assembled per watershed group |

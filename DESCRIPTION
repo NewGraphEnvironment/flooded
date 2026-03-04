@@ -36,6 +36,8 @@ Suggests:
     whitebox,
     testthat (>= 3.0.0),
     knitr,
-    rmarkdown
+    rmarkdown,
+    rstac,
+    gdalcubes
 Config/testthat/edition: 3
 VignetteBuilder: knitr
