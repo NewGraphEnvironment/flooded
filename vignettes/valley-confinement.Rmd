@@ -1,6 +1,7 @@
 ---
 title: "Valley confinement on Neexdzii Kwah"
-output: rmarkdown::html_vignette
+output:
+  bookdown::html_vignette2
 vignette: >
   %\VignetteIndexEntry{Valley confinement on Neexdzii Kwah}
   %\VignetteEngine{knitr::rmarkdown}
@@ -49,9 +50,10 @@ plot(st_geometry(streams), add = TRUE, col = "blue", lwd = 1.5)
 
 ## Step 1: Rasterize streams
 
-Burn the stream network onto the DEM grid using upstream contributing area as
-the cell value. This is what the VCA bankfull regression expects — it estimates
-flood depth from contributing area in hectares.
+Burn the stream network onto the DEM grid (Figure \@ref(fig:plot-dem)) using
+upstream contributing area as the cell value (Figure \@ref(fig:plot-streams)).
+This is what the VCA bankfull regression expects — it estimates flood depth
+from contributing area in hectares.
 
 ```{r rasterize}
 stream_r <- fl_stream_rasterize(streams, dem, field = "upstream_area_ha")
@@ -93,7 +95,7 @@ The VCA combines four spatial criteria. Let's inspect each one.
 ### Slope mask
 
 Cells with slope <= 9% (the VCA default) represent potentially flat valley
-floor.
+floor (Figure \@ref(fig:plot-slope-mask)).
 
 ```{r slope-mask}
 mask_slope <- fl_mask(slope, threshold = 9, operator = "<=")
@@ -108,7 +110,8 @@ plot(st_geometry(streams), add = TRUE, col = "blue", lwd = 0.8)
 
 ### Distance mask
 
-Cells within 1000 m of a stream (half the default `max_width = 2000`).
+Cells within 1000 m of a stream (half the default `max_width = 2000`;
+Figure \@ref(fig:plot-dist-mask)).
 
 ```{r distance-mask}
 mask_dist <- fl_mask_distance(stream_r, threshold = 1000)
@@ -123,8 +126,8 @@ plot(st_geometry(streams), add = TRUE, col = "blue", lwd = 0.8)
 
 ### Cost distance
 
-Accumulated cost (slope-weighted) distance from streams. The VCA default
-threshold is 2500.
+Accumulated cost (slope-weighted) distance from streams (Figure \@ref(fig:plot-cost)).
+The VCA default threshold is 2500.
 
 ```{r cost-distance}
 cost <- fl_cost_distance(slope, stream_r)
@@ -141,7 +144,7 @@ plot(st_geometry(streams), add = TRUE, col = "blue", lwd = 0.8)
 
 The bankfull regression estimates flood depth from upstream contributing area
 and precipitation, interpolates the water surface outward from streams, and
-identifies cells below the flood surface.
+identifies cells below the flood surface (Figure \@ref(fig:plot-flood)).
 
 ```{r flood-model}
 flood <- fl_flood_model(dem, stream_r, flood_factor = 6, precip = precip_r,
@@ -160,7 +163,8 @@ plot(st_geometry(streams), add = TRUE, col = "blue", lwd = 0.8)
 
 `fl_valley_confine()` chains all the above (slope + distance + cost + flood
 masks), applies morphological cleanup (closing, hole filling, small patch
-removal, majority filter), and returns a binary valley raster.
+removal, majority filter), and returns a binary valley raster
+(Figure \@ref(fig:plot-valleys)).
 
 Note the `precip` argument — without it, flood depths are ~4x too shallow
 and the resulting valley is significantly narrower.
@@ -192,7 +196,7 @@ plot(st_geometry(streams), add = TRUE, col = "blue", lwd = 1.2)
 ### Connect to streams
 
 Keep only valley patches that touch a stream cell — removes isolated flat
-areas disconnected from the network.
+areas disconnected from the network (Figure \@ref(fig:plot-connected)).
 
 ```{r patch-conn}
 connected <- fl_patch_conn(valleys, stream_r)

@@ -33,6 +33,7 @@ Imports:
     terra,
     sf
 Suggests:
+    bookdown,
     whitebox,
     testthat (>= 3.0.0),
     knitr,
