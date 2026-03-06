@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="index.html">flooded</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -41,7 +41,8 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="articles/valley-confinement.html">Valley confinement on Neexdzii Kwah</a></li>
+<li><a class="dropdown-item" href="articles/stac-dem.html">Bring your own DEM via STAC</a></li>
+    <li><a class="dropdown-item" href="articles/valley-confinement.html">Valley confinement on Neexdzii Kwah</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
@@ -102,6 +103,12 @@
 <span><span class="va">bankfull_depth</span> <span class="op">=</span> <span class="va">bankfull_width</span> <span class="op">^</span> <span class="fl">0.607</span> <span class="op">*</span> <span class="fl">0.145</span></span>
 <span><span class="va">flood_depth</span>    <span class="op">=</span> <span class="va">bankfull_depth</span> <span class="op">*</span> <span class="va">flood_factor</span></span></code></pre>
 <p>Both <code>upstream_area</code> (hectares) and <code>precip</code> (mean annual precipitation, mm) are important — omitting precipitation underestimates flood depth by ~4x.</p>
+</div>
+<div class="section level2">
+<h2 id="resolution-and-restoration">Resolution and restoration<a class="anchor" aria-label="anchor" href="#resolution-and-restoration"></a>
+</h2>
+<p><code>flooded</code> is DEM-agnostic — any source works. But resolution changes what you can see. At 25 m (e.g. the provincial TRIM DEM), the floodplain appears as one continuous surface. At 1 m lidar, anthropogenic features emerge: roads, railway grades, dykes, and agricultural fill that sit above the flood surface and block lateral connectivity.</p>
+<p>The gap between coarse and fine results is a diagnostic: it shows <strong>what is preventing floodplain from functioning</strong> and <strong>where to act</strong> — removing fill, breaching dykes, or installing crossings to reconnect floodplain. See the <a href="https://newgraphenvironment.github.io/flooded/articles/stac-dem.html">STAC DEM vignette</a> for a worked example comparing 25 m TRIM with 1 m lidar on the Neexdzii Kwah (Bulkley River).</p>
 </div>
 <div class="section level2">
 <h2 id="performance">Performance<a class="anchor" aria-label="anchor" href="#performance"></a>

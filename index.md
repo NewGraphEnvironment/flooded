@@ -53,6 +53,22 @@ Both `upstream_area` (hectares) and `precip` (mean annual precipitation,
 mm) are important — omitting precipitation underestimates flood depth by
 ~4x.
 
+## Resolution and restoration
+
+`flooded` is DEM-agnostic — any source works. But resolution changes
+what you can see. At 25 m (e.g. the provincial TRIM DEM), the floodplain
+appears as one continuous surface. At 1 m lidar, anthropogenic features
+emerge: roads, railway grades, dykes, and agricultural fill that sit
+above the flood surface and block lateral connectivity.
+
+The gap between coarse and fine results is a diagnostic: it shows **what
+is preventing floodplain from functioning** and **where to act** —
+removing fill, breaching dykes, or installing crossings to reconnect
+floodplain. See the [STAC DEM
+vignette](https://newgraphenvironment.github.io/flooded/articles/stac-dem.html)
+for a worked example comparing 25 m TRIM with 1 m lidar on the Neexdzii
+Kwah (Bulkley River).
+
 ## Performance
 
 Set `terra` threads before running the pipeline to enable multi-core
