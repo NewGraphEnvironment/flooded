@@ -43,9 +43,10 @@ DEM with stream network overlay.
 
 ## Step 1: Rasterize streams
 
-Burn the stream network onto the DEM grid using upstream contributing
-area as the cell value. This is what the VCA bankfull regression expects
-— it estimates flood depth from contributing area in hectares.
+Burn the stream network onto the DEM grid (Figure @ref(fig:plot-dem))
+using upstream contributing area as the cell value (Figure
+@ref(fig:plot-streams)). This is what the VCA bankfull regression
+expects — it estimates flood depth from contributing area in hectares.
 
 ``` r
 stream_r <- fl_stream_rasterize(streams, dem, field = "upstream_area_ha")
@@ -92,7 +93,7 @@ The VCA combines four spatial criteria. Let’s inspect each one.
 ### Slope mask
 
 Cells with slope \<= 9% (the VCA default) represent potentially flat
-valley floor.
+valley floor (Figure @ref(fig:plot-slope-mask)).
 
 ``` r
 mask_slope <- fl_mask(slope, threshold = 9, operator = "<=")
@@ -113,7 +114,8 @@ Slope mask: green = slope \<= 9%.
 
 ### Distance mask
 
-Cells within 1000 m of a stream (half the default `max_width = 2000`).
+Cells within 1000 m of a stream (half the default `max_width = 2000`;
+Figure @ref(fig:plot-dist-mask)).
 
 ``` r
 mask_dist <- fl_mask_distance(stream_r, threshold = 1000)
@@ -134,8 +136,8 @@ Distance mask: corridor within 1 km of streams.
 
 ### Cost distance
 
-Accumulated cost (slope-weighted) distance from streams. The VCA default
-threshold is 2500.
+Accumulated cost (slope-weighted) distance from streams (Figure
+@ref(fig:plot-cost)). The VCA default threshold is 2500.
 
 ``` r
 cost <- fl_cost_distance(slope, stream_r)
@@ -158,7 +160,8 @@ Cost distance from streams. Warm colours = high cost.
 
 The bankfull regression estimates flood depth from upstream contributing
 area and precipitation, interpolates the water surface outward from
-streams, and identifies cells below the flood surface.
+streams, and identifies cells below the flood surface (Figure
+@ref(fig:plot-flood)).
 
 ``` r
 flood <- fl_flood_model(dem, stream_r, flood_factor = 6, precip = precip_r,
@@ -184,7 +187,8 @@ Flood model: depth above terrain (m).
 [`fl_valley_confine()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_confine.md)
 chains all the above (slope + distance + cost + flood masks), applies
 morphological cleanup (closing, hole filling, small patch removal,
-majority filter), and returns a binary valley raster.
+majority filter), and returns a binary valley raster (Figure
+@ref(fig:plot-valleys)).
 
 Note the `precip` argument — without it, flood depths are ~4x too
 shallow and the resulting valley is significantly narrower.
@@ -222,7 +226,8 @@ Unconfined valleys (green) with stream network.
 ### Connect to streams
 
 Keep only valley patches that touch a stream cell — removes isolated
-flat areas disconnected from the network.
+flat areas disconnected from the network (Figure
+@ref(fig:plot-connected)).
 
 ``` r
 connected <- fl_patch_conn(valleys, stream_r)

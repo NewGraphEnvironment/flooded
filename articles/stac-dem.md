@@ -381,11 +381,12 @@ raised features that block lateral connectivity.
 
 ## Anthropogenic barriers to floodplain connectivity
 
-The difference between the two maps above is striking — and informative.
-The 25 m TRIM DEM (resampled to a 10 m grid but still only 25 m terrain
-detail) shows the floodplain as one continuous green mass. The 1 m lidar
-reveals a different story: white gaps cut through the green where the
-ground surface sits **above** the modelled flood level.
+The difference between Figures @ref(fig:plot-compare) and
+@ref(fig:site-compare) is striking — and informative. The 25 m TRIM DEM
+(resampled to a 10 m grid but still only 25 m terrain detail) shows the
+floodplain as one continuous green mass. The 1 m lidar reveals a
+different story: white gaps cut through the green where the ground
+surface sits **above** the modelled flood level.
 
 These white features are areas the VCA identifies as “not floodplain” —
 pixels too high or too steep to be reached by the flood surface. At 25 m
