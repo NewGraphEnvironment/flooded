@@ -1,6 +1,7 @@
 ---
 title: "Bring your own DEM via STAC"
-output: rmarkdown::html_vignette
+output:
+  bookdown::html_vignette2
 vignette: >
   %\VignetteIndexEntry{Bring your own DEM via STAC}
   %\VignetteEngine{knitr::rmarkdown}
@@ -354,7 +355,7 @@ lateral connectivity.
 
 ## Anthropogenic barriers to floodplain connectivity
 
-The difference between the two maps above is striking — and informative. The
+The difference between Figures \@ref(fig:plot-compare) and \@ref(fig:site-compare) is striking — and informative. The
 25 m TRIM DEM (resampled to a 10 m grid but still only 25 m terrain detail)
 shows the floodplain as one continuous green mass. The 1 m lidar reveals a
 different story: white gaps cut through the green where the ground surface sits
