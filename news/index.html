@@ -38,7 +38,8 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.1" id="flooded-011">flooded 0.1.1<a class="anchor" aria-label="anchor" href="#flooded-011"></a></h2>
-<ul><li>Add STAC DEM vignette comparing 25 m TRIM (resampled to 10 m) with native 1 m lidar — includes site-level zoom and pop-up analysis quantifying anthropogenic barriers to floodplain connectivity.</li>
+<ul><li>Replace raw SQL in <code>data-raw/network_extract.R</code> with <code>fresh::frs_network()</code> for stream network extraction via network subtraction.</li>
+<li>Add STAC DEM vignette comparing 25 m TRIM (resampled to 10 m) with native 1 m lidar — includes site-level zoom and pop-up analysis quantifying anthropogenic barriers to floodplain connectivity.</li>
 <li>Add <code>bcdata</code> reproducibility script (<code>data-raw/testdata_bcdata.R</code>).</li>
 <li>Add resolution and restoration section to README.</li>
 <li>Pre-build STAC vignette for fast pkgdown rendering.</li>
