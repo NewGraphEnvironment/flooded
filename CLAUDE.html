@@ -42,18 +42,25 @@
 <p>Portable floodplain delineation from DEM and stream network using the Valley Confinement Algorithm (VCA). Built on <code>terra</code> and <code>sf</code> for R-native raster processing. Bring your own DEM and streams; works anywhere.</p>
 <div class="section level2">
 <h2 id="repository-context">Repository Context<a class="anchor" aria-label="anchor" href="#repository-context"></a></h2>
-<p><strong>Repository:</strong> NewGraphEnvironment/flooded <strong>Primary Language:</strong> R (package) <strong>Version:</strong> 0.1.0 <strong>License:</strong> MIT</p>
+<p><strong>Repository:</strong> NewGraphEnvironment/flooded <strong>Primary Language:</strong> R (package) <strong>Version:</strong> 0.2.0 <strong>License:</strong> MIT</p>
 </div>
 <div class="section level2">
 <h2 id="ecosystem">Ecosystem<a class="anchor" aria-label="anchor" href="#ecosystem"></a></h2>
-<p><code>flooded</code> is the floodplain-delineation engine in a family of packages:</p>
-<ul><li>
-<strong><a href="https://github.com/NewGraphEnvironment/drift" class="external-link">drift</a></strong> — fetch, classify, and summarize lateral habitat using flooded output</li>
-<li>
-<strong><a href="https://github.com/NewGraphEnvironment/fly" class="external-link">fly</a></strong> — airphoto footprint estimation and coverage selection</li>
-<li>
-<strong><a href="https://github.com/NewGraphEnvironment/diggs" class="external-link">diggs</a></strong> — BC Historic Airphoto Explorer (interactive Shiny app)</li>
-</ul><p>Pipeline flow: <code>flooded</code> (delineate) → <code>drift</code> (classify)</p>
+<table class="table"><colgroup><col width="60%"><col width="40%"></colgroup><thead><tr class="header"><th>Package</th>
+<th>Role</th>
+</tr></thead><tbody><tr class="odd"><td><a href="https://github.com/NewGraphEnvironment/fresh" class="external-link">fresh</a></td>
+<td>FWA-referenced spatial hydrology (network extraction, snapping)</td>
+</tr><tr class="even"><td><a href="https://github.com/NewGraphEnvironment/breaks" class="external-link">breaks</a></td>
+<td>Delineate sub-basins from break points on stream networks</td>
+</tr><tr class="odd"><td><strong>flooded</strong></td>
+<td>Delineate floodplain extents from DEMs and stream networks (this package)</td>
+</tr><tr class="even"><td><a href="https://github.com/NewGraphEnvironment/drift" class="external-link">drift</a></td>
+<td>Track land cover change within floodplains over time</td>
+</tr><tr class="odd"><td><a href="https://github.com/NewGraphEnvironment/fly" class="external-link">fly</a></td>
+<td>Estimate airphoto footprints and select optimal coverage for a study area</td>
+</tr><tr class="even"><td><a href="https://github.com/NewGraphEnvironment/diggs" class="external-link">diggs</a></td>
+<td>BC Historic Airphoto Explorer (interactive Shiny app)</td>
+</tr></tbody></table><p>Pipeline flow: <code>fresh</code> (network data) → <code>flooded</code> (delineate) → <code>drift</code> (classify)</p>
 </div>
 <div class="section level2">
 <h2 id="architecture">Architecture<a class="anchor" aria-label="anchor" href="#architecture"></a></h2>
