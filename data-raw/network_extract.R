@@ -12,16 +12,18 @@
 # Requires:
 #   - SSH tunnel to the remote newgraph DB forwarding to localhost:63333
 #     (do NOT hardcode the remote IP — use your SSH config)
-#   - R packages: fresh, sf
+#   - R packages: fresh, sf, terra
 #
-# Output: inst/testdata/streams.gpkg
-#   50 segments, order 4+, covering Bulkley River mainstem, Richfield Creek,
-#   Cesford Creek, and Robert Hatch Creek near Topley, BC.
+# Output:
+#   inst/testdata/streams.gpkg      — 50 segments, order 4+, Bulkley mainstem,
+#     Richfield, Cesford, Robert Hatch Creeks near Topley, BC
+#   inst/testdata/waterbodies.gpkg  — lakes and wetlands in the DEM extent
 #
 # To extract a different reach, change the blk, drm, and filter below.
 
 library(fresh)
 library(sf)
+library(terra)
 
 # --- Boundary points on Bulkley mainstem ---
 blk <- 360873822
@@ -68,7 +70,43 @@ message("  ", nrow(network), " segments")
 message("  Streams: ", paste(unique(na.omit(network$gnis_name)), collapse = ", "))
 message("  Orders: ", paste(sort(unique(network$stream_order)), collapse = ", "))
 
-# --- Write to inst/testdata ---
+# --- Write streams to inst/testdata ---
 out_path <- here::here("inst", "testdata", "streams.gpkg")
 sf::st_write(network, out_path, delete_dsn = TRUE, quiet = TRUE)
 message("Saved: ", out_path)
+
+# --- Extract waterbodies (lakes + wetlands) ---
+# frs_network() uses the waterbody_key bridge for polygon tables.
+# Results extend beyond the DEM extent so we crop with st_intersection.
+# TODO: replace st_intersection crop with fresh clip helper once
+# NewGraphEnvironment/fresh#12 is implemented.
+message("Querying waterbodies...")
+
+dem <- terra::rast(here::here("inst", "testdata", "dem.tif"))
+dem_bbox <- sf::st_as_sfc(sf::st_bbox(dem))
+
+wb <- frs_network(
+  blue_line_key = blk,
+  downstream_route_measure = mouth_drm,
+  upstream_measure = cutoff_drm,
+  tables = list(
+    lakes = "whse_basemapping.fwa_lakes_poly",
+    wetlands = "whse_basemapping.fwa_wetlands_poly"
+  )
+)
+
+lakes <- sf::st_intersection(wb$lakes, dem_bbox)
+wetlands <- sf::st_intersection(wb$wetlands, dem_bbox)
+
+message("  Lakes in DEM extent: ", nrow(lakes))
+message("  Wetlands in DEM extent: ", nrow(wetlands))
+
+# Combine into single waterbodies layer
+waterbodies <- rbind(
+  lakes[, c("waterbody_key", "waterbody_type", "area_ha", "geom")],
+  wetlands[, c("waterbody_key", "waterbody_type", "area_ha", "geom")]
+)
+
+wb_path <- here::here("inst", "testdata", "waterbodies.gpkg")
+sf::st_write(waterbodies, wb_path, delete_dsn = TRUE, quiet = TRUE)
+message("Saved: ", wb_path, " (", nrow(waterbodies), " features)")

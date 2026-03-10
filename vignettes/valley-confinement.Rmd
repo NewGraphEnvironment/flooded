@@ -1,9 +1,9 @@
 ---
-title: "Valley confinement on Neexdzii Kwah"
+title: "Valley confinement from DEM and stream network"
 output:
   bookdown::html_vignette2
 vignette: >
-  %\VignetteIndexEntry{Valley confinement on Neexdzii Kwah}
+  %\VignetteIndexEntry{Valley confinement from DEM and stream network}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -236,6 +236,61 @@ assembled <- fl_flood_assemble(connected, flooded_mask)
 cat("Assembled cells:", sum(values(assembled) == 1, na.rm = TRUE), "\n")
 ```
 
+## Adding waterbodies and channel buffer
+
+The VCA operates on terrain alone — lakes and wetlands appear as donut holes
+in the valley raster because the water surface reads differently than
+surrounding terrain. Similarly, at coarse DEM resolution the stream channel
+itself can be sub-pixel and excluded from the output.
+
+`fl_valley_confine()` addresses both:
+
+- **`channel_buffer`** — auto-detected when streams have a `channel_width`
+  column. Buffers each stream segment by half its channel width and adds to
+  the output. This is a DEM correction, not a habitat buffer.
+- **`waterbodies`** — an optional `sf` polygon layer of lakes and wetlands.
+  Rasterized as-is (no buffer) and added to the output via logical OR.
+
+```{r load-waterbodies}
+waterbodies <- st_read(
+  system.file("testdata/waterbodies.gpkg", package = "flooded"),
+  quiet = TRUE
+)
+cat("Waterbodies:", nrow(waterbodies), "features\n")
+cat("Types:", paste(names(table(waterbodies$waterbody_type)),
+                    table(waterbodies$waterbody_type), sep = "=", collapse = ", "), "\n")
+```
+
+```{r vca-features}
+valleys_wb <- fl_valley_confine(
+  dem, streams,
+  field = "upstream_area_ha",
+  slope = slope,
+  precip = precip_r,
+  waterbodies = waterbodies
+)
+
+n_wb <- sum(values(valleys_wb) == 1, na.rm = TRUE)
+cell_area <- prod(res(dem))
+cat("VCA only:          ", round(n_valley * cell_area / 1e4, 1), "ha\n")
+cat("VCA + features:    ", round(n_wb * cell_area / 1e4, 1), "ha\n")
+cat("Features added:    ", round((n_wb - n_valley) * cell_area / 1e4, 1), "ha\n")
+```
+
+```{r plot-features, fig.width = 7, fig.height = 8, fig.cap = "Valley delineation without (top) and with (bottom) waterbodies and channel buffer. Green = valley, blue = streams."}
+par(mfrow = c(2, 1), mar = c(2, 4, 2, 1))
+plot(valleys, col = c("grey90", "darkgreen"),
+     main = "VCA only", legend = FALSE)
+plot(st_geometry(streams), add = TRUE, col = "blue", lwd = 1)
+
+plot(valleys_wb, col = c("grey90", "darkgreen"),
+     main = "VCA + waterbodies + channel buffer", legend = FALSE)
+plot(st_geometry(streams), add = TRUE, col = "blue", lwd = 1)
+if (nrow(waterbodies) > 0) {
+  plot(st_geometry(waterbodies), add = TRUE, border = "cyan", lwd = 0.8)
+}
+```
+
 ## Precipitation matters
 
 The VCA bankfull regression includes a precipitation term (`precip ^ 0.355`)
@@ -287,5 +342,7 @@ Key tuning parameters:
 | `cost_threshold` | 2500 | Higher = valley extends further up hillslopes |
 | `flood_factor` | 6 | Higher = deeper flood, more floodplain |
 | `precip` | 1 | MAP in mm — critical for realistic flood depth |
+| `waterbodies` | NULL | sf polygons of lakes/wetlands to fill donut holes |
+| `channel_buffer` | auto | Buffer streams by channel_width (DEM correction) |
 | `size_threshold` | 5000 m² | Minimum valley patch area |
 | `hole_threshold` | 2500 m² | Maximum hole size to fill |

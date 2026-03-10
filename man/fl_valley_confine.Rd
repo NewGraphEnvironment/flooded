@@ -14,6 +14,8 @@ fl_valley_confine(
   cost_threshold = 2500,
   flood_factor = 6,
   precip = 1,
+  waterbodies = NULL,
+  channel_buffer = NULL,
   size_threshold = 5000,
   hole_threshold = 2500
 )
@@ -41,6 +43,19 @@ Default \code{2500}.}
 \item{flood_factor}{Numeric. Multiplier on bankfull depth. Default \code{6}.}
 
 \item{precip}{A \code{SpatRaster} or numeric scalar of precipitation. Default \code{1}.}
+
+\item{waterbodies}{An \code{sf} polygon object of lakes and/or wetlands, or
+\code{NULL} (default). Waterbody polygons are rasterized onto the valley grid
+and added to the output after morphological cleanup. No buffer is applied —
+a lake or wetland in the valley is part of the flood system as-is.
+Only waterbody cells that touch (or are adjacent to) the existing valley
+output are included — headwater features disconnected from the valley
+floor are excluded.}
+
+\item{channel_buffer}{Logical. Buffer streams by their \code{channel_width}
+attribute and add to the valley output. Default \code{TRUE} when \code{streams} is
+an \code{sf} object with a \code{channel_width} column, \code{FALSE} otherwise. The
+stream channel is floodplain but can be sub-pixel at coarse DEM resolution.}
 
 \item{size_threshold}{Numeric. Minimum valley patch area (m²). Default \code{5000}.}
 
@@ -72,6 +87,12 @@ The combined mask then undergoes morphological cleanup:
 \item Majority filter (3x3) to smooth edges
 }
 
+After cleanup, optional features are added via logical OR:
+\itemize{
+\item \strong{Channel buffer} — streams buffered by \code{channel_width} (DEM correction)
+\item \strong{Waterbodies} — lake/wetland polygons rasterized as-is (fill donut holes)
+}
+
 Adapted from the USDA Valley Confinement Algorithm Toolbox (BlueGeo
 implementation by Devin Cairns, MIT license) and bcfishpass lateral
 habitat assembly (Simon Norris, Apache 2.0).
@@ -96,12 +117,26 @@ streams <- sf::st_read(
 )
 precip_r <- fl_stream_rasterize(streams, dem, field = "map_upstream")
 
+# Basic VCA (channel buffer auto-detected from streams$channel_width)
 valleys <- fl_valley_confine(
   dem, streams,
   field = "upstream_area_ha",
   precip = precip_r
 )
 terra::plot(valleys, col = c("grey90", "darkgreen"), main = "Unconfined valleys")
+
+# With waterbodies — fills lake/wetland donut holes
+waterbodies <- sf::st_read(
+  system.file("testdata/waterbodies.gpkg", package = "flooded"),
+  quiet = TRUE
+)
+valleys_wb <- fl_valley_confine(
+  dem, streams,
+  field = "upstream_area_ha",
+  precip = precip_r,
+  waterbodies = waterbodies
+)
+terra::plot(valleys_wb, col = c("grey90", "darkgreen"), main = "With waterbodies")
 
 }
 \seealso{

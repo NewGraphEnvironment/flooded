@@ -18,6 +18,17 @@
 #'   Default `2500`.
 #' @param flood_factor Numeric. Multiplier on bankfull depth. Default `6`.
 #' @param precip A `SpatRaster` or numeric scalar of precipitation. Default `1`.
+#' @param waterbodies An `sf` polygon object of lakes and/or wetlands, or
+#'   `NULL` (default). Waterbody polygons are rasterized onto the valley grid
+#'   and added to the output after morphological cleanup. No buffer is applied —
+#'   a lake or wetland in the valley is part of the flood system as-is.
+#'   Only waterbody cells that touch (or are adjacent to) the existing valley
+#'   output are included — headwater features disconnected from the valley
+#'   floor are excluded.
+#' @param channel_buffer Logical. Buffer streams by their `channel_width`
+#'   attribute and add to the valley output. Default `TRUE` when `streams` is
+#'   an `sf` object with a `channel_width` column, `FALSE` otherwise. The
+#'   stream channel is floodplain but can be sub-pixel at coarse DEM resolution.
 #' @param size_threshold Numeric. Minimum valley patch area (m²). Default `5000`.
 #' @param hole_threshold Numeric. Maximum hole area to fill (m²). Default `2500`.
 #'
@@ -36,6 +47,10 @@
 #' - Fill small holes (< `hole_threshold`)
 #' - Remove small patches (< `size_threshold`)
 #' - Majority filter (3x3) to smooth edges
+#'
+#' After cleanup, optional features are added via logical OR:
+#' - **Channel buffer** — streams buffered by `channel_width` (DEM correction)
+#' - **Waterbodies** — lake/wetland polygons rasterized as-is (fill donut holes)
 #'
 #' Adapted from the USDA Valley Confinement Algorithm Toolbox (BlueGeo
 #' implementation by Devin Cairns, MIT license) and bcfishpass lateral
@@ -65,12 +80,26 @@
 #' )
 #' precip_r <- fl_stream_rasterize(streams, dem, field = "map_upstream")
 #'
+#' # Basic VCA (channel buffer auto-detected from streams$channel_width)
 #' valleys <- fl_valley_confine(
 #'   dem, streams,
 #'   field = "upstream_area_ha",
 #'   precip = precip_r
 #' )
 #' terra::plot(valleys, col = c("grey90", "darkgreen"), main = "Unconfined valleys")
+#'
+#' # With waterbodies — fills lake/wetland donut holes
+#' waterbodies <- sf::st_read(
+#'   system.file("testdata/waterbodies.gpkg", package = "flooded"),
+#'   quiet = TRUE
+#' )
+#' valleys_wb <- fl_valley_confine(
+#'   dem, streams,
+#'   field = "upstream_area_ha",
+#'   precip = precip_r,
+#'   waterbodies = waterbodies
+#' )
+#' terra::plot(valleys_wb, col = c("grey90", "darkgreen"), main = "With waterbodies")
 #'
 #' @export
 fl_valley_confine <- function(dem, streams,
@@ -81,9 +110,17 @@ fl_valley_confine <- function(dem, streams,
                               cost_threshold = 2500,
                               flood_factor = 6,
                               precip = 1,
+                              waterbodies = NULL,
+                              channel_buffer = NULL,
                               size_threshold = 5000,
                               hole_threshold = 2500) {
   stopifnot(inherits(dem, "SpatRaster"))
+
+  # --- Auto-detect channel_buffer ---
+  if (is.null(channel_buffer)) {
+    channel_buffer <- inherits(streams, "sf") &&
+      "channel_width" %in% names(streams)
+  }
 
   # --- Rasterize streams if needed ---
   if (inherits(streams, "sf")) {
@@ -149,6 +186,38 @@ fl_valley_confine <- function(dem, streams,
 
   # Ensure binary output
   valleys <- terra::ifel(valleys >= 1, 1L, 0L)
+
+  # --- Add features (OR into valley output) ---
+
+  # Channel buffer: stream width is floodplain but sub-pixel at coarse DEM res
+
+  if (isTRUE(channel_buffer) && inherits(streams, "sf")) {
+    if (!"channel_width" %in% names(streams)) {
+      warning("channel_buffer = TRUE but streams has no 'channel_width' column; skipping.",
+              call. = FALSE)
+    } else {
+      buffered <- sf::st_buffer(streams, dist = streams$channel_width / 2)
+      buf_r <- terra::rasterize(terra::vect(buffered), dem, field = 1L,
+                                background = 0L)
+      valleys <- terra::ifel(buf_r == 1L, 1L, valleys)
+    }
+  }
+
+  # Waterbodies: valley-bottom lakes/wetlands fill donut holes in the VCA.
+  # Only include waterbodies that touch the existing valley output — this
+  # fills actual donut holes without adding disconnected headwater features
+  # that happen to be within the stream corridor.
+  if (!is.null(waterbodies)) {
+    stopifnot(inherits(waterbodies, "sf"))
+    if (nrow(waterbodies) > 0L) {
+      wb_r <- terra::rasterize(terra::vect(waterbodies), dem, field = 1L,
+                               background = 0L)
+      # Dilate valley by 1 pixel so waterbodies adjacent to (not just
+      # overlapping) the valley edge are included
+      valley_dilated <- terra::focal(valleys, w = 3, fun = "max", na.rm = TRUE)
+      valleys <- terra::ifel(wb_r == 1L & valley_dilated == 1L, 1L, valleys)
+    }
+  }
 
   names(valleys) <- "valley"
   valleys
