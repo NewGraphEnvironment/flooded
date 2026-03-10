@@ -48,9 +48,9 @@ Default \code{2500}.}
 \code{NULL} (default). Waterbody polygons are rasterized onto the valley grid
 and added to the output after morphological cleanup. No buffer is applied —
 a lake or wetland in the valley is part of the flood system as-is.
-Only waterbody cells that touch (or are adjacent to) the existing valley
-output are included — headwater features disconnected from the valley
-floor are excluded.}
+No spatial filtering is applied — all polygons are rasterized. Pre-filter
+to valley-bottom features before calling if headwater waterbodies are
+not wanted.}
 
 \item{channel_buffer}{Logical. Buffer streams by their \code{channel_width}
 attribute and add to the valley output. Default \code{TRUE} when \code{streams} is
@@ -90,7 +90,7 @@ The combined mask then undergoes morphological cleanup:
 After cleanup, optional features are added via logical OR:
 \itemize{
 \item \strong{Channel buffer} — streams buffered by \code{channel_width} (DEM correction)
-\item \strong{Waterbodies} — lake/wetland polygons rasterized as-is (fill donut holes)
+\item \strong{Waterbodies} — user-supplied lake/wetland polygons rasterized as-is
 }
 
 Adapted from the USDA Valley Confinement Algorithm Toolbox (BlueGeo

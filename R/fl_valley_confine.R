@@ -22,9 +22,9 @@
 #'   `NULL` (default). Waterbody polygons are rasterized onto the valley grid
 #'   and added to the output after morphological cleanup. No buffer is applied —
 #'   a lake or wetland in the valley is part of the flood system as-is.
-#'   Only waterbody cells that touch (or are adjacent to) the existing valley
-#'   output are included — headwater features disconnected from the valley
-#'   floor are excluded.
+#'   No spatial filtering is applied — all polygons are rasterized. Pre-filter
+#'   to valley-bottom features before calling if headwater waterbodies are
+#'   not wanted.
 #' @param channel_buffer Logical. Buffer streams by their `channel_width`
 #'   attribute and add to the valley output. Default `TRUE` when `streams` is
 #'   an `sf` object with a `channel_width` column, `FALSE` otherwise. The
@@ -50,7 +50,7 @@
 #'
 #' After cleanup, optional features are added via logical OR:
 #' - **Channel buffer** — streams buffered by `channel_width` (DEM correction)
-#' - **Waterbodies** — lake/wetland polygons rasterized as-is (fill donut holes)
+#' - **Waterbodies** — user-supplied lake/wetland polygons rasterized as-is
 #'
 #' Adapted from the USDA Valley Confinement Algorithm Toolbox (BlueGeo
 #' implementation by Devin Cairns, MIT license) and bcfishpass lateral
@@ -196,26 +196,26 @@ fl_valley_confine <- function(dem, streams,
       warning("channel_buffer = TRUE but streams has no 'channel_width' column; skipping.",
               call. = FALSE)
     } else {
-      buffered <- sf::st_buffer(streams, dist = streams$channel_width / 2)
-      buf_r <- terra::rasterize(terra::vect(buffered), dem, field = 1L,
-                                background = 0L)
-      valleys <- terra::ifel(buf_r == 1L, 1L, valleys)
+      has_width <- !is.na(streams$channel_width) & streams$channel_width > 0
+      if (any(has_width)) {
+        streams_w <- streams[has_width, ]
+        buffered <- sf::st_buffer(streams_w, dist = streams_w$channel_width / 2)
+        buf_r <- terra::rasterize(terra::vect(buffered), dem, field = 1L,
+                                  background = 0L)
+        valleys <- terra::ifel(buf_r == 1L, 1L, valleys)
+      }
     }
   }
 
-  # Waterbodies: valley-bottom lakes/wetlands fill donut holes in the VCA.
-  # Only include waterbodies that touch the existing valley output — this
-  # fills actual donut holes without adding disconnected headwater features
-  # that happen to be within the stream corridor.
+  # Waterbodies: rasterize as-is and OR into valley output. No filtering —
+  # the user decides what to pass in. Pre-filter to valley-bottom features
+  # before calling if headwater waterbodies are not wanted.
   if (!is.null(waterbodies)) {
     stopifnot(inherits(waterbodies, "sf"))
     if (nrow(waterbodies) > 0L) {
       wb_r <- terra::rasterize(terra::vect(waterbodies), dem, field = 1L,
                                background = 0L)
-      # Dilate valley by 1 pixel so waterbodies adjacent to (not just
-      # overlapping) the valley edge are included
-      valley_dilated <- terra::focal(valleys, w = 3, fun = "max", na.rm = TRUE)
-      valleys <- terra::ifel(wb_r == 1L & valley_dilated == 1L, 1L, valleys)
+      valleys <- terra::ifel(wb_r == 1L, 1L, valleys)
     }
   }
 
