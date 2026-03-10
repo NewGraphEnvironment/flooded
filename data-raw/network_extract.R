@@ -6,9 +6,15 @@
 # The outputs are committed to the package so this script does NOT need to be
 # run by package users.
 #
-# Extracts all coho potential habitat (all orders) between two points on a
-# mainstem using fresh::frs_network() with network subtraction. Lakes and
-# wetlands are clipped to DEM extent.
+# Extracts coho potential habitat (order 4+) between two points on a mainstem
+# using fresh::frs_network() with network subtraction. Lakes and wetlands are
+# clipped to DEM extent.
+#
+# The order 4+ filter focuses on streams most relevant to restoration planning
+# and higher-value salmon habitat. It also constrains the floodplain AOI for
+# practical applications like orthophoto acquisition and review. All watershed
+# tributaries contribute to floodplain health, but the vignette demonstrates
+# the pipeline on the mainstem corridor where investment has the most impact.
 #
 # Requires:
 #   - SSH tunnel to the remote newgraph DB forwarding to localhost:63333
@@ -28,13 +34,14 @@ cutoff_drm <- 222000
 dem <- terra::rast(here::here("inst", "testdata", "dem.tif"))
 dem_bbox <- sf::st_as_sfc(sf::st_bbox(dem))
 
-# --- Extract all coho potential habitat + waterbodies ---
-# streams_co_vw: all orders, access_co > 0 (no order filter — small tribs
-# matter for floodplain health and connect waterbodies to the network).
+# --- Extract coho potential habitat (order 4+) + waterbodies ---
+# streams_co_vw: access_co > 0. We filter to stream_order >= 4 to focus on
+# the mainstem corridor and major tributaries — this keeps the test data
+# compact and the floodplain AOI manageable for downstream applications.
 #
 # frs_clip() doesn't handle XYM/XYZM geometries yet so we clip manually
 # after st_zm(). TODO: fix in fresh, then use clip param directly.
-message("Querying co habitat and waterbodies between drm ", mouth_drm,
+message("Querying co habitat (order 4+) and waterbodies between drm ", mouth_drm,
         " and ", cutoff_drm, " on blk ", blk, "...")
 
 results <- frs_network(
@@ -52,7 +59,8 @@ results <- frs_network(
         "spawning", "access", "geom"
       ),
       wscode_col = "wscode",
-      localcode_col = "localcode"
+      localcode_col = "localcode",
+      extra_where = "stream_order >= 4"
     ),
     lakes = "whse_basemapping.fwa_lakes_poly",
     wetlands = "whse_basemapping.fwa_wetlands_poly"
