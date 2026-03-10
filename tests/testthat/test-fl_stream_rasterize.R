@@ -22,8 +22,8 @@ test_that("fl_stream_rasterize burns correct values", {
 
   expect_true(all(vals > 0))
   # Values should fall within the range of the input field (float32 tolerance)
-  expect_equal(min(vals), min(streams$channel_width), tolerance = 1e-5)
-  expect_equal(max(vals), max(streams$channel_width), tolerance = 1e-5)
+  expect_equal(min(vals), min(streams$channel_width, na.rm = TRUE), tolerance = 1e-5)
+  expect_equal(max(vals), max(streams$channel_width, na.rm = TRUE), tolerance = 1e-5)
 })
 
 test_that("fl_stream_rasterize produces mostly NA (non-stream) cells", {
