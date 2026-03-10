@@ -6,18 +6,21 @@ Portable floodplain delineation from DEM and stream network using the Valley Con
 
 **Repository:** NewGraphEnvironment/flooded
 **Primary Language:** R (package)
-**Version:** 0.1.0
+**Version:** 0.2.0
 **License:** MIT
 
 ## Ecosystem
 
-`flooded` is the floodplain-delineation engine in a family of packages:
+| Package | Role |
+|---------|------|
+| [fresh](https://github.com/NewGraphEnvironment/fresh) | FWA-referenced spatial hydrology (network extraction, snapping) |
+| [breaks](https://github.com/NewGraphEnvironment/breaks) | Delineate sub-basins from break points on stream networks |
+| **flooded** | Delineate floodplain extents from DEMs and stream networks (this package) |
+| [drift](https://github.com/NewGraphEnvironment/drift) | Track land cover change within floodplains over time |
+| [fly](https://github.com/NewGraphEnvironment/fly) | Estimate airphoto footprints and select optimal coverage for a study area |
+| [diggs](https://github.com/NewGraphEnvironment/diggs) | BC Historic Airphoto Explorer (interactive Shiny app) |
 
-- **[drift](https://github.com/NewGraphEnvironment/drift)** — fetch, classify, and summarize lateral habitat using flooded output
-- **[fly](https://github.com/NewGraphEnvironment/fly)** — airphoto footprint estimation and coverage selection
-- **[diggs](https://github.com/NewGraphEnvironment/diggs)** — BC Historic Airphoto Explorer (interactive Shiny app)
-
-Pipeline flow: `flooded` (delineate) → `drift` (classify)
+Pipeline flow: `fresh` (network data) → `flooded` (delineate) → `drift` (classify)
 
 ## Architecture
 
