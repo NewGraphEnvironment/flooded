@@ -119,6 +119,48 @@
 <p>On an Apple M4 Max, this cuts a ~2,700 km² watershed (27M cells at 10 m) from ~3.5 min to ~1 min.</p>
 </div>
 <div class="section level2">
+<h2 id="ecosystem">Ecosystem<a class="anchor" aria-label="anchor" href="#ecosystem"></a>
+</h2>
+<p>flooded is one piece of a larger watershed analysis workflow:</p>
+<table class="table">
+<colgroup>
+<col width="60%">
+<col width="40%">
+</colgroup>
+<thead><tr class="header">
+<th>Package</th>
+<th>Role</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><a href="https://github.com/NewGraphEnvironment/fresh" class="external-link">fresh</a></td>
+<td>FWA-referenced spatial hydrology (network extraction, snapping)</td>
+</tr>
+<tr class="even">
+<td><a href="https://github.com/NewGraphEnvironment/breaks" class="external-link">breaks</a></td>
+<td>Delineate sub-basins from break points on stream networks</td>
+</tr>
+<tr class="odd">
+<td><strong>flooded</strong></td>
+<td>Delineate floodplain extents from DEMs and stream networks (this package)</td>
+</tr>
+<tr class="even">
+<td><a href="https://github.com/NewGraphEnvironment/drift" class="external-link">drift</a></td>
+<td>Track land cover change within floodplains over time</td>
+</tr>
+<tr class="odd">
+<td><a href="https://github.com/NewGraphEnvironment/fly" class="external-link">fly</a></td>
+<td>Estimate airphoto footprints and select optimal coverage for a study area</td>
+</tr>
+<tr class="even">
+<td><a href="https://github.com/NewGraphEnvironment/diggs" class="external-link">diggs</a></td>
+<td>Interactive explorer for <a href="https://github.com/NewGraphEnvironment/fly" class="external-link">fly</a> airphoto selections (Shiny app)</td>
+</tr>
+</tbody>
+</table>
+<p>Pipeline: fresh (network data) → breaks (sub-basins) → flooded (floodplains) → drift (land cover change)</p>
+</div>
+<div class="section level2">
 <h2 id="origins">Origins<a class="anchor" aria-label="anchor" href="#origins"></a>
 </h2>
 <p>Adapted from:</p>
