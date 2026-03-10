@@ -17,6 +17,8 @@ fl_valley_confine(
   cost_threshold = 2500,
   flood_factor = 6,
   precip = 1,
+  waterbodies = NULL,
+  channel_buffer = NULL,
   size_threshold = 5000,
   hole_threshold = 2500
 )
@@ -63,6 +65,23 @@ fl_valley_confine(
 
   A `SpatRaster` or numeric scalar of precipitation. Default `1`.
 
+- waterbodies:
+
+  An `sf` polygon object of lakes and/or wetlands, or `NULL` (default).
+  Waterbody polygons are rasterized onto the valley grid and added to
+  the output after morphological cleanup. No buffer is applied — a lake
+  or wetland in the valley is part of the flood system as-is. No spatial
+  filtering is applied — all polygons are rasterized. Pre-filter to
+  valley-bottom features before calling if headwater waterbodies are not
+  wanted.
+
+- channel_buffer:
+
+  Logical. Buffer streams by their `channel_width` attribute and add to
+  the valley output. Default `TRUE` when `streams` is an `sf` object
+  with a `channel_width` column, `FALSE` otherwise. The stream channel
+  is floodplain but can be sub-pixel at coarse DEM resolution.
+
 - size_threshold:
 
   Numeric. Minimum valley patch area (m²). Default `5000`.
@@ -99,6 +118,13 @@ The combined mask then undergoes morphological cleanup:
 
 - Majority filter (3x3) to smooth edges
 
+After cleanup, optional features are added via logical OR:
+
+- **Channel buffer** — streams buffered by `channel_width` (DEM
+  correction)
+
+- **Waterbodies** — user-supplied lake/wetland polygons rasterized as-is
+
 Adapted from the USDA Valley Confinement Algorithm Toolbox (BlueGeo
 implementation by Devin Cairns, MIT license) and bcfishpass lateral
 habitat assembly (Simon Norris, Apache 2.0).
@@ -134,11 +160,26 @@ streams <- sf::st_read(
 )
 precip_r <- fl_stream_rasterize(streams, dem, field = "map_upstream")
 
+# Basic VCA (channel buffer auto-detected from streams$channel_width)
 valleys <- fl_valley_confine(
   dem, streams,
   field = "upstream_area_ha",
   precip = precip_r
 )
 terra::plot(valleys, col = c("grey90", "darkgreen"), main = "Unconfined valleys")
+
+
+# With waterbodies — fills lake/wetland donut holes
+waterbodies <- sf::st_read(
+  system.file("testdata/waterbodies.gpkg", package = "flooded"),
+  quiet = TRUE
+)
+valleys_wb <- fl_valley_confine(
+  dem, streams,
+  field = "upstream_area_ha",
+  precip = precip_r,
+  waterbodies = waterbodies
+)
+terra::plot(valleys_wb, col = c("grey90", "darkgreen"), main = "With waterbodies")
 
 ```

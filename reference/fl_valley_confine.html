@@ -23,7 +23,7 @@ unconfined valley bottoms."><meta property="og:image" content="https://newgraphe
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/stac-dem.html">Bring your own DEM via STAC</a></li>
-    <li><a class="dropdown-item" href="../articles/valley-confinement.html">Valley confinement on Neexdzii Kwah</a></li>
+    <li><a class="dropdown-item" href="../articles/valley-confinement.html">Valley confinement from DEM and stream network</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -59,6 +59,8 @@ unconfined valley bottoms.</p>
 <span>  cost_threshold <span class="op">=</span> <span class="fl">2500</span>,</span>
 <span>  flood_factor <span class="op">=</span> <span class="fl">6</span>,</span>
 <span>  precip <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  waterbodies <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  channel_buffer <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  size_threshold <span class="op">=</span> <span class="fl">5000</span>,</span>
 <span>  hole_threshold <span class="op">=</span> <span class="fl">2500</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -109,6 +111,23 @@ Default <code>2500</code>.</p></dd>
 <dd><p>A <code>SpatRaster</code> or numeric scalar of precipitation. Default <code>1</code>.</p></dd>
 
 
+<dt id="arg-waterbodies">waterbodies<a class="anchor" aria-label="anchor" href="#arg-waterbodies"></a></dt>
+<dd><p>An <code>sf</code> polygon object of lakes and/or wetlands, or
+<code>NULL</code> (default). Waterbody polygons are rasterized onto the valley grid
+and added to the output after morphological cleanup. No buffer is applied —
+a lake or wetland in the valley is part of the flood system as-is.
+No spatial filtering is applied — all polygons are rasterized. Pre-filter
+to valley-bottom features before calling if headwater waterbodies are
+not wanted.</p></dd>
+
+
+<dt id="arg-channel-buffer">channel_buffer<a class="anchor" aria-label="anchor" href="#arg-channel-buffer"></a></dt>
+<dd><p>Logical. Buffer streams by their <code>channel_width</code>
+attribute and add to the valley output. Default <code>TRUE</code> when <code>streams</code> is
+an <code>sf</code> object with a <code>channel_width</code> column, <code>FALSE</code> otherwise. The
+stream channel is floodplain but can be sub-pixel at coarse DEM resolution.</p></dd>
+
+
 <dt id="arg-size-threshold">size_threshold<a class="anchor" aria-label="anchor" href="#arg-size-threshold"></a></dt>
 <dd><p>Numeric. Minimum valley patch area (m²). Default <code>5000</code>.</p></dd>
 
@@ -132,6 +151,8 @@ confined / hillslope, <code>NA</code> = outside analysis extent.</p>
 <li><p>Fill small holes (&lt; <code>hole_threshold</code>)</p></li>
 <li><p>Remove small patches (&lt; <code>size_threshold</code>)</p></li>
 <li><p>Majority filter (3x3) to smooth edges</p></li>
+</ul><p>After cleanup, optional features are added via logical OR:</p><ul><li><p><strong>Channel buffer</strong> — streams buffered by <code>channel_width</code> (DEM correction)</p></li>
+<li><p><strong>Waterbodies</strong> — user-supplied lake/wetland polygons rasterized as-is</p></li>
 </ul><p>Adapted from the USDA Valley Confinement Algorithm Toolbox (BlueGeo
 implementation by Devin Cairns, MIT license) and bcfishpass lateral
 habitat assembly (Simon Norris, Apache 2.0).</p><div class="section">
@@ -162,6 +183,7 @@ minutes to ~1 minute for a 27M-cell raster (~2,700 km² at 10 m).</p>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">precip_r</span> <span class="op">&lt;-</span> <span class="fu"><a href="fl_stream_rasterize.html">fl_stream_rasterize</a></span><span class="op">(</span><span class="va">streams</span>, <span class="va">dem</span>, field <span class="op">=</span> <span class="st">"map_upstream"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Basic VCA (channel buffer auto-detected from streams$channel_width)</span></span></span>
 <span class="r-in"><span><span class="va">valleys</span> <span class="op">&lt;-</span> <span class="fu">fl_valley_confine</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  <span class="va">dem</span>, <span class="va">streams</span>,</span></span>
 <span class="r-in"><span>  field <span class="op">=</span> <span class="st">"upstream_area_ha"</span>,</span></span>
@@ -169,6 +191,20 @@ minutes to ~1 minute for a 27M-cell raster (~2,700 km² at 10 m).</p>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">valleys</span>, col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"grey90"</span>, <span class="st">"darkgreen"</span><span class="op">)</span>, main <span class="op">=</span> <span class="st">"Unconfined valleys"</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="fl_valley_confine-1.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># With waterbodies — fills lake/wetland donut holes</span></span></span>
+<span class="r-in"><span><span class="va">waterbodies</span> <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"testdata/waterbodies.gpkg"</span>, package <span class="op">=</span> <span class="st">"flooded"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  quiet <span class="op">=</span> <span class="cn">TRUE</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">valleys_wb</span> <span class="op">&lt;-</span> <span class="fu">fl_valley_confine</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">dem</span>, <span class="va">streams</span>,</span></span>
+<span class="r-in"><span>  field <span class="op">=</span> <span class="st">"upstream_area_ha"</span>,</span></span>
+<span class="r-in"><span>  precip <span class="op">=</span> <span class="va">precip_r</span>,</span></span>
+<span class="r-in"><span>  waterbodies <span class="op">=</span> <span class="va">waterbodies</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">valleys_wb</span>, col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"grey90"</span>, <span class="st">"darkgreen"</span><span class="op">)</span>, main <span class="op">=</span> <span class="st">"With waterbodies"</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="fl_valley_confine-2.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

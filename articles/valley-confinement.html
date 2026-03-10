@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Valley confinement on Neexdzii Kwah • flooded</title>
+<title>Valley confinement from DEM and stream network • flooded</title>
 <!-- favicons --><link rel="icon" type="image/png" sizes="96x96" href="../favicon-96x96.png">
 <link rel="icon" type="”image/svg+xml”" href="../favicon.svg">
 <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
@@ -15,7 +15,7 @@
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Valley confinement on Neexdzii Kwah">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Valley confinement from DEM and stream network">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -39,7 +39,7 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/stac-dem.html">Bring your own DEM via STAC</a></li>
-    <li><a class="dropdown-item" href="../articles/valley-confinement.html">Valley confinement on Neexdzii Kwah</a></li>
+    <li><a class="dropdown-item" href="../articles/valley-confinement.html">Valley confinement from DEM and stream network</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -61,7 +61,7 @@
 
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
-      <img src="../logo.png" class="logo" alt=""><h1>Valley confinement on Neexdzii Kwah</h1>
+      <img src="../logo.png" class="logo" alt=""><h1>Valley confinement from DEM and stream network</h1>
             
       
       <small class="dont-index">Source: <a href="https://github.com/NewGraphEnvironment/flooded/blob/main/vignettes/valley-confinement.Rmd" class="external-link"><code>vignettes/valley-confinement.Rmd</code></a></small>
@@ -74,6 +74,17 @@
 a section of Neexdzii Kwah (Bulkley River) near Topley, BC. The test
 data covers ~8 km of mainstem plus tributaries (Richfield Creek, Cesford
 Creek, Robert Hatch Creek) at 10 m resolution.</p>
+<p>The bundled stream network is filtered to order 4+ coho potential
+habitat (<code>bcfishpass.streams_co_vw</code>). This focuses the
+floodplain delineation on the mainstem corridor and major tributaries —
+the streams most relevant to restoration planning and where investment
+has the greatest impact on higher-value salmon habitat. Filtering also
+constrains the analysis-of-interest (AOI) for practical downstream
+applications like orthophoto acquisition and review, where cost control
+matters. All watershed tributaries contribute to floodplain health, but
+a bring-your-own-DEM tool benefits from demonstrating the pipeline on a
+focused corridor. See <code>data-raw/network_extract.R</code> for the
+extraction script.</p>
 <div class="section level2">
 <h2 id="load-data">Load data<a class="anchor" aria-label="anchor" href="#load-data"></a>
 </h2>
@@ -255,7 +266,7 @@ binary valley raster (Figure @ref(fig:plot-valleys)).</p>
 <span><span class="va">n_valley</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/values.html" class="external-link">values</a></span><span class="op">(</span><span class="va">valleys</span><span class="op">)</span> <span class="op">==</span> <span class="fl">1</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Valley cells:"</span>, <span class="va">n_valley</span>, <span class="st">"/"</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">ncell</a></span><span class="op">(</span><span class="va">valleys</span><span class="op">)</span>,</span>
 <span>    <span class="st">"("</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="fl">100</span> <span class="op">*</span> <span class="va">n_valley</span> <span class="op">/</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">ncell</a></span><span class="op">(</span><span class="va">valleys</span><span class="op">)</span>, <span class="fl">1</span><span class="op">)</span>, <span class="st">"%)\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Valley cells: 54044 / 518400 ( 10.4 %)</span></span></code></pre></div>
+<span><span class="co">#&gt; Valley cells: 54418 / 518400 ( 10.5 %)</span></span></code></pre></div>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">valleys</span>, col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"grey90"</span>, <span class="st">"darkgreen"</span><span class="op">)</span>,</span>
 <span>     main <span class="op">=</span> <span class="st">"Unconfined valleys"</span>, legend <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
@@ -279,7 +290,7 @@ flat areas disconnected from the network (Figure
 <code class="sourceCode R"><span><span class="va">connected</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fl_patch_conn.html">fl_patch_conn</a></span><span class="op">(</span><span class="va">valleys</span>, <span class="va">stream_r</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Connected valley cells:"</span>,</span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/values.html" class="external-link">values</a></span><span class="op">(</span><span class="va">connected</span><span class="op">)</span> <span class="op">==</span> <span class="fl">1</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Connected valley cells: 53220</span></span></code></pre></div>
+<span><span class="co">#&gt; Connected valley cells: 53585</span></span></code></pre></div>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">connected</span>, col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"grey90"</span>, <span class="st">"darkgreen"</span><span class="op">)</span>,</span>
 <span>     main <span class="op">=</span> <span class="st">"Connected valleys"</span>, legend <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
@@ -302,7 +313,7 @@ stricter threshold).</p>
 <span><span class="va">trimmed</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fl_flood_trim.html">fl_flood_trim</a></span><span class="op">(</span><span class="va">connected</span>, <span class="va">steep_mask</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"After trimming steep cells:"</span>,</span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/values.html" class="external-link">values</a></span><span class="op">(</span><span class="va">trimmed</span><span class="op">)</span> <span class="op">==</span> <span class="fl">1</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; After trimming steep cells: 36547</span></span></code></pre></div>
+<span><span class="co">#&gt; After trimming steep cells: 36601</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="assemble-multiple-layers">Assemble multiple layers<a class="anchor" aria-label="anchor" href="#assemble-multiple-layers"></a>
@@ -316,7 +327,84 @@ sources.</p>
 <span><span class="va">flooded_mask</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/ifelse.html" class="external-link">ifel</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">flooded_mask</span><span class="op">)</span>, <span class="fl">0L</span>, <span class="va">flooded_mask</span><span class="op">)</span></span>
 <span><span class="va">assembled</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fl_flood_assemble.html">fl_flood_assemble</a></span><span class="op">(</span><span class="va">connected</span>, <span class="va">flooded_mask</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Assembled cells:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/values.html" class="external-link">values</a></span><span class="op">(</span><span class="va">assembled</span><span class="op">)</span> <span class="op">==</span> <span class="fl">1</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Assembled cells: 62988</span></span></code></pre></div>
+<span><span class="co">#&gt; Assembled cells: 63285</span></span></code></pre></div>
+</div>
+</div>
+<div class="section level2">
+<h2 id="adding-waterbodies-and-channel-buffer">Adding waterbodies and channel buffer<a class="anchor" aria-label="anchor" href="#adding-waterbodies-and-channel-buffer"></a>
+</h2>
+<p>The VCA operates on terrain alone — lakes and wetlands appear as
+donut holes in the valley raster because the water surface reads
+differently than surrounding terrain. Similarly, at coarse DEM
+resolution the stream channel itself can be sub-pixel and excluded from
+the output.</p>
+<p><code><a href="../reference/fl_valley_confine.html">fl_valley_confine()</a></code> addresses both:</p>
+<ul>
+<li>
+<strong><code>channel_buffer</code></strong> — auto-detected when
+streams have a <code>channel_width</code> column. Buffers each stream
+segment by half its channel width and adds to the output. This is a DEM
+correction, not a habitat buffer. Streams with NA
+<code>channel_width</code> are skipped for the buffer but still included
+in the VCA flood model via the bankfull regression. Users pulling
+lower-order streams may encounter NA widths — the <a href="https://www.poissonconsulting.ca/f/859859031" class="external-link">channel width
+model</a> (Thorley et al., 2021) does not yet cover most first-order
+streams.</li>
+<li>
+<strong><code>waterbodies</code></strong> — an optional
+<code>sf</code> polygon layer of lakes and wetlands. Rasterized as-is
+(no buffer) and added to the output via logical OR. No spatial filtering
+is applied — pre-filter to valley-bottom features before calling if
+headwater waterbodies are not wanted.</li>
+</ul>
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">waterbodies</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"testdata/waterbodies.gpkg"</span>, package <span class="op">=</span> <span class="st">"flooded"</span><span class="op">)</span>,</span>
+<span>  quiet <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Waterbodies:"</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">waterbodies</span><span class="op">)</span>, <span class="st">"features\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Waterbodies: 16 features</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Types:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/names.html" class="external-link">names</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">waterbodies</span><span class="op">$</span><span class="va">waterbody_type</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>                    <span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">waterbodies</span><span class="op">$</span><span class="va">waterbody_type</span><span class="op">)</span>, sep <span class="op">=</span> <span class="st">"="</span>, collapse <span class="op">=</span> <span class="st">", "</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Types: L=10, W=6</span></span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">valleys_wb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fl_valley_confine.html">fl_valley_confine</a></span><span class="op">(</span></span>
+<span>  <span class="va">dem</span>, <span class="va">streams</span>,</span>
+<span>  field <span class="op">=</span> <span class="st">"upstream_area_ha"</span>,</span>
+<span>  slope <span class="op">=</span> <span class="va">slope</span>,</span>
+<span>  precip <span class="op">=</span> <span class="va">precip_r</span>,</span>
+<span>  waterbodies <span class="op">=</span> <span class="va">waterbodies</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">n_wb</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/values.html" class="external-link">values</a></span><span class="op">(</span><span class="va">valleys_wb</span><span class="op">)</span> <span class="op">==</span> <span class="fl">1</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="va">cell_area</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/prod.html" class="external-link">prod</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">res</a></span><span class="op">(</span><span class="va">dem</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"VCA only:          "</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="va">n_valley</span> <span class="op">*</span> <span class="va">cell_area</span> <span class="op">/</span> <span class="fl">1e4</span>, <span class="fl">1</span><span class="op">)</span>, <span class="st">"ha\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; VCA only:           544.2 ha</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"VCA + features:    "</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="va">n_wb</span> <span class="op">*</span> <span class="va">cell_area</span> <span class="op">/</span> <span class="fl">1e4</span>, <span class="fl">1</span><span class="op">)</span>, <span class="st">"ha\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; VCA + features:     553.5 ha</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Features added:    "</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="op">(</span><span class="va">n_wb</span> <span class="op">-</span> <span class="va">n_valley</span><span class="op">)</span> <span class="op">*</span> <span class="va">cell_area</span> <span class="op">/</span> <span class="fl">1e4</span>, <span class="fl">1</span><span class="op">)</span>, <span class="st">"ha\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Features added:     9.3 ha</span></span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">1</span><span class="op">)</span>, mar <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">4</span>, <span class="fl">2</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">valleys</span>, col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"grey90"</span>, <span class="st">"darkgreen"</span><span class="op">)</span>,</span>
+<span>     main <span class="op">=</span> <span class="st">"VCA only"</span>, legend <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">streams</span><span class="op">)</span>, add <span class="op">=</span> <span class="cn">TRUE</span>, col <span class="op">=</span> <span class="st">"blue"</span>, lwd <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">valleys_wb</span>, col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"grey90"</span>, <span class="st">"darkgreen"</span><span class="op">)</span>,</span>
+<span>     main <span class="op">=</span> <span class="st">"VCA + waterbodies + channel buffer"</span>, legend <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">streams</span><span class="op">)</span>, add <span class="op">=</span> <span class="cn">TRUE</span>, col <span class="op">=</span> <span class="st">"blue"</span>, lwd <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">waterbodies</span><span class="op">)</span> <span class="op">&gt;</span> <span class="fl">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">waterbodies</span><span class="op">)</span>, add <span class="op">=</span> <span class="cn">TRUE</span>, border <span class="op">=</span> <span class="st">"darkorange"</span>,</span>
+<span>       lwd <span class="op">=</span> <span class="fl">1.2</span><span class="op">)</span></span>
+<span><span class="op">}</span></span></code></pre></div>
+<div class="figure">
+<img src="valley-confinement_files/figure-html/plot-features-1.png" class="r-plt" alt="Valley delineation without (top) and with (bottom) waterbodies and channel buffer. Dark green = VCA valley floor, blue lines = streams, orange outlines = waterbody polygons (lakes and wetlands) added via logical OR. Waterbodies fill donut holes left by the terrain-based VCA where flat water surfaces read differently than surrounding floodplain." width="1050"><p class="caption">
+Valley delineation without (top) and with (bottom) waterbodies and
+channel buffer. Dark green = VCA valley floor, blue lines = streams,
+orange outlines = waterbody polygons (lakes and wetlands) added via
+logical OR. Waterbodies fill donut holes left by the terrain-based VCA
+where flat water surfaces read differently than surrounding floodplain.
+</p>
 </div>
 </div>
 <div class="section level2">
@@ -333,7 +421,7 @@ product will work — rasterize it to the DEM grid and pass it as the
 underestimates flood depth by roughly 4x in wet climates (~500 mm MAP).
 This produces a valley that is about half the width of the correct
 result:</p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">valleys_no_precip</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fl_valley_confine.html">fl_valley_confine</a></span><span class="op">(</span></span>
 <span>  <span class="va">dem</span>, <span class="va">streams</span>, field <span class="op">=</span> <span class="st">"upstream_area_ha"</span>,</span>
 <span>  precip <span class="op">=</span> <span class="fl">1</span></span>
@@ -342,10 +430,10 @@ result:</p>
 <span><span class="va">n_no</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/values.html" class="external-link">values</a></span><span class="op">(</span><span class="va">valleys_no_precip</span><span class="op">)</span> <span class="op">==</span> <span class="fl">1</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Without precip:"</span>, <span class="va">n_no</span>, <span class="st">"cells ("</span>,</span>
 <span>    <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="fl">100</span> <span class="op">*</span> <span class="va">n_no</span> <span class="op">/</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">ncell</a></span><span class="op">(</span><span class="va">dem</span><span class="op">)</span>, <span class="fl">1</span><span class="op">)</span>, <span class="st">"%)\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Without precip: 27106 cells ( 5.2 %)</span></span>
+<span><span class="co">#&gt; Without precip: 27522 cells ( 5.3 %)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"With precip:   "</span>, <span class="va">n_valley</span>, <span class="st">"cells ("</span>,</span>
 <span>    <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="fl">100</span> <span class="op">*</span> <span class="va">n_valley</span> <span class="op">/</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">ncell</a></span><span class="op">(</span><span class="va">dem</span><span class="op">)</span>, <span class="fl">1</span><span class="op">)</span>, <span class="st">"%)\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; With precip:    54044 cells ( 10.4 %)</span></span></code></pre></div>
+<span><span class="co">#&gt; With precip:    54418 cells ( 10.5 %)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="performance">Performance<a class="anchor" aria-label="anchor" href="#performance"></a>
@@ -353,7 +441,7 @@ result:</p>
 <p>Several <code>terra</code> operations inside
 <code><a href="../reference/fl_valley_confine.html">fl_valley_confine()</a></code> support multi-threading (focal filters,
 distance calculations, raster math). Set threads before running:</p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/terraOptions.html" class="external-link">terraOptions</a></span><span class="op">(</span>threads <span class="op">=</span> <span class="fl">12</span><span class="op">)</span>  <span class="co"># adjust to your machine</span></span></code></pre></div>
 <p>On an Apple M4 Max (16 cores, 12 performance), this reduced a
 Neexdzii Kwah run (~2,700 km², 27M cells, 1165 stream segments) from
@@ -401,6 +489,16 @@ which are single-threaded.</p>
 <td><code>precip</code></td>
 <td>1</td>
 <td>MAP in mm — critical for realistic flood depth</td>
+</tr>
+<tr class="even">
+<td><code>waterbodies</code></td>
+<td>NULL</td>
+<td>sf polygons of lakes/wetlands to fill donut holes</td>
+</tr>
+<tr class="odd">
+<td><code>channel_buffer</code></td>
+<td>auto</td>
+<td>Buffer streams by channel_width (DEM correction)</td>
 </tr>
 <tr class="even">
 <td><code>size_threshold</code></td>

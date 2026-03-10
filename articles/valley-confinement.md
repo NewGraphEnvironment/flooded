@@ -1,9 +1,21 @@
-# Valley confinement on Neexdzii Kwah
+# Valley confinement from DEM and stream network
 
 This vignette walks through the full `flooded` pipeline on a section of
 Neexdzii Kwah (Bulkley River) near Topley, BC. The test data covers ~8
 km of mainstem plus tributaries (Richfield Creek, Cesford Creek, Robert
 Hatch Creek) at 10 m resolution.
+
+The bundled stream network is filtered to order 4+ coho potential
+habitat (`bcfishpass.streams_co_vw`). This focuses the floodplain
+delineation on the mainstem corridor and major tributaries — the streams
+most relevant to restoration planning and where investment has the
+greatest impact on higher-value salmon habitat. Filtering also
+constrains the analysis-of-interest (AOI) for practical downstream
+applications like orthophoto acquisition and review, where cost control
+matters. All watershed tributaries contribute to floodplain health, but
+a bring-your-own-DEM tool benefits from demonstrating the pipeline on a
+focused corridor. See `data-raw/network_extract.R` for the extraction
+script.
 
 ## Load data
 
@@ -207,7 +219,7 @@ valleys <- fl_valley_confine(
 n_valley <- sum(values(valleys) == 1, na.rm = TRUE)
 cat("Valley cells:", n_valley, "/", ncell(valleys),
     "(", round(100 * n_valley / ncell(valleys), 1), "%)\n")
-#> Valley cells: 54044 / 518400 ( 10.4 %)
+#> Valley cells: 54418 / 518400 ( 10.5 %)
 ```
 
 ``` r
@@ -233,7 +245,7 @@ flat areas disconnected from the network (Figure
 connected <- fl_patch_conn(valleys, stream_r)
 cat("Connected valley cells:",
     sum(values(connected) == 1, na.rm = TRUE), "\n")
-#> Connected valley cells: 53220
+#> Connected valley cells: 53585
 ```
 
 ``` r
@@ -259,7 +271,7 @@ steep_mask <- fl_mask(slope, threshold = 5, operator = ">")
 trimmed <- fl_flood_trim(connected, steep_mask)
 cat("After trimming steep cells:",
     sum(values(trimmed) == 1, na.rm = TRUE), "\n")
-#> After trimming steep cells: 36547
+#> After trimming steep cells: 36601
 ```
 
 ### Assemble multiple layers
@@ -274,8 +286,92 @@ flooded_mask <- flood[["flooded"]]
 flooded_mask <- ifel(is.na(flooded_mask), 0L, flooded_mask)
 assembled <- fl_flood_assemble(connected, flooded_mask)
 cat("Assembled cells:", sum(values(assembled) == 1, na.rm = TRUE), "\n")
-#> Assembled cells: 62988
+#> Assembled cells: 63285
 ```
+
+## Adding waterbodies and channel buffer
+
+The VCA operates on terrain alone — lakes and wetlands appear as donut
+holes in the valley raster because the water surface reads differently
+than surrounding terrain. Similarly, at coarse DEM resolution the stream
+channel itself can be sub-pixel and excluded from the output.
+
+[`fl_valley_confine()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_confine.md)
+addresses both:
+
+- **`channel_buffer`** — auto-detected when streams have a
+  `channel_width` column. Buffers each stream segment by half its
+  channel width and adds to the output. This is a DEM correction, not a
+  habitat buffer. Streams with NA `channel_width` are skipped for the
+  buffer but still included in the VCA flood model via the bankfull
+  regression. Users pulling lower-order streams may encounter NA widths
+  — the [channel width
+  model](https://www.poissonconsulting.ca/f/859859031) (Thorley et
+  al., 2021) does not yet cover most first-order streams.
+- **`waterbodies`** — an optional `sf` polygon layer of lakes and
+  wetlands. Rasterized as-is (no buffer) and added to the output via
+  logical OR. No spatial filtering is applied — pre-filter to
+  valley-bottom features before calling if headwater waterbodies are not
+  wanted.
+
+``` r
+waterbodies <- st_read(
+  system.file("testdata/waterbodies.gpkg", package = "flooded"),
+  quiet = TRUE
+)
+cat("Waterbodies:", nrow(waterbodies), "features\n")
+#> Waterbodies: 16 features
+cat("Types:", paste(names(table(waterbodies$waterbody_type)),
+                    table(waterbodies$waterbody_type), sep = "=", collapse = ", "), "\n")
+#> Types: L=10, W=6
+```
+
+``` r
+valleys_wb <- fl_valley_confine(
+  dem, streams,
+  field = "upstream_area_ha",
+  slope = slope,
+  precip = precip_r,
+  waterbodies = waterbodies
+)
+
+n_wb <- sum(values(valleys_wb) == 1, na.rm = TRUE)
+cell_area <- prod(res(dem))
+cat("VCA only:          ", round(n_valley * cell_area / 1e4, 1), "ha\n")
+#> VCA only:           544.2 ha
+cat("VCA + features:    ", round(n_wb * cell_area / 1e4, 1), "ha\n")
+#> VCA + features:     553.5 ha
+cat("Features added:    ", round((n_wb - n_valley) * cell_area / 1e4, 1), "ha\n")
+#> Features added:     9.3 ha
+```
+
+``` r
+par(mfrow = c(2, 1), mar = c(2, 4, 2, 1))
+plot(valleys, col = c("grey90", "darkgreen"),
+     main = "VCA only", legend = FALSE)
+plot(st_geometry(streams), add = TRUE, col = "blue", lwd = 1)
+
+plot(valleys_wb, col = c("grey90", "darkgreen"),
+     main = "VCA + waterbodies + channel buffer", legend = FALSE)
+plot(st_geometry(streams), add = TRUE, col = "blue", lwd = 1)
+if (nrow(waterbodies) > 0) {
+  plot(st_geometry(waterbodies), add = TRUE, border = "darkorange",
+       lwd = 1.2)
+}
+```
+
+![Valley delineation without (top) and with (bottom) waterbodies and
+channel buffer. Dark green = VCA valley floor, blue lines = streams,
+orange outlines = waterbody polygons (lakes and wetlands) added via
+logical OR. Waterbodies fill donut holes left by the terrain-based VCA
+where flat water surfaces read differently than surrounding
+floodplain.](valley-confinement_files/figure-html/plot-features-1.png)
+
+Valley delineation without (top) and with (bottom) waterbodies and
+channel buffer. Dark green = VCA valley floor, blue lines = streams,
+orange outlines = waterbody polygons (lakes and wetlands) added via
+logical OR. Waterbodies fill donut holes left by the terrain-based VCA
+where flat water surfaces read differently than surrounding floodplain.
 
 ## Precipitation matters
 
@@ -299,10 +395,10 @@ valleys_no_precip <- fl_valley_confine(
 n_no <- sum(values(valleys_no_precip) == 1, na.rm = TRUE)
 cat("Without precip:", n_no, "cells (",
     round(100 * n_no / ncell(dem), 1), "%)\n")
-#> Without precip: 27106 cells ( 5.2 %)
+#> Without precip: 27522 cells ( 5.3 %)
 cat("With precip:   ", n_valley, "cells (",
     round(100 * n_valley / ncell(dem), 1), "%)\n")
-#> With precip:    54044 cells ( 10.4 %)
+#> With precip:    54418 cells ( 10.5 %)
 ```
 
 ## Performance
@@ -328,12 +424,14 @@ which are single-threaded.
 
 Key tuning parameters:
 
-| Parameter         | Default | Effect                                         |
-|-------------------|---------|------------------------------------------------|
-| `slope_threshold` | 9%      | Higher = more valley floor included            |
-| `max_width`       | 2000 m  | Analysis corridor width                        |
-| `cost_threshold`  | 2500    | Higher = valley extends further up hillslopes  |
-| `flood_factor`    | 6       | Higher = deeper flood, more floodplain         |
-| `precip`          | 1       | MAP in mm — critical for realistic flood depth |
-| `size_threshold`  | 5000 m² | Minimum valley patch area                      |
-| `hole_threshold`  | 2500 m² | Maximum hole size to fill                      |
+| Parameter         | Default | Effect                                            |
+|-------------------|---------|---------------------------------------------------|
+| `slope_threshold` | 9%      | Higher = more valley floor included               |
+| `max_width`       | 2000 m  | Analysis corridor width                           |
+| `cost_threshold`  | 2500    | Higher = valley extends further up hillslopes     |
+| `flood_factor`    | 6       | Higher = deeper flood, more floodplain            |
+| `precip`          | 1       | MAP in mm — critical for realistic flood depth    |
+| `waterbodies`     | NULL    | sf polygons of lakes/wetlands to fill donut holes |
+| `channel_buffer`  | auto    | Buffer streams by channel_width (DEM correction)  |
+| `size_threshold`  | 5000 m² | Minimum valley patch area                         |
+| `hole_threshold`  | 2500 m² | Maximum hole size to fill                         |
