@@ -1,5 +1,17 @@
 # Changelog
 
+## flooded 0.2.0
+
+- Add `waterbodies` and `channel_buffer` params to
+  [`fl_valley_confine()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_confine.md)
+  — fill lake/wetland donut holes and correct sub-pixel stream channels
+  ([\#21](https://github.com/NewGraphEnvironment/flooded/issues/21)).
+- Handle NA `channel_width` gracefully in channel buffer (order 1
+  streams).
+- Update vignette with waterbody/channel buffer comparison, order 4+
+  filter rationale, and channel width model documentation.
+- Regenerate test data via `fresh::frs_network()` with `frs_clip()`.
+
 ## flooded 0.1.1
 
 - Replace raw SQL in `data-raw/network_extract.R` with

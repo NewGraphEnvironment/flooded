@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">flooded</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,6 +36,13 @@
       <small>Source: <a href="https://github.com/NewGraphEnvironment/flooded/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.2.0" id="flooded-020">flooded 0.2.0<a class="anchor" aria-label="anchor" href="#flooded-020"></a></h2>
+<ul><li>Add <code>waterbodies</code> and <code>channel_buffer</code> params to <code><a href="../reference/fl_valley_confine.html">fl_valley_confine()</a></code> — fill lake/wetland donut holes and correct sub-pixel stream channels (<a href="https://github.com/NewGraphEnvironment/flooded/issues/21" class="external-link">#21</a>).</li>
+<li>Handle NA <code>channel_width</code> gracefully in channel buffer (order 1 streams).</li>
+<li>Update vignette with waterbody/channel buffer comparison, order 4+ filter rationale, and channel width model documentation.</li>
+<li>Regenerate test data via <code>fresh::frs_network()</code> with <code>frs_clip()</code>.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.1" id="flooded-011">flooded 0.1.1<a class="anchor" aria-label="anchor" href="#flooded-011"></a></h2>
 <ul><li>Replace raw SQL in <code>data-raw/network_extract.R</code> with <code>fresh::frs_network()</code> for stream network extraction via network subtraction.</li>
