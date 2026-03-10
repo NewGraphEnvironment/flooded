@@ -10,7 +10,7 @@ Hatch Creek) at 10 m resolution.
 ``` r
 library(flooded)
 library(terra)
-#> terra 1.8.93
+#> terra 1.9.1
 library(sf)
 #> Linking to GEOS 3.12.1, GDAL 3.8.4, PROJ 9.4.0; sf_use_s2() is TRUE
 
@@ -120,7 +120,7 @@ Figure @ref(fig:plot-dist-mask)).
 ``` r
 mask_dist <- fl_mask_distance(stream_r, threshold = 1000)
 cat("Within 1 km:", sum(values(mask_dist) == 1, na.rm = TRUE), "cells\n")
-#> Within 1 km: 288888 cells
+#> Within 1 km: 277943 cells
 ```
 
 ``` r
@@ -143,7 +143,7 @@ Accumulated cost (slope-weighted) distance from streams (Figure
 cost <- fl_cost_distance(slope, stream_r)
 mask_cost <- fl_mask(cost, threshold = 2500, operator = "<")
 cat("Cost < 2500:", sum(values(mask_cost) == 1, na.rm = TRUE), "cells\n")
-#> Cost < 2500: 113534 cells
+#> Cost < 2500: 110827 cells
 ```
 
 ``` r
@@ -167,7 +167,7 @@ streams, and identifies cells below the flood surface (Figure
 flood <- fl_flood_model(dem, stream_r, flood_factor = 6, precip = precip_r,
                         max_width = 2000)
 cat("Flooded cells:", sum(values(flood[["flooded"]]) == 1, na.rm = TRUE), "\n")
-#> Flooded cells: 62943
+#> Flooded cells: 61845
 ```
 
 ``` r
@@ -207,7 +207,7 @@ valleys <- fl_valley_confine(
 n_valley <- sum(values(valleys) == 1, na.rm = TRUE)
 cat("Valley cells:", n_valley, "/", ncell(valleys),
     "(", round(100 * n_valley / ncell(valleys), 1), "%)\n")
-#> Valley cells: 55420 / 518400 ( 10.7 %)
+#> Valley cells: 54044 / 518400 ( 10.4 %)
 ```
 
 ``` r
@@ -233,7 +233,7 @@ flat areas disconnected from the network (Figure
 connected <- fl_patch_conn(valleys, stream_r)
 cat("Connected valley cells:",
     sum(values(connected) == 1, na.rm = TRUE), "\n")
-#> Connected valley cells: 54487
+#> Connected valley cells: 53220
 ```
 
 ``` r
@@ -259,7 +259,7 @@ steep_mask <- fl_mask(slope, threshold = 5, operator = ">")
 trimmed <- fl_flood_trim(connected, steep_mask)
 cat("After trimming steep cells:",
     sum(values(trimmed) == 1, na.rm = TRUE), "\n")
-#> After trimming steep cells: 37694
+#> After trimming steep cells: 36547
 ```
 
 ### Assemble multiple layers
@@ -274,7 +274,7 @@ flooded_mask <- flood[["flooded"]]
 flooded_mask <- ifel(is.na(flooded_mask), 0L, flooded_mask)
 assembled <- fl_flood_assemble(connected, flooded_mask)
 cat("Assembled cells:", sum(values(assembled) == 1, na.rm = TRUE), "\n")
-#> Assembled cells: 64302
+#> Assembled cells: 62988
 ```
 
 ## Precipitation matters
@@ -299,10 +299,10 @@ valleys_no_precip <- fl_valley_confine(
 n_no <- sum(values(valleys_no_precip) == 1, na.rm = TRUE)
 cat("Without precip:", n_no, "cells (",
     round(100 * n_no / ncell(dem), 1), "%)\n")
-#> Without precip: 24840 cells ( 4.8 %)
+#> Without precip: 27106 cells ( 5.2 %)
 cat("With precip:   ", n_valley, "cells (",
     round(100 * n_valley / ncell(dem), 1), "%)\n")
-#> With precip:    55420 cells ( 10.7 %)
+#> With precip:    54044 cells ( 10.4 %)
 ```
 
 ## Performance

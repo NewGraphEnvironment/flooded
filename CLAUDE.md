@@ -16,13 +16,12 @@ anywhere.
 
 - **[drift](https://github.com/NewGraphEnvironment/drift)** — fetch,
   classify, and summarize lateral habitat using flooded output
-- **[fly](https://github.com/NewGraphEnvironment/fly)** — interactive
-  mapping and layer toggle for drift/flooded results
-- **[diggs](https://github.com/NewGraphEnvironment/diggs)** — Shiny app
-  front-end for fly
+- **[fly](https://github.com/NewGraphEnvironment/fly)** — airphoto
+  footprint estimation and coverage selection
+- **[diggs](https://github.com/NewGraphEnvironment/diggs)** — BC
+  Historic Airphoto Explorer (interactive Shiny app)
 
-Pipeline flow: `flooded` (delineate) → `drift` (classify) → `fly` (map)
-→ `diggs` (Shiny UI)
+Pipeline flow: `flooded` (delineate) → `drift` (classify)
 
 ## Architecture
 
