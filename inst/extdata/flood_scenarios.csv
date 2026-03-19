@@ -1,0 +1,4 @@
+scenario_id,flood_factor,slope_threshold,max_width,cost_threshold,size_threshold,hole_threshold,run,description,ecological_process,citation_keys
+ff02,2,9,2000,2500,5000,2500,TRUE,Flood-prone width / active channel margin,Rosgen flood-prone width approximating 50-yr flood stage. Captures the zone of frequent inundation and active channel migration.,nagel_etal2014LandscapeScale
+ff04,4,9,2000,2500,5000,2500,TRUE,Functional floodplain,Historical floodplain extent where nutrient exchange and LWD recruitment occur. Hall et al. found ff=3 best fit on 10m DEM; ff=4 compensates for 25m TRIM vertical smoothing.,hall_etal2007Predictingriver;nagel_etal2014LandscapeScale
+ff06,6,9,2000,2500,5000,2500,TRUE,Valley bottom extent,Full depositional zone including terraces. Nagel et al. recommended ff=5-7 for valley bottom mapping. Wider than functional floodplain — includes areas not regularly influenced by high flows.,nagel_etal2014LandscapeScale
