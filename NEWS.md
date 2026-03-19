@@ -8,6 +8,13 @@
 * Regenerate test data via `fresh::frs_network()` with `frs_clip()`.
 * Add VCA parameter legend CSV (`inst/extdata/flood_params.csv`) with units,
   defaults, and literature sources for all tuning parameters.
+* Add `fl_scenarios()` and `fl_params()` for loading pre-defined flood
+  factor scenarios and parameter metadata (#28).
+* Add flood scenario CSV (`inst/extdata/flood_scenarios.csv`) with three
+  scenarios: ff02 (active channel), ff04 (functional floodplain), ff06
+  (valley bottom).
+* Add flood factor comparison section to vignette with three-panel plot.
+* Replace hardcoded summary table with `fl_params()` output.
 
 # flooded 0.1.1
 
