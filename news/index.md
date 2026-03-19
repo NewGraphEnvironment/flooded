@@ -11,6 +11,8 @@
 - Update vignette with waterbody/channel buffer comparison, order 4+
   filter rationale, and channel width model documentation.
 - Regenerate test data via `fresh::frs_network()` with `frs_clip()`.
+- Add VCA parameter legend CSV (`inst/extdata/flood_params.csv`) with
+  units, defaults, and literature sources for all tuning parameters.
 
 ## flooded 0.1.1
 
