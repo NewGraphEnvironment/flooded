@@ -135,10 +135,14 @@ MIT
   : Create a binary mask from a raster by thresholding
 - [`fl_mask_distance()`](https://newgraphenvironment.github.io/flooded/reference/fl_mask_distance.md)
   : Binary mask by Euclidean distance from features
+- [`fl_params()`](https://newgraphenvironment.github.io/flooded/reference/fl_params.md)
+  : Load VCA parameter legend
 - [`fl_patch_conn()`](https://newgraphenvironment.github.io/flooded/reference/fl_patch_conn.md)
   : Keep only patches connected to anchor features
 - [`fl_patch_rm()`](https://newgraphenvironment.github.io/flooded/reference/fl_patch_rm.md)
   : Remove small patches from a binary raster
+- [`fl_scenarios()`](https://newgraphenvironment.github.io/flooded/reference/fl_scenarios.md)
+  : Load flood factor scenarios
 - [`fl_stream_rasterize()`](https://newgraphenvironment.github.io/flooded/reference/fl_stream_rasterize.md)
   : Rasterize a stream network onto a DEM grid
 - [`fl_valley_confine()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_confine.md)

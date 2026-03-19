@@ -209,17 +209,18 @@ shallow and the resulting valley is significantly narrower.
 valleys <- fl_valley_confine(
   dem, streams,
   field = "upstream_area_ha",
-  slope_threshold = 9,
-  max_width = 2000,
-  cost_threshold = 2500,
-  flood_factor = 6,
-  precip = precip_r
+  slope = slope,            # pre-computed; derived from DEM if NULL
+  slope_threshold = 9,      # percent slope — cells steeper are excluded
+  max_width = 2000,         # metres — safety cap on valley width
+  cost_threshold = 2500,    # accumulated cost distance limit
+  flood_factor = 6,         # bankfull depth multiplier (valley bottom)
+  precip = precip_r         # mean annual precipitation (mm)
 )
 
 n_valley <- sum(values(valleys) == 1, na.rm = TRUE)
 cat("Valley cells:", n_valley, "/", ncell(valleys),
     "(", round(100 * n_valley / ncell(valleys), 1), "%)\n")
-#> Valley cells: 54418 / 518400 ( 10.5 %)
+#> Valley cells: 53635 / 518400 ( 10.3 %)
 ```
 
 ``` r
@@ -338,11 +339,11 @@ valleys_wb <- fl_valley_confine(
 n_wb <- sum(values(valleys_wb) == 1, na.rm = TRUE)
 cell_area <- prod(res(dem))
 cat("VCA only:          ", round(n_valley * cell_area / 1e4, 1), "ha\n")
-#> VCA only:           544.2 ha
+#> VCA only:           536.4 ha
 cat("VCA + features:    ", round(n_wb * cell_area / 1e4, 1), "ha\n")
 #> VCA + features:     553.5 ha
 cat("Features added:    ", round((n_wb - n_valley) * cell_area / 1e4, 1), "ha\n")
-#> Features added:     9.3 ha
+#> Features added:     17.1 ha
 ```
 
 ``` r
@@ -398,8 +399,114 @@ cat("Without precip:", n_no, "cells (",
 #> Without precip: 27522 cells ( 5.3 %)
 cat("With precip:   ", n_valley, "cells (",
     round(100 * n_valley / ncell(dem), 1), "%)\n")
-#> With precip:    54418 cells ( 10.5 %)
+#> With precip:    53635 cells ( 10.3 %)
 ```
+
+## Flood factor scenarios
+
+The `flood_factor` is a DEM compensation parameter — it scales predicted
+bankfull depth to set the flood height above the channel. Higher values
+compensate for coarser DEM vertical resolution. The ecological
+interpretation is an overlay: Hall et al. (2007) validated ff=3 against
+213 field-measured floodplain widths on 10 m DEM; Nagel et al. (2014)
+recommended ff=5–7 for mapping valley bottoms (wider than functional
+floodplain).
+
+[`fl_scenarios()`](https://newgraphenvironment.github.io/flooded/reference/fl_scenarios.md)
+provides three pre-defined scenarios.
+[`fl_params()`](https://newgraphenvironment.github.io/flooded/reference/fl_params.md)
+documents every tuning parameter with units, defaults, and literature
+sources.
+
+``` r
+scenarios <- fl_scenarios()
+scenarios[, c("scenario_id", "flood_factor", "description")]
+#> # A tibble: 3 × 3
+#>   scenario_id flood_factor description                              
+#>   <chr>              <int> <chr>                                    
+#> 1 ff02                   2 Flood-prone width / active channel margin
+#> 2 ff04                   4 Functional floodplain                    
+#> 3 ff06                   6 Valley bottom extent
+```
+
+``` r
+params <- fl_params()
+params[, c("parameter", "unit", "default", "source")]
+#> # A tibble: 6 × 4
+#>   parameter       unit          default source                             
+#>   <chr>           <chr>           <int> <chr>                              
+#> 1 flood_factor    dimensionless       6 Nagel et al. 2014; Hall et al. 2007
+#> 2 slope_threshold percent             9 Nagel et al. 2014                  
+#> 3 max_width       metres           2000 Nagel et al. 2014 (modified)       
+#> 4 cost_threshold  dimensionless    2500 Nagel et al. 2014                  
+#> 5 size_threshold  m2               5000 Nagel et al. 2014 (modified)       
+#> 6 hole_threshold  m2               2500 flooded-specific
+```
+
+Run all three scenarios on the test data to see how flood factor
+controls the mapped extent:
+
+``` r
+results <- list()
+for (i in seq_len(nrow(scenarios))) {
+  s <- scenarios[i, ]
+  results[[s$scenario_id]] <- fl_valley_confine(
+    dem, streams,
+    field = "upstream_area_ha",
+    slope = slope,
+    precip = precip_r,
+    flood_factor = s$flood_factor,
+    slope_threshold = s$slope_threshold,
+    max_width = s$max_width,
+    cost_threshold = s$cost_threshold,
+    size_threshold = s$size_threshold,
+    hole_threshold = s$hole_threshold,
+    waterbodies = waterbodies
+  )
+}
+
+cell_area <- prod(res(dem))
+for (id in names(results)) {
+  n <- sum(values(results[[id]]) == 1, na.rm = TRUE)
+  cat(sprintf("%-6s (ff=%s): %5.1f ha\n", id,
+              scenarios$flood_factor[scenarios$scenario_id == id],
+              n * cell_area / 1e4))
+}
+#> ff02   (ff=2): 338.2 ha
+#> ff04   (ff=4): 493.9 ha
+#> ff06   (ff=6): 553.5 ha
+```
+
+``` r
+par(mfrow = c(3, 1), mar = c(2, 4, 2, 1))
+titles <- c(
+  ff02 = "ff=2: Active channel margin",
+  ff04 = "ff=4: Functional floodplain",
+  ff06 = "ff=6: Valley bottom"
+)
+for (id in names(results)) {
+  plot(results[[id]], col = c("grey90", "darkgreen"),
+       main = titles[id], legend = FALSE)
+  plot(st_geometry(streams), add = TRUE, col = "blue", lwd = 1)
+  if (nrow(waterbodies) > 0) {
+    plot(st_geometry(waterbodies), add = TRUE,
+         border = "darkorange", lwd = 1.2)
+  }
+}
+```
+
+![Valley delineation at three flood factor values. ff=2 (active channel
+margin) captures the zone of frequent inundation. ff=4 (functional
+floodplain) maps the historical flood extent. ff=6 (valley bottom)
+includes terraces and depositional surfaces beyond the active
+floodplain. Blue lines = streams, orange outlines = waterbody
+polygons.](valley-confinement_files/figure-html/plot-scenarios-1.png)
+
+Valley delineation at three flood factor values. ff=2 (active channel
+margin) captures the zone of frequent inundation. ff=4 (functional
+floodplain) maps the historical flood extent. ff=6 (valley bottom)
+includes terraces and depositional surfaces beyond the active
+floodplain. Blue lines = streams, orange outlines = waterbody polygons.
 
 ## Performance
 
@@ -422,16 +529,32 @@ which are single-threaded.
 
 ## Summary
 
-Key tuning parameters:
+Key tuning parameters from
+[`fl_params()`](https://newgraphenvironment.github.io/flooded/reference/fl_params.md):
 
-| Parameter         | Default | Effect                                            |
-|-------------------|---------|---------------------------------------------------|
-| `slope_threshold` | 9%      | Higher = more valley floor included               |
-| `max_width`       | 2000 m  | Analysis corridor width                           |
-| `cost_threshold`  | 2500    | Higher = valley extends further up hillslopes     |
-| `flood_factor`    | 6       | Higher = deeper flood, more floodplain            |
-| `precip`          | 1       | MAP in mm — critical for realistic flood depth    |
-| `waterbodies`     | NULL    | sf polygons of lakes/wetlands to fill donut holes |
-| `channel_buffer`  | auto    | Buffer streams by channel_width (DEM correction)  |
-| `size_threshold`  | 5000 m² | Minimum valley patch area                         |
-| `hole_threshold`  | 2500 m² | Maximum hole size to fill                         |
+``` r
+params <- fl_params()
+knitr::kable(
+  params[, c("parameter", "default", "unit", "effect")],
+  col.names = c("Parameter", "Default", "Unit", "Effect")
+)
+```
+
+| Parameter       | Default | Unit          | Effect                                        |
+|:----------------|--------:|:--------------|:----------------------------------------------|
+| flood_factor    |       6 | dimensionless | Higher = deeper flood; more floodplain        |
+| slope_threshold |       9 | percent       | Higher = more valley floor included           |
+| max_width       |    2000 | metres        | Analysis corridor width                       |
+| cost_threshold  |    2500 | dimensionless | Higher = valley extends further up hillslopes |
+| size_threshold  |    5000 | m2            | Minimum valley patch area                     |
+| hole_threshold  |    2500 | m2            | Maximum hole size to fill                     |
+
+Additional arguments to
+[`fl_valley_confine()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_confine.md)
+not in the parameter legend:
+
+| Parameter        | Default | Effect                                            |
+|------------------|---------|---------------------------------------------------|
+| `precip`         | 1       | MAP in mm — critical for realistic flood depth    |
+| `waterbodies`    | NULL    | sf polygons of lakes/wetlands to fill donut holes |
+| `channel_buffer` | auto    | Buffer streams by channel_width (DEM correction)  |
