@@ -31,7 +31,8 @@ Depends:
     R (>= 4.1)
 Imports:
     terra,
-    sf
+    sf,
+    tibble
 Suggests:
     bookdown,
     whitebox,

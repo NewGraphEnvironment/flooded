@@ -184,11 +184,12 @@ and the resulting valley is significantly narrower.
 valleys <- fl_valley_confine(
   dem, streams,
   field = "upstream_area_ha",
-  slope_threshold = 9,
-  max_width = 2000,
-  cost_threshold = 2500,
-  flood_factor = 6,
-  precip = precip_r
+  slope = slope,            # pre-computed; derived from DEM if NULL
+  slope_threshold = 9,      # percent slope — cells steeper are excluded
+  max_width = 2000,         # metres — safety cap on valley width
+  cost_threshold = 2500,    # accumulated cost distance limit
+  flood_factor = 6,         # bankfull depth multiplier (valley bottom)
+  precip = precip_r         # mean annual precipitation (mm)
 )
 
 n_valley <- sum(values(valleys) == 1, na.rm = TRUE)
@@ -336,6 +337,77 @@ cat("With precip:   ", n_valley, "cells (",
     round(100 * n_valley / ncell(dem), 1), "%)\n")
 ```
 
+## Flood factor scenarios
+
+The `flood_factor` is a DEM compensation parameter — it scales predicted
+bankfull depth to set the flood height above the channel. Higher values
+compensate for coarser DEM vertical resolution. The ecological interpretation
+is an overlay: Hall et al. (2007) validated ff=3 against 213 field-measured
+floodplain widths on 10 m DEM; Nagel et al. (2014) recommended ff=5–7 for
+mapping valley bottoms (wider than functional floodplain).
+
+`fl_scenarios()` provides three pre-defined scenarios. `fl_params()` documents
+every tuning parameter with units, defaults, and literature sources.
+
+```{r scenarios}
+scenarios <- fl_scenarios()
+scenarios[, c("scenario_id", "flood_factor", "description")]
+```
+
+```{r params}
+params <- fl_params()
+params[, c("parameter", "unit", "default", "source")]
+```
+
+Run all three scenarios on the test data to see how flood factor controls
+the mapped extent:
+
+```{r run-scenarios}
+results <- list()
+for (i in seq_len(nrow(scenarios))) {
+  s <- scenarios[i, ]
+  results[[s$scenario_id]] <- fl_valley_confine(
+    dem, streams,
+    field = "upstream_area_ha",
+    slope = slope,
+    precip = precip_r,
+    flood_factor = s$flood_factor,
+    slope_threshold = s$slope_threshold,
+    max_width = s$max_width,
+    cost_threshold = s$cost_threshold,
+    size_threshold = s$size_threshold,
+    hole_threshold = s$hole_threshold,
+    waterbodies = waterbodies
+  )
+}
+
+cell_area <- prod(res(dem))
+for (id in names(results)) {
+  n <- sum(values(results[[id]]) == 1, na.rm = TRUE)
+  cat(sprintf("%-6s (ff=%s): %5.1f ha\n", id,
+              scenarios$flood_factor[scenarios$scenario_id == id],
+              n * cell_area / 1e4))
+}
+```
+
+```{r plot-scenarios, fig.width = 7, fig.height = 10, fig.cap = "Valley delineation at three flood factor values. ff=2 (active channel margin) captures the zone of frequent inundation. ff=4 (functional floodplain) maps the historical flood extent. ff=6 (valley bottom) includes terraces and depositional surfaces beyond the active floodplain. Blue lines = streams, orange outlines = waterbody polygons."}
+par(mfrow = c(3, 1), mar = c(2, 4, 2, 1))
+titles <- c(
+  ff02 = "ff=2: Active channel margin",
+  ff04 = "ff=4: Functional floodplain",
+  ff06 = "ff=6: Valley bottom"
+)
+for (id in names(results)) {
+  plot(results[[id]], col = c("grey90", "darkgreen"),
+       main = titles[id], legend = FALSE)
+  plot(st_geometry(streams), add = TRUE, col = "blue", lwd = 1)
+  if (nrow(waterbodies) > 0) {
+    plot(st_geometry(waterbodies), add = TRUE,
+         border = "darkorange", lwd = 1.2)
+  }
+}
+```
+
 ## Performance
 
 Several `terra` operations inside `fl_valley_confine()` support multi-threading
@@ -352,16 +424,20 @@ which are single-threaded.
 
 ## Summary
 
-Key tuning parameters:
+Key tuning parameters from `fl_params()`:
+
+```{r summary-table}
+params <- fl_params()
+knitr::kable(
+  params[, c("parameter", "default", "unit", "effect")],
+  col.names = c("Parameter", "Default", "Unit", "Effect")
+)
+```
+
+Additional arguments to `fl_valley_confine()` not in the parameter legend:
 
 | Parameter | Default | Effect |
 |-----------|---------|--------|
-| `slope_threshold` | 9% | Higher = more valley floor included |
-| `max_width` | 2000 m | Analysis corridor width |
-| `cost_threshold` | 2500 | Higher = valley extends further up hillslopes |
-| `flood_factor` | 6 | Higher = deeper flood, more floodplain |
 | `precip` | 1 | MAP in mm — critical for realistic flood depth |
 | `waterbodies` | NULL | sf polygons of lakes/wetlands to fill donut holes |
 | `channel_buffer` | auto | Buffer streams by channel_width (DEM correction) |
-| `size_threshold` | 5000 m² | Minimum valley patch area |
-| `hole_threshold` | 2500 m² | Maximum hole size to fill |
