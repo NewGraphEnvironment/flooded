@@ -12,7 +12,7 @@ fl_params(path = NULL)
 }
 \value{
 A tibble with columns: \code{parameter}, \code{unit}, \code{default}, \code{source},
-\code{citation_keys}, \code{description}.
+\code{citation_keys}, \code{effect}, \code{description}.
 }
 \description{
 Returns a tibble of Valley Confinement Algorithm parameters with units,

@@ -40,7 +40,7 @@ pre-defined flood factor scenarios. Close #28.
 - [x] devtools::document() — NAMESPACE, fl_params.Rd, fl_scenarios.Rd
 - [x] devtools::test() — 154 pass (22 new)
 - [x] lintr::lint_package() — no new warnings
-- [ ] Commit with Fixes #28
+- [x] Commit with Fixes #28 (16bf126)
 
 ## Constraints
 - Do NOT modify fl_valley_confine()

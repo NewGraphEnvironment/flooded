@@ -9,7 +9,7 @@
 #'   (default), loads the bundled `inst/extdata/flood_params.csv`.
 #'
 #' @return A tibble with columns: `parameter`, `unit`, `default`, `source`,
-#'   `citation_keys`, `description`.
+#'   `citation_keys`, `effect`, `description`.
 #'
 #' @examples
 #' params <- fl_params()

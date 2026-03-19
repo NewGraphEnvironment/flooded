@@ -2,7 +2,7 @@ test_that("fl_params returns tibble with expected columns", {
   params <- fl_params()
   expect_s3_class(params, "tbl_df")
   expected_cols <- c("parameter", "unit", "default", "source",
-                     "citation_keys", "description")
+                     "citation_keys", "effect", "description")
   expect_true(all(expected_cols %in% names(params)))
 })
 
