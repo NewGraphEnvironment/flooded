@@ -1,27 +1,13 @@
-# Findings: fl_scenarios() and fl_params()
+# Findings
 
-## Research (pre-existing)
+## Repo state (2026-04-14)
+- flooded v0.2.0, clean main, no existing .onAttach
+- `planning/active/` tracked (unlike mc which gitignores)
+- Prior PWF from issue #28 was stale in active/ — archived retroactively
 
-All research already committed:
-- `inst/research/vca_parameter_rationale.md` — verified quotes from Nagel 2014, Hall 2007
-- `inst/extdata/flood_params.csv` — parameter legend with units, defaults, citations
+## Template
+- Proven infrastructure: drift v0.2.2, mc v0.2.6
+- Option namespace: `flooded.quote_show_source` (matches pattern)
 
-## Key facts for scenario design
-
-### flood_factor zones (from vca_parameter_rationale.md)
-- ff=2: Rosgen flood-prone width, ~50-yr flood (active channel margin)
-- ff=3: Hall 2007 best fit for historical floodplain on 10m DEM (213 field sites)
-- ff=4: Reasonable functional floodplain estimate on 25m DEM
-- ff=5-7: Nagel 2014 valley bottom (includes terraces, depositional areas)
-- ff=7: Nagel 2014 recommendation for 30m DEM
-
-### Defaults from flood_params.csv
-- slope_threshold: 9 (percent)
-- max_width: 2000 (metres)
-- cost_threshold: 2500 (dimensionless)
-- size_threshold: 5000 (m²)
-- hole_threshold: 2500 (m²)
-
-### Two independent width models (from flooded#25)
-- bcfishpass (Thorley et al. 2021): `exp(0.307) * (area * precip / 100000) ^ 0.458`
-- VCA/Hall 2007 (flooded internal): `(area ^ 0.280) * 0.196 * (precip ^ 0.355)`
+## Known-from-prior-rounds
+- Ab-Soul, ASAP Rocky, Mac Miller, Killer Mike, Travis Scott, Bad Bunny already in fpr/rfp/drift/mc. New quotes for flooded to avoid duplication — research agents told to find fresh material, though ultimately curation is user's call.

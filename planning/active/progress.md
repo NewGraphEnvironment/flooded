@@ -1,11 +1,12 @@
-# Progress: fl_scenarios() and fl_params()
+# Progress
 
-## Session log
+## Session 2026-04-14
 
-### 2026-03-19
-- Read flooded#28 comments — updated scope and implementation prompt
-- Read inst/research/vca_parameter_rationale.md and inst/extdata/flood_params.csv
-- Read R/fl_valley_confine.R for current param defaults
-- Created branch `flood-scenarios` from main
-- Set up planning/active/ structure
-- Starting Phase 1: flood_scenarios.csv
+- Branch `quotes-enable` off main (main up to date)
+- Archived stale PWF from issue #28 → planning/archive/2026-04-issue-28-fl-scenarios/
+- Wrote fresh PWF baseline
+- 25 hip-hop + 20 climate
+- 8 research agents launched in parallel — returned 157 candidates across 45 voices
+- 2 fact-check agents: 2 drops (Ab-Soul Revolt unverified, Mac Miller paraphrase), several URL upgrades to primaries
+- Final shipped: 157 quotes. Infrastructure matches drift v0.2.2 / mc v0.2.6
+- R CMD check: pre-existing `whitebox` Suggests dep ERROR (unrelated to our changes)

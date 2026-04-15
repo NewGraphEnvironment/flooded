@@ -1,48 +1,28 @@
-# Task: fl_scenarios() and fl_params() — CSV loaders for VCA parameters
+# Task Plan: Enable Startup Quotes in flooded
 
-**Issue:** flooded#28
-**Branch:** flood-scenarios
+Third `/quotes-enable` round. 25 hip-hop + 20 climate voices = 45 people, 8 research agents.
 
-## Goal
-Add two exported functions (`fl_scenarios()`, `fl_params()`) and one new CSV
-(`flood_scenarios.csv`) to give users access to VCA parameter metadata and
-pre-defined flood factor scenarios. Close #28.
+## Phase 1: Inputs
+- [x] Hip-hop (25): Kanye West, Royce da 5'9", Black Thought, Ab-Soul, ASAP Rocky, Danny Brown, The Weeknd, Kenny Beats, Freddie Gibbs, Madlib, Travis Scott, Erick the Architect, Zombie Juice, Meechie Darko, Killer Mike, J Cole, Bad Bunny, Don Toliver, Aaron Frazer, Post Malone, Mac Miller, Lil Yachty, Fre$h, Mustard, IDK, Joey Bada$$
+- [x] Climate (20): Katharine Hayhoe, Michael Mann, James Hansen, Gavin Schmidt, Kate Marvel, Kim Cobb, Johan Rockström, Susan Joy Hassol, Naomi Oreskes, Katharine Wilkinson, Michael Oppenheimer, Friederike Otto, Peter Kalmus, Jennifer Francis, Ben Santer, Richard Alley, Bill McKibben, David Wallace-Wells, Elizabeth Kolbert, Ayana Elizabeth Johnson
 
-## Phases
+## Phase 2: Research (parallel)
+- [ ] 8 agents (4 hip-hop clusters + 2 climate-science + 2 climate-writer)
+- [ ] ToolSearch WebSearch/WebFetch first
+- [ ] Primary-source URLs + fetch-verify
 
-### Phase 1: Create flood_scenarios.csv
-- [x] Create `inst/extdata/flood_scenarios.csv`
-- [x] Columns: scenario_id, flood_factor, slope_threshold, max_width, cost_threshold, size_threshold, hole_threshold, run, description, ecological_process, citation_keys
-- [x] Three rows: ff02 (active channel), ff04 (functional floodplain), ff06 (valley bottom)
-- [x] Non-flood_factor params use defaults from flood_params.csv
+## Phase 3: Fact-check
+- [ ] Tier-2 chained / book-source; spot-check direct-primary
 
-### Phase 2: fl_params()
-- [x] Create `R/fl_params.R`
-- [x] Load flood_params.csv by default, accept custom path
-- [x] Return tibble
-- [x] roxygen with @export
+## Phase 4: User review
+- [ ] CSV veto round
 
-### Phase 3: fl_scenarios()
-- [x] Create `R/fl_scenarios.R`
-- [x] Load flood_scenarios.csv by default, accept custom path
-- [x] Return tibble
-- [x] roxygen with @export
+## Phase 5: Infrastructure
+- [ ] R/zzz.R (drift/mc template, option namespace = flooded.quote_show_source)
+- [ ] data-raw/quotes_build.R + audit CSV + README
+- [ ] cli to Imports
 
-### Phase 4: Tests
-- [x] Create `tests/testthat/test-fl_params.R` (4 tests)
-- [x] Create `tests/testthat/test-fl_scenarios.R` (7 tests)
-- [x] Default load returns tibble with expected columns
-- [x] Custom path override works
-- [x] Invalid path errors cleanly
-- [x] Scenarios match flood_params.csv defaults for non-flood_factor params
-
-### Phase 5: Document and verify
-- [x] devtools::document() — NAMESPACE, fl_params.Rd, fl_scenarios.Rd
-- [x] devtools::test() — 154 pass (22 new)
-- [x] lintr::lint_package() — no new warnings
-- [x] Commit with Fixes #28 (16bf126)
-
-## Constraints
-- Do NOT modify fl_valley_confine()
-- Do NOT add vignette (separate issue)
-- Do NOT bump version
+## Phase 6: Ship
+- [ ] R CMD check (accept pre-existing)
+- [ ] Version bump + NEWS
+- [ ] Commit, PR, archive after merge
