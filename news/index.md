@@ -1,5 +1,26 @@
 # Changelog
 
+## flooded 0.2.1
+
+- Startup quote ritual:
+  [`library(flooded)`](https://github.com/NewGraphEnvironment/flooded)
+  prints a random fact-checked quote on attach. Italic quote, grey
+  attribution, clickable blue `source` hyperlink (OSC 8). Suppress via
+  `options(flooded.quote_show_source = FALSE)`.
+- 157 shipped entries across 45 voices — 25 hip-hop (Kanye West, Royce
+  da 5’9”, Black Thought, Ab-Soul, ASAP Rocky, Danny Brown, The Weeknd,
+  Kenny Beats, Freddie Gibbs, Madlib, Travis Scott, Flatbush Zombies
+  trio, J. Cole, Bad Bunny, Don Toliver, Aaron Frazer, Post Malone, Mac
+  Miller, Lil Yachty, Fre$h,Mustard,IDK,JoeyBada$\$) + 20 climate voices
+  (Hayhoe, Mann, Hansen, Schmidt, Marvel, Cobb, Rockström, Hassol,
+  Oreskes, Wilkinson, Oppenheimer, Otto, Kalmus, Francis, Santer, Alley,
+  McKibben, Wallace-Wells, Kolbert, Johnson).
+- Curated via the soul `/quotes-enable` skill. 8 parallel research
+  agents returned 157 candidates; 2 independent fact-check agents
+  flagged 2 drops and several URL upgrades to primary sources (GQ, W
+  Magazine, Rolling Stone, Vulture).
+- `cli` added to Imports for OSC 8 hyperlinks and styling.
+
 ## flooded 0.2.0
 
 - Add `waterbodies` and `channel_buffer` params to

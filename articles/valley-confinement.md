@@ -21,6 +21,9 @@ script.
 
 ``` r
 library(flooded)
+#> 
+#>  'Whatever you think is a permanent, lasting, eternal feature of human life — all of it will be affected by climate change.' - David Wallace-Wells
+#>   source
 library(terra)
 #> terra 1.9.11
 library(sf)
