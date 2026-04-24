@@ -4,7 +4,7 @@ pkgdown_sha: ~
 articles:
   stac-dem: stac-dem.html
   valley-confinement: valley-confinement.html
-last_built: 2026-04-15T07:46Z
+last_built: 2026-04-24T04:02Z
 urls:
   reference: https://newgraphenvironment.github.io/flooded/reference
   article: https://newgraphenvironment.github.io/flooded/articles
