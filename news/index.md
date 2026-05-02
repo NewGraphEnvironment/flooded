@@ -11,10 +11,10 @@
   da 5’9”, Black Thought, Ab-Soul, ASAP Rocky, Danny Brown, The Weeknd,
   Kenny Beats, Freddie Gibbs, Madlib, Travis Scott, Flatbush Zombies
   trio, J. Cole, Bad Bunny, Don Toliver, Aaron Frazer, Post Malone, Mac
-  Miller, Lil Yachty, Fre$h,Mustard,IDK,JoeyBada$\$) + 20 climate voices
-  (Hayhoe, Mann, Hansen, Schmidt, Marvel, Cobb, Rockström, Hassol,
-  Oreskes, Wilkinson, Oppenheimer, Otto, Kalmus, Francis, Santer, Alley,
-  McKibben, Wallace-Wells, Kolbert, Johnson).
+  Miller, Lil Yachty, Fre$`h, Mustard, IDK, Joey Bada`$\$) + 20 climate
+  voices (Hayhoe, Mann, Hansen, Schmidt, Marvel, Cobb, Rockström,
+  Hassol, Oreskes, Wilkinson, Oppenheimer, Otto, Kalmus, Francis,
+  Santer, Alley, McKibben, Wallace-Wells, Kolbert, Johnson).
 - Curated via the soul `/quotes-enable` skill. 8 parallel research
   agents returned 157 candidates; 2 independent fact-check agents
   flagged 2 drops and several URL upgrades to primary sources (GQ, W

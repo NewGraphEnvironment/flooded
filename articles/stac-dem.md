@@ -12,6 +12,7 @@ provincial lidar DEMs.
 ## Setup
 
 ``` r
+
 library(flooded)
 library(terra)
 #> terra 1.8.93
@@ -49,6 +50,7 @@ First, load the bundled test data and run the VCA to establish a
 baseline.
 
 ``` r
+
 dem_10m <- rast(system.file("testdata/dem.tif", package = "flooded"))
 slope_10m <- rast(system.file("testdata/slope.tif", package = "flooded"))
 streams <- st_read(
@@ -81,6 +83,7 @@ Query the `stac-dem-bc` collection for tiles intersecting our test area.
 We filter to 2019 tiles only (1 m lidar).
 
 ``` r
+
 # Test area bounding box in WGS84
 # terra ext() gives xmin,xmax,ymin,ymax — STAC needs xmin,ymin,xmax,ymax
 dem_wgs <- project(dem_10m, "EPSG:4326")
@@ -113,6 +116,7 @@ build in a vignette. For production work, set `dx = 1, dy = 1` for full
 1 m resolution.
 
 ``` r
+
 # Build gdalcubes image collection from STAC items
 col <- stac_image_collection(items$features, asset_names = "image")
 
@@ -147,6 +151,7 @@ cat("Resolution:", res(dem_stac), "m\n")
 ## Derive slope
 
 ``` r
+
 slope_stac <- terra::terrain(dem_stac, v = "slope", unit = "degrees")
 # Convert to percent slope to match flooded convention
 slope_stac <- tan(slope_stac * pi / 180) * 100
@@ -155,6 +160,7 @@ slope_stac <- tan(slope_stac * pi / 180) * 100
 ## Run VCA on STAC DEM
 
 ``` r
+
 # Rasterize streams onto the STAC DEM grid
 precip_stac <- fl_stream_rasterize(streams, dem_stac, field = "map_upstream")
 
@@ -178,6 +184,7 @@ cat(stac_res, "m DEM valley cells:", n_stac, "/", ncell(valleys_stac),
 ## Compare
 
 ``` r
+
 # Resample STAC result to 10 m grid for visual comparison
 valleys_stac_10 <- resample(valleys_stac, dem_10m, method = "near")
 
@@ -193,6 +200,7 @@ cat("Valley area (STAC", stac_res, "m DEM):", round(area_stac, 2), "km²\n")
 ```
 
 ``` r
+
 par(mfrow = c(2, 1), mar = c(2, 4, 2, 1))
 plot(valleys_10m, col = c("grey90", "darkgreen"),
      main = "Bundled 10 m DEM (25 m TRIM resampled)", legend = FALSE)
@@ -221,11 +229,13 @@ Richfield Creek where they enter the Bulkley River floodplain, and run
 at full 1 m resolution.
 
 ``` r
+
 # Site extent — Robert Hatch / Richfield confluence with Bulkley
 site_ext <- ext(976560, 980060, 1055808, 1059808)
 ```
 
 ``` r
+
 # Fetch 1 m lidar for the site extent
 site_wgs <- project(rast(site_ext, crs = "EPSG:3005"), "EPSG:4326")
 se <- ext(site_wgs)
@@ -268,6 +278,7 @@ cat("1 m DEM:", ncol(dem_1m), "x", nrow(dem_1m), "pixels (",
 ```
 
 ``` r
+
 slope_1m <- terra::terrain(dem_1m, v = "slope", unit = "degrees")
 slope_1m <- tan(slope_1m * pi / 180) * 100
 
@@ -300,6 +311,7 @@ cat("1 m DEM valley cells:", format(n_1m, big.mark = ","), "/",
 ```
 
 ``` r
+
 # Run 10 m (resampled TRIM) on the same site for comparison
 dem_site_10m <- terra::crop(dem_10m, site_ext)
 slope_site_10m <- terra::crop(slope_10m, site_ext)
@@ -339,6 +351,7 @@ emerge at 1 m.
 ## Quantifying the difference
 
 ``` r
+
 # Resample 1 m result to the 25 m (resampled to 10 m) site grid
 valleys_1m_on_10m <- resample(valleys_1m, dem_site_10m, method = "near")
 
@@ -438,9 +451,9 @@ reconnect floodplain.
 
 The `flooded` pipeline is DEM-agnostic. Any source works:
 
-| Source                      | Native resolution | Notes                                                                        |
-|-----------------------------|-------------------|------------------------------------------------------------------------------|
-| BC Data Catalogue (WCS)     | 25 m              | Provincial TRIM DEM; `bcdata get-dem` (Python CLI)                           |
-| Bundled test data           | 25 m → 10 m       | TRIM resampled via bilinear; `system.file("testdata/", package = "flooded")` |
-| stac-dem-bc (this vignette) | 1 m               | Provincial lidar; `rstac` + `gdalcubes`                                      |
-| CDEM / SRTM                 | 30 m              | Federal/global fallback for areas without lidar                              |
+| Source | Native resolution | Notes |
+|----|----|----|
+| BC Data Catalogue (WCS) | 25 m | Provincial TRIM DEM; `bcdata get-dem` (Python CLI) |
+| Bundled test data | 25 m → 10 m | TRIM resampled via bilinear; `system.file("testdata/", package = "flooded")` |
+| stac-dem-bc (this vignette) | 1 m | Provincial lidar; `rstac` + `gdalcubes` |
+| CDEM / SRTM | 30 m | Federal/global fallback for areas without lidar |

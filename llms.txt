@@ -11,12 +11,14 @@ anywhere.
 ## Installation
 
 ``` r
+
 pak::pak("NewGraphEnvironment/flooded")
 ```
 
 ## Example
 
 ``` r
+
 library(flooded)
 
 dem <- terra::rast("dem.tif")
@@ -75,6 +77,7 @@ Set `terra` threads before running the pipeline to enable multi-core
 processing:
 
 ``` r
+
 terra::terraOptions(threads = 12)  # adjust to your machine
 ```
 
@@ -85,14 +88,14 @@ from ~3.5 min to ~1 min.
 
 flooded is one piece of a larger watershed analysis workflow:
 
-| Package                                                 | Role                                                                                                       |
-|---------------------------------------------------------|------------------------------------------------------------------------------------------------------------|
-| [fresh](https://github.com/NewGraphEnvironment/fresh)   | FWA-referenced spatial hydrology (network extraction, snapping)                                            |
-| [breaks](https://github.com/NewGraphEnvironment/breaks) | Delineate sub-basins from break points on stream networks                                                  |
-| **flooded**                                             | Delineate floodplain extents from DEMs and stream networks (this package)                                  |
-| [drift](https://github.com/NewGraphEnvironment/drift)   | Track land cover change within floodplains over time                                                       |
-| [fly](https://github.com/NewGraphEnvironment/fly)       | Estimate airphoto footprints and select optimal coverage for a study area                                  |
-| [diggs](https://github.com/NewGraphEnvironment/diggs)   | Interactive explorer for [fly](https://github.com/NewGraphEnvironment/fly) airphoto selections (Shiny app) |
+| Package | Role |
+|----|----|
+| [fresh](https://github.com/NewGraphEnvironment/fresh) | FWA-referenced spatial hydrology (network extraction, snapping) |
+| [breaks](https://github.com/NewGraphEnvironment/breaks) | Delineate sub-basins from break points on stream networks |
+| **flooded** | Delineate floodplain extents from DEMs and stream networks (this package) |
+| [drift](https://github.com/NewGraphEnvironment/drift) | Track land cover change within floodplains over time |
+| [fly](https://github.com/NewGraphEnvironment/fly) | Estimate airphoto footprints and select optimal coverage for a study area |
+| [diggs](https://github.com/NewGraphEnvironment/diggs) | Interactive explorer for [fly](https://github.com/NewGraphEnvironment/fly) airphoto selections (Shiny app) |
 
 Pipeline: fresh (network data) → breaks (sub-basins) → flooded
 (floodplains) → drift (land cover change)

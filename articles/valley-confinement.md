@@ -20,6 +20,7 @@ script.
 ## Load data
 
 ``` r
+
 library(flooded)
 #> 
 #>  'Whatever you think is a permanent, lasting, eternal feature of human life — all of it will be affected by climate change.' - David Wallace-Wells
@@ -47,6 +48,7 @@ cat("Mean annual precip range:", range(streams$map_upstream), "mm\n")
 ```
 
 ``` r
+
 plot(dem, main = "Elevation (m)")
 plot(st_geometry(streams), add = TRUE, col = "blue", lwd = 1.5)
 ```
@@ -64,10 +66,12 @@ using upstream contributing area as the cell value (Figure
 expects — it estimates flood depth from contributing area in hectares.
 
 ``` r
+
 stream_r <- fl_stream_rasterize(streams, dem, field = "upstream_area_ha")
 ```
 
 ``` r
+
 plot(stream_r, main = "Upstream area (ha)")
 ```
 
@@ -96,6 +100,7 @@ alongside the streams to create a spatially varying precipitation
 surface at stream cells.
 
 ``` r
+
 precip_r <- fl_stream_rasterize(streams, dem, field = "map_upstream")
 cat("Precip at stream cells:", range(values(precip_r), na.rm = TRUE), "mm\n")
 #> Precip at stream cells: 526 587 mm
@@ -111,12 +116,14 @@ Cells with slope \<= 9% (the VCA default) represent potentially flat
 valley floor (Figure @ref(fig:plot-slope-mask)).
 
 ``` r
+
 mask_slope <- fl_mask(slope, threshold = 9, operator = "<=")
 cat("Gentle slope:", sum(values(mask_slope) == 1, na.rm = TRUE), "cells\n")
 #> Gentle slope: 280449 cells
 ```
 
 ``` r
+
 plot(mask_slope, col = c("grey90", "darkgreen"), main = "Slope <= 9%",
      legend = FALSE)
 plot(st_geometry(streams), add = TRUE, col = "blue", lwd = 0.8)
@@ -133,12 +140,14 @@ Cells within 1000 m of a stream (half the default `max_width = 2000`;
 Figure @ref(fig:plot-dist-mask)).
 
 ``` r
+
 mask_dist <- fl_mask_distance(stream_r, threshold = 1000)
 cat("Within 1 km:", sum(values(mask_dist) == 1, na.rm = TRUE), "cells\n")
 #> Within 1 km: 277943 cells
 ```
 
 ``` r
+
 plot(mask_dist, col = c("grey90", "steelblue"), main = "Within 1 km of stream",
      legend = FALSE)
 plot(st_geometry(streams), add = TRUE, col = "blue", lwd = 0.8)
@@ -155,6 +164,7 @@ Accumulated cost (slope-weighted) distance from streams (Figure
 @ref(fig:plot-cost)). The VCA default threshold is 2500.
 
 ``` r
+
 cost <- fl_cost_distance(slope, stream_r)
 mask_cost <- fl_mask(cost, threshold = 2500, operator = "<")
 cat("Cost < 2500:", sum(values(mask_cost) == 1, na.rm = TRUE), "cells\n")
@@ -162,6 +172,7 @@ cat("Cost < 2500:", sum(values(mask_cost) == 1, na.rm = TRUE), "cells\n")
 ```
 
 ``` r
+
 plot(cost, main = "Cost distance", range = c(0, 5000))
 plot(st_geometry(streams), add = TRUE, col = "blue", lwd = 0.8)
 ```
@@ -179,6 +190,7 @@ streams, and identifies cells below the flood surface (Figure
 @ref(fig:plot-flood)).
 
 ``` r
+
 flood <- fl_flood_model(dem, stream_r, flood_factor = 6, precip = precip_r,
                         max_width = 2000)
 cat("Flooded cells:", sum(values(flood[["flooded"]]) == 1, na.rm = TRUE), "\n")
@@ -186,6 +198,7 @@ cat("Flooded cells:", sum(values(flood[["flooded"]]) == 1, na.rm = TRUE), "\n")
 ```
 
 ``` r
+
 depth <- flood[["flood_depth"]]
 depth[depth == 0] <- NA
 plot(depth, main = "Flood depth (m)")
@@ -209,6 +222,7 @@ Note the `precip` argument — without it, flood depths are ~4x too
 shallow and the resulting valley is significantly narrower.
 
 ``` r
+
 valleys <- fl_valley_confine(
   dem, streams,
   field = "upstream_area_ha",
@@ -227,6 +241,7 @@ cat("Valley cells:", n_valley, "/", ncell(valleys),
 ```
 
 ``` r
+
 plot(valleys, col = c("grey90", "darkgreen"),
      main = "Unconfined valleys", legend = FALSE)
 plot(st_geometry(streams), add = TRUE, col = "blue", lwd = 1.2)
@@ -246,6 +261,7 @@ flat areas disconnected from the network (Figure
 @ref(fig:plot-connected)).
 
 ``` r
+
 connected <- fl_patch_conn(valleys, stream_r)
 cat("Connected valley cells:",
     sum(values(connected) == 1, na.rm = TRUE), "\n")
@@ -253,6 +269,7 @@ cat("Connected valley cells:",
 ```
 
 ``` r
+
 plot(connected, col = c("grey90", "darkgreen"),
      main = "Connected valleys", legend = FALSE)
 plot(st_geometry(streams), add = TRUE, col = "blue", lwd = 1.2)
@@ -271,6 +288,7 @@ areas, steep terrain, railways, or waterbodies. Here we demonstrate by
 removing cells on slopes \> 5% (a stricter threshold).
 
 ``` r
+
 steep_mask <- fl_mask(slope, threshold = 5, operator = ">")
 trimmed <- fl_flood_trim(connected, steep_mask)
 cat("After trimming steep cells:",
@@ -285,6 +303,7 @@ unions multiple binary rasters. This is useful when combining outputs
 from different flood models or data sources.
 
 ``` r
+
 # Example: union the connected valleys with a wider flood-only mask
 flooded_mask <- flood[["flooded"]]
 flooded_mask <- ifel(is.na(flooded_mask), 0L, flooded_mask)
@@ -319,6 +338,7 @@ addresses both:
   wanted.
 
 ``` r
+
 waterbodies <- st_read(
   system.file("testdata/waterbodies.gpkg", package = "flooded"),
   quiet = TRUE
@@ -331,6 +351,7 @@ cat("Types:", paste(names(table(waterbodies$waterbody_type)),
 ```
 
 ``` r
+
 valleys_wb <- fl_valley_confine(
   dem, streams,
   field = "upstream_area_ha",
@@ -350,6 +371,7 @@ cat("Features added:    ", round((n_wb - n_valley) * cell_area / 1e4, 1), "ha\n"
 ```
 
 ``` r
+
 par(mfrow = c(2, 1), mar = c(2, 4, 2, 1))
 plot(valleys, col = c("grey90", "darkgreen"),
      main = "VCA only", legend = FALSE)
@@ -391,6 +413,7 @@ depth by roughly 4x in wet climates (~500 mm MAP). This produces a
 valley that is about half the width of the correct result:
 
 ``` r
+
 valleys_no_precip <- fl_valley_confine(
   dem, streams, field = "upstream_area_ha",
   precip = 1
@@ -422,6 +445,7 @@ documents every tuning parameter with units, defaults, and literature
 sources.
 
 ``` r
+
 scenarios <- fl_scenarios()
 scenarios[, c("scenario_id", "flood_factor", "description")]
 #> # A tibble: 3 × 3
@@ -433,6 +457,7 @@ scenarios[, c("scenario_id", "flood_factor", "description")]
 ```
 
 ``` r
+
 params <- fl_params()
 params[, c("parameter", "unit", "default", "source")]
 #> # A tibble: 6 × 4
@@ -450,6 +475,7 @@ Run all three scenarios on the test data to see how flood factor
 controls the mapped extent:
 
 ``` r
+
 results <- list()
 for (i in seq_len(nrow(scenarios))) {
   s <- scenarios[i, ]
@@ -481,6 +507,7 @@ for (id in names(results)) {
 ```
 
 ``` r
+
 par(mfrow = c(3, 1), mar = c(2, 4, 2, 1))
 titles <- c(
   ff02 = "ff=2: Active channel margin",
@@ -519,6 +546,7 @@ support multi-threading (focal filters, distance calculations, raster
 math). Set threads before running:
 
 ``` r
+
 terra::terraOptions(threads = 12)  # adjust to your machine
 ```
 
@@ -536,6 +564,7 @@ Key tuning parameters from
 [`fl_params()`](https://newgraphenvironment.github.io/flooded/reference/fl_params.md):
 
 ``` r
+
 params <- fl_params()
 knitr::kable(
   params[, c("parameter", "default", "unit", "effect")],
@@ -543,14 +572,14 @@ knitr::kable(
 )
 ```
 
-| Parameter       | Default | Unit          | Effect                                        |
-|:----------------|--------:|:--------------|:----------------------------------------------|
-| flood_factor    |       6 | dimensionless | Higher = deeper flood; more floodplain        |
-| slope_threshold |       9 | percent       | Higher = more valley floor included           |
-| max_width       |    2000 | metres        | Analysis corridor width                       |
-| cost_threshold  |    2500 | dimensionless | Higher = valley extends further up hillslopes |
-| size_threshold  |    5000 | m2            | Minimum valley patch area                     |
-| hole_threshold  |    2500 | m2            | Maximum hole size to fill                     |
+| Parameter | Default | Unit | Effect |
+|:---|---:|:---|:---|
+| flood_factor | 6 | dimensionless | Higher = deeper flood; more floodplain |
+| slope_threshold | 9 | percent | Higher = more valley floor included |
+| max_width | 2000 | metres | Analysis corridor width |
+| cost_threshold | 2500 | dimensionless | Higher = valley extends further up hillslopes |
+| size_threshold | 5000 | m2 | Minimum valley patch area |
+| hole_threshold | 2500 | m2 | Maximum hole size to fill |
 
 Additional arguments to
 [`fl_valley_confine()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_confine.md)
