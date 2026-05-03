@@ -96,6 +96,40 @@ tests/testthat/          — unit tests for each fl_* function</code></pre>
 </div>
 </div>
 <div class="section level1">
+<h1 id="ci-monitoring">CI Monitoring<a class="anchor" aria-label="anchor" href="#ci-monitoring"></a></h1>
+<p>When this repo has GitHub Actions workflows, scan recent runs on session start. Catches failed pkgdown deploys, broken vignette builds, and stale citation regenerations that would otherwise linger until the user manually checks.</p>
+<div class="section level2">
+<h2 id="on-session-start">On Session Start<a class="anchor" aria-label="anchor" href="#on-session-start"></a></h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="ex">gh</span> run list <span class="at">--limit</span> 5 <span class="at">--json</span> status,conclusion,name,createdAt,databaseId <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>  <span class="at">--jq</span> <span class="st">'.[] | select(.conclusion == "failure")'</span></span></code></pre></div>
+<p>If any failures since the last visit, surface to the user before starting other work:</p>
+<blockquote>
+<p>Workflow <code>&lt;name&gt;</code> failed <code>&lt;time&gt;</code> ago (run <code>&lt;id&gt;</code>). Investigate with <code>gh run view &lt;id&gt; --log-failed</code>. Fix or proceed with current task?</p>
+</blockquote>
+<p>User decides; do not auto-fix.</p>
+</div>
+<div class="section level2">
+<h2 id="particular-failures-worth-naming">Particular Failures Worth Naming<a class="anchor" aria-label="anchor" href="#particular-failures-worth-naming"></a></h2>
+<ul><li>
+<strong>pkgdown</strong> — docs site on GitHub Pages broken</li>
+<li>
+<strong>R-CMD-check</strong> — package may not install</li>
+<li>
+<strong>Vignette / build-vignettes</strong> — vignette docs incomplete</li>
+<li>
+<strong>update-citation-cff</strong> — CITATION.cff stale</li>
+</ul></div>
+<div class="section level2">
+<h2 id="why-this-matters">Why This Matters<a class="anchor" aria-label="anchor" href="#why-this-matters"></a></h2>
+<p>Without this scan, post-merge workflow failures linger until someone (often the user) notices a stale docs site or a missing vignette. The session-start sweep catches them on the first re-entry into the repo.</p>
+</div>
+<div class="section level2">
+<h2 id="pairs-with-gh-pr-merge">Pairs with <code>/gh-pr-merge</code>
+<a class="anchor" aria-label="anchor" href="#pairs-with-gh-pr-merge"></a></h2>
+<p>The skill watches workflows triggered by a fresh merge in real time — that’s the targeted catch. This convention is the backstop for failures that landed when no one was watching (merges via web UI, scheduled triggers, manually-triggered workflows).</p>
+</div>
+</div>
+<div class="section level1">
 <h1 id="code-check-conventions">Code Check Conventions<a class="anchor" aria-label="anchor" href="#code-check-conventions"></a></h1>
 <p>Structured checklist for reviewing diffs before commit. Used by <code>/code-check</code>. Add new checks here when a bug class is discovered — they compound over time.</p>
 <div class="section level2">
@@ -161,11 +195,11 @@ tests/testthat/          — unit tests for each fl_* function</code></pre>
 <li><p>Don’t write: <code>- test -s /file || { echo "FATAL: ..." }</code> — the <code>:</code> inside braces makes YAML see a dict.</p></li>
 <li>
 <p>Do write: use <code>- |</code> block scalar with explicit <code>if/then/fi</code>:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="kw">- </span><span class="ch">|</span></span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>  if [ ! -s /file ]; then</span>
-<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>    echo "FATAL: ..." &gt;&amp;2</span>
-<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>    exit 1</span>
-<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>  fi</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="kw">- </span><span class="ch">|</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>  if [ ! -s /file ]; then</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>    echo "FATAL: ..." &gt;&amp;2</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>    exit 1</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>  fi</span></code></pre></div>
 </li>
 <li><p>Validate post-edit: <code>python3 -c "import yaml; runcmd=yaml.safe_load(open('cloud-init.yaml').read().split(chr(10),1)[1])['runcmd']; print([type(x).__name__ for x in runcmd if not isinstance(x,str)] or 'all strings')"</code>. If the output is anything other than <code>all strings</code>, the runcmd will fail.</p></li>
 </ul></div>
@@ -194,9 +228,9 @@ tests/testthat/          — unit tests for each fl_* function</code></pre>
 <ul><li><p>DO injects <code>ssh_key_ids</code> only into <code>/root/.ssh/authorized_keys</code> (cloud-init’s <code>cc_ssh</code> module). Cloud-init <code>users:</code> block with <code>ssh_authorized_keys: []</code> does NOT pick those up.</p></li>
 <li>
 <p>Non-root users that need SSH access must copy from root’s keys in runcmd:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="kw">-</span><span class="at"> mkdir -p /home/&lt;user&gt;/.ssh</span></span>
-<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="kw">-</span><span class="at"> cp /root/.ssh/authorized_keys /home/&lt;user&gt;/.ssh/authorized_keys</span></span>
-<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="kw">-</span><span class="at"> chown -R &lt;user&gt;:&lt;user&gt; /home/&lt;user&gt;/.ssh</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="kw">-</span><span class="at"> mkdir -p /home/&lt;user&gt;/.ssh</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="kw">-</span><span class="at"> cp /root/.ssh/authorized_keys /home/&lt;user&gt;/.ssh/authorized_keys</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="kw">-</span><span class="at"> chown -R &lt;user&gt;:&lt;user&gt; /home/&lt;user&gt;/.ssh</span></span></code></pre></div>
 </li>
 <li><p>Guard with <code>test -s /root/.ssh/authorized_keys</code> to fail loudly if <code>cc_ssh</code> hasn’t run before runcmd (rare race).</p></li>
 </ul></div>
@@ -466,33 +500,33 @@ tests/testthat/          — unit tests for each fl_* function</code></pre>
 <div class="section level3">
 <h3 id="task_planmd">task_plan.md<a class="anchor" aria-label="anchor" href="#task_planmd"></a></h3>
 <p>Phases with checkboxes. This is the core tracking file.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu"># Task Plan</span></span>
-<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a></span>
-<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="fu">## Phase 1: [Name]</span></span>
-<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="ss">- </span><span class="va">[ ]</span> Task description</span>
-<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="ss">- </span><span class="va">[ ]</span> Another task</span>
-<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a></span>
-<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="fu">## Phase 2: [Name]</span></span>
-<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="ss">- </span><span class="va">[ ]</span> Task description</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu"># Task Plan</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="fu">## Phase 1: [Name]</span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="ss">- </span><span class="va">[ ]</span> Task description</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="ss">- </span><span class="va">[ ]</span> Another task</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="fu">## Phase 2: [Name]</span></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="ss">- </span><span class="va">[ ]</span> Task description</span></code></pre></div>
 <p>Mark tasks done as they’re completed: <code>- [x] Task description</code></p>
 </div>
 <div class="section level3">
 <h3 id="findingsmd">findings.md<a class="anchor" aria-label="anchor" href="#findingsmd"></a></h3>
 <p>Append-only research log. Discoveries, technical analysis, things learned.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu"># Findings</span></span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a></span>
-<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="fu">## [Topic]</span></span>
-<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">[</span><span class="ot">What was found, with source/date</span><span class="co">]</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu"># Findings</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="fu">## [Topic]</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">[</span><span class="ot">What was found, with source/date</span><span class="co">]</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="progressmd">progress.md<a class="anchor" aria-label="anchor" href="#progressmd"></a></h3>
 <p>Session entries with commit references.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu"># Progress</span></span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a></span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="fu">## Session YYYY-MM-DD</span></span>
-<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="ss">- </span>Completed: <span class="co">[</span><span class="ot">items</span><span class="co">]</span></span>
-<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="ss">- </span>Commits: <span class="co">[</span><span class="ot">refs</span><span class="co">]</span></span>
-<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="ss">- </span>Next: <span class="co">[</span><span class="ot">items</span><span class="co">]</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu"># Progress</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="fu">## Session YYYY-MM-DD</span></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="ss">- </span>Completed: <span class="co">[</span><span class="ot">items</span><span class="co">]</span></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="ss">- </span>Commits: <span class="co">[</span><span class="ot">refs</span><span class="co">]</span></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="ss">- </span>Next: <span class="co">[</span><span class="ot">items</span><span class="co">]</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -560,7 +594,7 @@ tests/testthat/          — unit tests for each fl_* function</code></pre>
 <li><p>Tests must pass before closing the function’s issue</p></li>
 <li>
 <p>Always grep for errors in the same command as the test run to avoid running twice:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="ex">Rscript</span> <span class="at">-e</span> <span class="st">'devtools::test()'</span> <span class="dv">2</span><span class="op">&gt;&amp;</span><span class="dv">1</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-E</span> <span class="st">"(FAIL|ERROR|PASS)"</span> <span class="kw">|</span> <span class="fu">tail</span> <span class="at">-5</span></span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="ex">Rscript</span> <span class="at">-e</span> <span class="st">'devtools::test()'</span> <span class="dv">2</span><span class="op">&gt;&amp;</span><span class="dv">1</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-E</span> <span class="st">"(FAIL|ERROR|PASS)"</span> <span class="kw">|</span> <span class="fu">tail</span> <span class="at">-5</span></span></code></pre></div>
 <p>For error context: <code>grep -E "(ERROR:|FAIL )" -A 10 | head -25</code></p>
 </li>
 </ul></div>
@@ -598,7 +632,7 @@ tests/testthat/          — unit tests for each fl_* function</code></pre>
 <p>Run <code>lintr::lint_package()</code> before committing R package code. Fix all warnings — every lint should be worth fixing.</p>
 <div class="section level3">
 <h3 id="recommended-lintr-config">Recommended .lintr config<a class="anchor" aria-label="anchor" href="#recommended-lintr-config"></a></h3>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">linters</span><span class="op">:</span> <span class="fu">linters_with_defaults</span><span class="op">(</span></span>
 <span>    <span class="fu">line_length_linter</span><span class="op">(</span><span class="fl">120</span><span class="op">)</span>,</span>
 <span>    <span class="fu">object_name_linter</span><span class="op">(</span>styles <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"snake_case"</span>, <span class="st">"dotted.case"</span><span class="op">)</span><span class="op">)</span>,</span>
@@ -636,18 +670,18 @@ tests/testthat/          — unit tests for each fl_* function</code></pre>
 <div class="section level3">
 <h3 id="branch-protection">Branch protection<a class="anchor" aria-label="anchor" href="#branch-protection"></a></h3>
 <p>Protect main from deletion and force pushes:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="ex">gh</span> api repos/OWNER/REPO/rulesets <span class="at">--method</span> POST <span class="at">--input</span> <span class="at">-</span> <span class="op">&lt;&lt;'EOF'</span></span>
-<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="st">{</span></span>
-<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="st">  "name": "Protect main",</span></span>
-<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="st">  "target": "branch",</span></span>
-<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="st">  "enforcement": "active",</span></span>
-<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a><span class="st">  "bypass_actors": [</span></span>
-<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a><span class="st">    { "actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "always" }</span></span>
-<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a><span class="st">  ],</span></span>
-<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a><span class="st">  "conditions": { "ref_name": { "include": ["refs/heads/main"], "exclude": [] } },</span></span>
-<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a><span class="st">  "rules": [ { "type": "deletion" }, { "type": "non_fast_forward" } ]</span></span>
-<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a><span class="st">}</span></span>
-<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a><span class="op">EOF</span></span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="ex">gh</span> api repos/OWNER/REPO/rulesets <span class="at">--method</span> POST <span class="at">--input</span> <span class="at">-</span> <span class="op">&lt;&lt;'EOF'</span></span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="st">{</span></span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a><span class="st">  "name": "Protect main",</span></span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a><span class="st">  "target": "branch",</span></span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="st">  "enforcement": "active",</span></span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a><span class="st">  "bypass_actors": [</span></span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a><span class="st">    { "actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "always" }</span></span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a><span class="st">  ],</span></span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a><span class="st">  "conditions": { "ref_name": { "include": ["refs/heads/main"], "exclude": [] } },</span></span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a><span class="st">  "rules": [ { "type": "deletion" }, { "type": "non_fast_forward" } ]</span></span>
+<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a><span class="st">}</span></span>
+<span id="cb13-12"><a href="#cb13-12" tabindex="-1"></a><span class="op">EOF</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="scaffold-checklist">Scaffold checklist<a class="anchor" aria-label="anchor" href="#scaffold-checklist"></a></h3>
@@ -732,11 +766,11 @@ tests/testthat/          — unit tests for each fl_* function</code></pre>
 <h2 id="in-reports-bookdown">In Reports (bookdown)<a class="anchor" aria-label="anchor" href="#in-reports-bookdown"></a></h2>
 <div class="section level3">
 <h3 id="bibliography-generation">Bibliography generation<a class="anchor" aria-label="anchor" href="#bibliography-generation"></a></h3>
-<div class="sourceCode" id="cb13"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="co"># index.Rmd — dynamic bib from Zotero via Better BibTeX</span></span>
-<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="fu">bibliography</span><span class="kw">:</span><span class="at"> </span><span class="st">"`r rbbt::bbt_write_bib('references.bib', overwrite = TRUE)`"</span></span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co"># index.Rmd — dynamic bib from Zotero via Better BibTeX</span></span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="fu">bibliography</span><span class="kw">:</span><span class="at"> </span><span class="st">"`r rbbt::bbt_write_bib('references.bib', overwrite = TRUE)`"</span></span></code></pre></div>
 <p><code>rbbt</code> pulls from BBT, which syncs with Zotero. Edit references in Zotero → rebuild report → bibliography updates.</p>
 <p><strong>Library targeting:</strong> rbbt must know which Zotero library to search. This is set globally in <code>~/.Rprofile</code>:</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># default library — NewGraphEnvironment group (libraryID 9, group 4733734)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>rbbt.default.library_id <span class="op">=</span> <span class="fl">9</span><span class="op">)</span></span></code></pre></div>
 <p>Without this option, rbbt searches only the personal library (libraryID 1) and won’t find group library references. The library IDs map to Zotero’s internal numbering — use <code>/zotero-lookup</code> with <code>SELECT DISTINCT libraryID FROM citationkey</code> against the BBT database to discover available libraries.</p>

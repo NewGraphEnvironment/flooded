@@ -58,6 +58,48 @@ Pipeline flow: `fresh` (network data) → `flooded` (delineate) → `drift`
 
 \<!– BEGIN SOUL CONVENTIONS — DO NOT EDIT BELOW THIS LINE –\>
 
+# CI Monitoring
+
+When this repo has GitHub Actions workflows, scan recent runs on session
+start. Catches failed pkgdown deploys, broken vignette builds, and stale
+citation regenerations that would otherwise linger until the user
+manually checks.
+
+## On Session Start
+
+``` bash
+gh run list --limit 5 --json status,conclusion,name,createdAt,databaseId \
+  --jq '.[] | select(.conclusion == "failure")'
+```
+
+If any failures since the last visit, surface to the user before
+starting other work:
+
+> Workflow `<name>` failed `<time>` ago (run `<id>`). Investigate with
+> `gh run view <id> --log-failed`. Fix or proceed with current task?
+
+User decides; do not auto-fix.
+
+## Particular Failures Worth Naming
+
+- **pkgdown** — docs site on GitHub Pages broken
+- **R-CMD-check** — package may not install
+- **Vignette / build-vignettes** — vignette docs incomplete
+- **update-citation-cff** — CITATION.cff stale
+
+## Why This Matters
+
+Without this scan, post-merge workflow failures linger until someone
+(often the user) notices a stale docs site or a missing vignette. The
+session-start sweep catches them on the first re-entry into the repo.
+
+## Pairs with `/gh-pr-merge`
+
+The skill watches workflows triggered by a fresh merge in real time —
+that’s the targeted catch. This convention is the backstop for failures
+that landed when no one was watching (merges via web UI, scheduled
+triggers, manually-triggered workflows).
+
 # Code Check Conventions
 
 Structured checklist for reviewing diffs before commit. Used by
