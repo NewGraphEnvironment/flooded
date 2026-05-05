@@ -1,6 +1,6 @@
 #' @keywords internal
 #' @import terra
-#' @importFrom sf st_crs st_transform st_read
+#' @importFrom sf st_crs st_transform st_read st_buffer
 "_PACKAGE"
 
 ## usethis namespace: start

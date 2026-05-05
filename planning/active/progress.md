@@ -11,4 +11,5 @@
 - Phases approved by user
 - Created branch `34-add-dem-source-helpers-file-stac-for-aoi` off main
 - Scaffolded PWF baseline (`task_plan.md`, `findings.md`, `progress.md`) with approved phases
-- Next: start Phase 1 — implement `fl_dem_aoi()` and tests
+- Phase 1 complete: `fl_dem_aoi()` implemented with MRDEM-30 default, file/`/vsicurl/`/`/vsis3/` source dispatch, CRS-safe crop-before-reproject. 8 tests pass including live MRDEM range read; lintr clean; full suite 172 PASS.
+- Next: Phase 2 — `data-raw/pars_vignette_data.R` and `vignettes/pars-floodplain.Rmd`

@@ -19,17 +19,17 @@ report appendix.
 
 ## Phase 1 — Implement `fl_dem_aoi()`
 
-- [ ] Create `R/fl_dem_aoi.R` with function body lifting `rtj/docs/dem-sources.md:50-65`
-- [ ] Roxygen with two examples: default MRDEM-30 fetch, and `\dontrun{}` LidarBC-via-STAC override
-- [ ] Update `R/flooded-package.R` if any new `@importFrom` needed
-- [ ] Create `tests/testthat/test-fl_dem_aoi.R`:
-  - [ ] File mode happy path with bundled `dem.tif`
-  - [ ] CRS mismatch (AOI in 4326, raster in 3005) — function transforms correctly
-  - [ ] Missing-file path errors cleanly
-  - [ ] MRDEM `/vsicurl/` mode gated by `skip_on_cran()` + `skip_if_offline()`
-  - [ ] Buffer semantics — streams-as-aoi vs polygon-as-aoi produce different extents
-- [ ] `lintr::lint_package()` clean
-- [ ] `devtools::document()` regenerates NAMESPACE / man cleanly
+- [x] Create `R/fl_dem_aoi.R` with function body lifting `rtj/docs/dem-sources.md:50-65`
+- [x] Roxygen with two examples: default MRDEM-30 fetch, and `\dontrun{}` LidarBC-via-STAC override
+- [x] Update `R/flooded-package.R` if any new `@importFrom` needed
+- [x] Create `tests/testthat/test-fl_dem_aoi.R`:
+  - [x] File mode happy path with bundled `dem.tif`
+  - [x] CRS mismatch (AOI in 4326, raster in 3005) — function transforms correctly
+  - [x] `target_crs` override reprojects after crop
+  - [x] MRDEM `/vsicurl/` mode gated by `skip_on_cran()` + `skip_if_offline()`
+  - [x] Buffer semantics — larger buffer yields larger extent
+- [x] `lintr::lint_package()` clean
+- [x] `devtools::document()` regenerates NAMESPACE / man cleanly
 
 ## Phase 2 — PARS floodplain showcase vignette + data-raw cache
 
