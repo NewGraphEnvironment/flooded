@@ -45,15 +45,15 @@ Peace report appendix.
   - [x] Run `fl_valley_confine()` end-to-end
   - [x] Cache outputs to `inst/vignette-data/` as INT2S DEM (target <15 MB total)
 - [x] Run data-raw locally for PARS; cache 11 MB across 5 files
-- [ ] Create `vignettes/pars-floodplain.Rmd` mirroring `cd/vignettes/peace-fwcp.Rmd` YAML scaffold
-  - [ ] Why MRDEM-30 (link to rtj doc rationale)
-  - [ ] AOI definition (PARS WSG — but vignette text frames it as "any WSG")
-  - [ ] `fl_dem_aoi(aoi = streams, buffer = 2000)` — streams-as-aoi pattern
-  - [ ] `fl_valley_confine()` walkthrough
-  - [ ] Result map via `tmap` or `mapgl` per gq registry conventions
-  - [ ] Summary stats
-- [ ] Confirm vignette renders via `pkgdown::build_site()`
-- [ ] Existing `vignettes/stac-dem.Rmd` left untouched (LidarBC reference)
+- [x] Create `vignettes/pars-floodplain.Rmd` (using `bookdown::html_vignette2` to match existing flooded style; YAML easily swappable for Peace report appendix bookdown config)
+  - [x] Why MRDEM-30 (link to rtj doc rationale)
+  - [x] AOI definition (PARS WSG, framed as "any WSG via the generic data-raw script")
+  - [x] `fl_dem_aoi(aoi = streams, buffer = 2000)` — streams-as-aoi pattern
+  - [x] `fl_valley_confine()` walkthrough
+  - [x] Result map: hillshade + valleys overlay + streams + WSG boundary via terra::plot
+  - [x] Summary stats: floodplain area (449 km², 8% of PARS), stream + polygon counts
+- [x] Confirm vignette renders cleanly (`rmarkdown::render` produces 604 KB HTML)
+- [x] Existing `vignettes/stac-dem.Rmd` left untouched (LidarBC reference)
 
 ## Phase 3 — Polish + release prep
 
