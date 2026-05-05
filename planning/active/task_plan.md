@@ -31,19 +31,25 @@ report appendix.
 - [x] `lintr::lint_package()` clean
 - [x] `devtools::document()` regenerates NAMESPACE / man cleanly
 
-## Phase 2 — PARS floodplain showcase vignette + data-raw cache
+## Phase 2 — Floodplain showcase vignette + data-raw cache
 
-- [ ] Create `data-raw/pars_vignette_data.R`:
-  - [ ] Fetch PARS WSG boundary + streams from fwapg
-  - [ ] Run `fl_dem_aoi()` against MRDEM-30 to get the PARS DEM clip
-  - [ ] Run `fl_valley_confine()` end-to-end
-  - [ ] Cache outputs to `inst/vignette-data/` (target <15 MB total)
-- [ ] Run data-raw locally; verify cache size budget
+Generic data-raw script that runs for any WSG by changing one variable
+(`wsg <- "PARS"`); PARS is the worked example for the vignette and the
+Peace report appendix.
+
+- [x] Create `data-raw/wsg_vignette_data.R` (generic — `wsg` parameter at top, output filenames namespaced):
+  - [x] Fetch WSG boundary + streams from fwapg via `fresh::frs_*`
+  - [x] Run `fl_dem_aoi()` against MRDEM-30 (streams-as-aoi pattern for tight crop)
+  - [x] Drop XYZM in `fl_dem_aoi()` so fwapg streams flow through GEOS — bug fix
+  - [x] Drop XYZM on streams in script before `fl_valley_confine()` (workaround pending follow-up issue)
+  - [x] Run `fl_valley_confine()` end-to-end
+  - [x] Cache outputs to `inst/vignette-data/` as INT2S DEM (target <15 MB total)
+- [x] Run data-raw locally for PARS; cache 11 MB across 5 files
 - [ ] Create `vignettes/pars-floodplain.Rmd` mirroring `cd/vignettes/peace-fwcp.Rmd` YAML scaffold
   - [ ] Why MRDEM-30 (link to rtj doc rationale)
-  - [ ] AOI definition (PARS WSG)
+  - [ ] AOI definition (PARS WSG — but vignette text frames it as "any WSG")
   - [ ] `fl_dem_aoi(aoi = streams, buffer = 2000)` — streams-as-aoi pattern
-  - [ ] `fl_valley_confine()` walkthrough with PARS-tuned parameters
+  - [ ] `fl_valley_confine()` walkthrough
   - [ ] Result map via `tmap` or `mapgl` per gq registry conventions
   - [ ] Summary stats
 - [ ] Confirm vignette renders via `pkgdown::build_site()`

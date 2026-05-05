@@ -89,7 +89,8 @@ fl_dem_aoi <- function(aoi, source = NULL, buffer = 2000, target_crs = NULL) {
   aoi_crs <- sf::st_crs(aoi)
   target_crs <- if (is.null(target_crs)) aoi_crs else sf::st_crs(target_crs)
 
-  aoi_buf <- sf::st_buffer(aoi, dist = buffer)
+  # GEOS can't buffer XYZM/XYZ — fwapg streams carry route-measure M values
+  aoi_buf <- sf::st_buffer(sf::st_zm(aoi), dist = buffer)
 
   r <- terra::rast(source)
   r_crs <- sf::st_crs(terra::crs(r))

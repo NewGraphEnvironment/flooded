@@ -79,6 +79,12 @@ For flooded's PARS vignette, the cached outputs are mostly sf objects (highly co
 - `Projects/repo/restoration_wedzin_kwa_2024/scripts/floodplain_lcc/02_floodplain_model.R:43, 87-107` — wedzin's manual pattern this replaces
 - `Projects/repo/flooded/vignettes/stac-dem.Rmd:95-184` — existing LidarBC STAC pattern (left untouched, referenced in roxygen example)
 
-## Bug to file separately
+## Bugs to file separately
+
+### Planning-init slug regex (soul)
 
 Planning-init skill's slug regex uses GNU `sed`-only `\+` syntax — fails silently on macOS BSD sed. Produced `34-add dem source helpers (file, stac) for` with literal spaces and parens until I switched to `sed -E`. Out of scope for #34; will file against soul.
+
+### `fl_valley_confine()` XYZM robustness (flooded follow-up)
+
+Streams fetched from fwapg (e.g., via `fresh::frs_stream_fetch()`) carry XYZM geometries — route measures live in M. `fl_valley_confine()` calls `sf::st_buffer()` internally (channel_buffer feature, R/fl_valley_confine.R:202) which fails on XYZM with `GEOS does not support XYM or XYZM geometries`. Every caller pulling from fwapg has to remember to `sf::st_zm()` first. One-line fix: drop Z/M at the top of `fl_valley_confine()` once streams type is sf. Worth filing as its own issue; out of scope for #34, fixed by `st_zm()` call in the data-raw script for now. (`fl_dem_aoi()` was already hardened during this work.)
