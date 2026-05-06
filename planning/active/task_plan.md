@@ -57,18 +57,24 @@ Peace report appendix.
 
 ## Phase 3 — Polish + release prep
 
-- [ ] `devtools::document()` — clean
-- [ ] `lintr::lint_package()` — no new lints
-- [ ] `devtools::test()` — full pass
-- [ ] `devtools::check()` — no new errors/warnings/notes
-- [ ] `du -sh inst/vignette-data/` under budget
-- [ ] `NEWS.md` entry: new `fl_dem_aoi()`, new PARS vignette
-- [ ] `DESCRIPTION` version bump `0.2.0` → `0.3.0`
+- [x] `devtools::document()` — clean
+- [x] `lintr::lint_package()` — 0 lints in new files (3 pre-existing in fl_flood_surface, fl_valley_poly, zzz; not touching adjacent code)
+- [x] `devtools::test()` — 172/172 PASS including live MRDEM `/vsicurl/` fetch
+- [x] `devtools::check()` — Status: OK (0 errors, 0 warnings, 0 notes) after `.Rbuildignore` updates and `vignettes/figure/` cleanup
+- [x] `du -sh inst/vignette-data/` — 11 MB, under 15 MB budget
+- [x] `NEWS.md` entry: `fl_dem_aoi()`, PARS vignette, generic data-raw script — all linked to #34
+- [x] `DESCRIPTION` version bump `0.2.1` → `0.3.0`
+- [x] `.Rbuildignore` — added `^planning$` and `^\.claude$`
 
 ## Validation
 
-- [ ] All tests pass
-- [ ] `/code-check` clean on each commit
-- [ ] PWF checkboxes match landed work
+- [x] All tests pass — 172/172 PASS
+- [x] `/code-check` clean on each commit (c84f301, 1304fd4, 0b62424, fd8bc98)
+- [x] PWF checkboxes match landed work
 - [ ] `/planning-archive` on completion
 - [ ] `/gh-pr-push` opens PR with `Fixes #34`
+
+## Follow-ups filed
+
+- flooded#36 — Harden `fl_valley_confine()` against XYZM streams from fwapg (worked around for #34 via `sf::st_zm()` in data-raw script)
+- soul (TBD) — `/planning-init` slug regex uses GNU `sed`-only `\+`; fix to `sed -E` for macOS BSD compatibility

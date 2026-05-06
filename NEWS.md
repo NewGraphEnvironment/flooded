@@ -1,3 +1,9 @@
+# flooded 0.3.0
+
+- New `fl_dem_aoi()` — AOI-driven DEM fetch helper. Defaults to MRDEM-30 via `/vsicurl/` (the rtj-doc-settled choice for watershed-scale BC work) but accepts any local path, `/vsicurl/` URL, or `/vsis3/` S3 URL via `source =`. Buffered crop happens in the source raster's CRS, reprojection after crop. Replaces hand-rolled per-project DEM plumbing (#34).
+- New `vignettes/pars-floodplain.Rmd` — watershed-scale showcase running `fl_dem_aoi()` + `fl_valley_confine()` end-to-end on the Parsnip River WSG (5,597 km²). Designed to port to a bookdown report appendix (#34).
+- New `data-raw/wsg_vignette_data.R` — generic, parameterised by `wsg <- "PARS"`. Re-runs the full pipeline for any 4-letter BC watershed group, namespaces outputs by WSG code (#34).
+
 # flooded 0.2.1
 
 - Startup quote ritual: `library(flooded)` prints a random fact-checked quote on attach. Italic quote, grey attribution, clickable blue `source` hyperlink (OSC 8). Suppress via `options(flooded.quote_show_source = FALSE)`.
