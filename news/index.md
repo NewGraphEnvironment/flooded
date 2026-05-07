@@ -20,6 +20,10 @@
   `wsg <- "PARS"`. Re-runs the full pipeline for any 4-letter BC
   watershed group, namespaces outputs by WSG code
   ([\#34](https://github.com/NewGraphEnvironment/flooded/issues/34)).
+- bcfishpass model version + date are cached at data-raw time as
+  `inst/vignette-data/<wsg>_meta.rds` so the vignette renders without a
+  database connection
+  ([\#34](https://github.com/NewGraphEnvironment/flooded/issues/34)).
 
 ## flooded 0.2.1
 
