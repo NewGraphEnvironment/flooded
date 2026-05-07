@@ -67,7 +67,7 @@ in `flooded::fl_params()`.
 
 This run uses the **`ff04`** scenario from `flooded::fl_scenarios()` —
 *functional floodplain*, the recurrent-inundation footprint. The active
-parameter values are shown in Table \@ref(tab:params-stamp).
+parameter values are shown in the table below.
 
 ```{r citation-helper, include = FALSE}
 # Convert "key1;key2" bare-key strings (the format used in
@@ -105,10 +105,9 @@ knitr::kable(
 )
 ```
 
-The package ships three pre-baked scenarios (Table
-\@ref(tab:scenarios-stamp)). They differ only in `flood_factor`; all
-other parameters are held constant so output differences isolate the
-ecological signal.
+The package ships three pre-baked scenarios (table below). They differ
+only in `flood_factor`; all other parameters are held constant so
+output differences isolate the ecological signal.
 
 ```{r scenarios-stamp, echo = FALSE}
 s_tab <- flooded::fl_scenarios()[, c("scenario_id", "flood_factor",
