@@ -2,9 +2,10 @@ pandoc: 3.8.3
 pkgdown: 2.2.0
 pkgdown_sha: ~
 articles:
+  pars-floodplain: pars-floodplain.html
   stac-dem: stac-dem.html
   valley-confinement: valley-confinement.html
-last_built: 2026-05-03T05:10Z
+last_built: 2026-05-07T21:51Z
 urls:
   reference: https://newgraphenvironment.github.io/flooded/reference
   article: https://newgraphenvironment.github.io/flooded/articles

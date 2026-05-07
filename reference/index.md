@@ -4,6 +4,8 @@
 
 - [`fl_cost_distance()`](https://newgraphenvironment.github.io/flooded/reference/fl_cost_distance.md)
   : Accumulated cost distance from stream cells
+- [`fl_dem_aoi()`](https://newgraphenvironment.github.io/flooded/reference/fl_dem_aoi.md)
+  : Fetch a DEM cropped to an AOI
 - [`fl_flood_assemble()`](https://newgraphenvironment.github.io/flooded/reference/fl_flood_assemble.md)
   : Union multiple binary rasters
 - [`fl_flood_depth()`](https://newgraphenvironment.github.io/flooded/reference/fl_flood_depth.md)

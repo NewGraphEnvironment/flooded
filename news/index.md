@@ -1,5 +1,26 @@
 # Changelog
 
+## flooded 0.3.0
+
+- New
+  [`fl_dem_aoi()`](https://newgraphenvironment.github.io/flooded/reference/fl_dem_aoi.md)
+  — AOI-driven DEM fetch helper. Defaults to MRDEM-30 via `/vsicurl/`
+  (the rtj-doc-settled choice for watershed-scale BC work) but accepts
+  any local path, `/vsicurl/` URL, or `/vsis3/` S3 URL via `source =`.
+  Buffered crop happens in the source raster’s CRS, reprojection after
+  crop. Replaces hand-rolled per-project DEM plumbing
+  ([\#34](https://github.com/NewGraphEnvironment/flooded/issues/34)).
+- New `vignettes/pars-floodplain.Rmd` — watershed-scale showcase running
+  [`fl_dem_aoi()`](https://newgraphenvironment.github.io/flooded/reference/fl_dem_aoi.md) +
+  [`fl_valley_confine()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_confine.md)
+  end-to-end on the Parsnip River WSG (5,597 km²). Designed to port to a
+  bookdown report appendix
+  ([\#34](https://github.com/NewGraphEnvironment/flooded/issues/34)).
+- New `data-raw/wsg_vignette_data.R` — generic, parameterised by
+  `wsg <- "PARS"`. Re-runs the full pipeline for any 4-letter BC
+  watershed group, namespaces outputs by WSG code
+  ([\#34](https://github.com/NewGraphEnvironment/flooded/issues/34)).
+
 ## flooded 0.2.1
 
 - Startup quote ritual:
@@ -31,7 +52,9 @@
   streams).
 - Update vignette with waterbody/channel buffer comparison, order 4+
   filter rationale, and channel width model documentation.
-- Regenerate test data via `fresh::frs_network()` with `frs_clip()`.
+- Regenerate test data via
+  [`fresh::frs_network()`](https://newgraphenvironment.github.io/fresh/reference/frs_network.html)
+  with `frs_clip()`.
 - Add VCA parameter legend CSV (`inst/extdata/flood_params.csv`) with
   units, defaults, and literature sources for all tuning parameters.
 - Add
@@ -51,8 +74,8 @@
 ## flooded 0.1.1
 
 - Replace raw SQL in `data-raw/network_extract.R` with
-  `fresh::frs_network()` for stream network extraction via network
-  subtraction.
+  [`fresh::frs_network()`](https://newgraphenvironment.github.io/fresh/reference/frs_network.html)
+  for stream network extraction via network subtraction.
 - Add STAC DEM vignette comparing 25 m TRIM (resampled to 10 m) with
   native 1 m lidar — includes site-level zoom and pop-up analysis
   quantifying anthropogenic barriers to floodplain connectivity.

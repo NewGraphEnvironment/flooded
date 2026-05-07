@@ -26,7 +26,7 @@ library(flooded)
 #>  'Whatever you think is a permanent, lasting, eternal feature of human life — all of it will be affected by climate change.' - David Wallace-Wells
 #>   source
 library(terra)
-#> terra 1.9.11
+#> terra 1.9.25
 library(sf)
 #> Linking to GEOS 3.12.1, GDAL 3.8.4, PROJ 9.4.0; sf_use_s2() is TRUE
 
