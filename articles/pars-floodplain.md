@@ -44,7 +44,7 @@ the regional regression of Hall et al. (2007). The parameter legend
 This run uses the **`ff04`** scenario from
 [`flooded::fl_scenarios()`](https://newgraphenvironment.github.io/flooded/reference/fl_scenarios.md)
 — *functional floodplain*, the recurrent-inundation footprint. The
-active parameter values are shown in Table @ref(tab:params-stamp).
+active parameter values are shown in the table below.
 
 | parameter | value | unit | effect | source |
 |:---|---:|:---|:---|:---|
@@ -58,10 +58,9 @@ other values are package defaults from
 [`flooded::fl_params()`](https://newgraphenvironment.github.io/flooded/reference/fl_params.md).
 {.table}
 
-The package ships three pre-baked scenarios (Table
-@ref(tab:scenarios-stamp)). They differ only in `flood_factor`; all
-other parameters are held constant so output differences isolate the
-ecological signal.
+The package ships three pre-baked scenarios (table below). They differ
+only in `flood_factor`; all other parameters are held constant so output
+differences isolate the ecological signal.
 
 | scenario_id | flood_factor | description | ecological_process | source |
 |:---|---:|:---|:---|:---|
