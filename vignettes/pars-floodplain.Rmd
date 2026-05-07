@@ -84,7 +84,7 @@ keys_to_pandoc <- function(s) {
 }
 ```
 
-```{r params-stamp}
+```{r params-stamp, echo = FALSE}
 ff_used <- 4
 pars_used <- c("flood_factor", "slope_threshold", "max_width", "cost_threshold")
 p_tab <- flooded::fl_params()[match(pars_used, flooded::fl_params()$parameter),
@@ -110,7 +110,7 @@ The package ships three pre-baked scenarios (Table
 other parameters are held constant so output differences isolate the
 ecological signal.
 
-```{r scenarios-stamp}
+```{r scenarios-stamp, echo = FALSE}
 s_tab <- flooded::fl_scenarios()[, c("scenario_id", "flood_factor",
                                      "description", "ecological_process",
                                      "citation_keys")]
@@ -281,7 +281,7 @@ floodplain <- flooded::fl_valley_poly(valleys)
 
 ## Floodplain map — full WSG
 
-```{r map-floodplain, fig.cap = "PARS unconfined valleys (green) over MRDEM-30 hillshade. Parks (light green polygon), First Nations reserves (light grey polygon, black diamond marker at centroid + label), accessible order 3+ streams in blue, lakes and wetlands in light blue, forest service / resource roads grey, railways black-dashed, watershed boundary heavy black."}
+```{r map-floodplain, echo = FALSE, fig.cap = "PARS unconfined valleys (green) over MRDEM-30 hillshade. Parks (light green polygon), First Nations reserves (light grey polygon, black diamond marker at centroid + label), accessible order 3+ streams in blue, lakes and wetlands in light blue, forest service / resource roads grey, railways black-dashed, watershed boundary heavy black."}
 hill <- terra::shade(
   terra::terrain(dem, "slope", unit = "radians"),
   terra::terrain(dem, "aspect", unit = "radians")
@@ -361,7 +361,7 @@ quadrant — the lower confluences where the trunk approaches Williston —
 shows the per-reach floodplain pattern, individual channels, lakes /
 wetlands, and the named First Nations reserves at full resolution.
 
-```{r map-detail, fig.cap = "South-east corner of PARS at full resolution. Parks (light green), First Nations reserves (light grey polygon with black diamond marker + formal english_name label at centroid), waterbodies, valleys, named streams (italic blue labels), roads (grey), railways (black dashed)."}
+```{r map-detail, echo = FALSE, fig.cap = "South-east corner of PARS at full resolution. Parks (light green), First Nations reserves (light grey polygon with black diamond marker + formal english_name label at centroid), waterbodies, valleys, named streams (italic blue labels), roads (grey), railways (black dashed)."}
 e <- sf::st_bbox(aoi)
 inset_bbox <- sf::st_bbox(c(
   xmin = unname(e["xmin"] + (e["xmax"] - e["xmin"]) * 0.55),
