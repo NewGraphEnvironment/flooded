@@ -36,11 +36,17 @@ Imports:
     tibble
 Suggests:
     bookdown,
-    whitebox,
-    testthat (>= 3.0.0),
+    DBI,
+    fresh,
+    gdalcubes,
     knitr,
     rmarkdown,
     rstac,
-    gdalcubes
+    testthat (>= 3.0.0),
+    whitebox,
+    xciter
+Remotes:
+    NewGraphEnvironment/fresh,
+    NewGraphEnvironment/xciter
 Config/testthat/edition: 3
 VignetteBuilder: knitr
