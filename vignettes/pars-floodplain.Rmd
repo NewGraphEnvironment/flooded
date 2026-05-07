@@ -224,17 +224,14 @@ runs weekly on a hosted virtual machine and republishes the
 upstream FWA, observation, or barrier change.
 
 ```{r bcfishpass-version, echo = FALSE}
-conn <- fresh::frs_db_conn()
-ver <- fresh::frs_db_query(conn,
-  "SELECT model_version, date_completed
-   FROM bcfishpass.log
-   WHERE model_type = 'LINEAR'
-   ORDER BY date_completed DESC LIMIT 1")
-DBI::dbDisconnect(conn)
+ver <- readRDS(system.file("vignette-data/pars_meta.rds",
+                           package = "flooded", mustWork = TRUE))
 ```
 
-This run is built against bcfishpass `r ver$model_version` (LINEAR model,
-completed `r format(ver$date_completed, "%Y-%m-%d")`).
+This run is built against bcfishpass `r ver$bcfishpass_version` (LINEAR
+model, completed `r ver$bcfishpass_date`). The version stamp is cached
+at data-raw time (see `data-raw/wsg_vignette_data.R`) so the vignette
+renders without touching the database.
 
 The streams query is a single
 [`fresh::frs_db_query()`](https://newgraphenvironment.github.io/fresh/reference/frs_db_query.html)

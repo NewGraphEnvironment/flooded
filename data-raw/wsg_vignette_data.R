@@ -217,6 +217,20 @@ fetch_layer(
            WHERE watershed_group_code = '%s'", wsg),
   "named_streams", "named streams")
 
+# Cache the bcfishpass model version + date so the vignette can stamp
+# data provenance without needing a DB connection at render time.
+message("Caching bcfishpass version stamp ...")
+bp_log <- DBI::dbGetQuery(conn, "
+  SELECT model_version, date_completed
+  FROM bcfishpass.log
+  WHERE model_type = 'LINEAR'
+  ORDER BY date_completed DESC LIMIT 1")
+saveRDS(
+  list(bcfishpass_version = bp_log$model_version,
+       bcfishpass_date    = format(bp_log$date_completed, "%Y-%m-%d")),
+  file.path(out_dir, paste0(stub, "_meta.rds"))
+)
+
 DBI::dbDisconnect(conn)
 
 # ---- 5. MRDEM-30 clip via fl_dem_aoi() ----------------------------------
