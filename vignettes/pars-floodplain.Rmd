@@ -284,8 +284,8 @@ hill <- terra::shade(
 )
 
 terra::plot(hill, col = grey(0:100 / 100), legend = FALSE, axes = FALSE,
-            mar = c(2, 2, 2, 2),
-            main = "Parsnip River Watershed Group — functional floodplain (ff04), accessible order 3+")
+            mar = c(2, 2, 4, 2),
+            main = "Parsnip River Watershed Group\nfunctional floodplain (ff04), accessible order 3+")
 
 # Hydro / floodplain
 terra::plot(valleys, col = c(NA, "#2c7a2c"), alpha = 0.55,
@@ -395,8 +395,8 @@ hill_inset <- terra::shade(
 )
 
 terra::plot(hill_inset, col = grey(0:100 / 100), legend = FALSE, axes = FALSE,
-            mar = c(2, 2, 2, 2),
-            main = "Parsnip River Watershed Group — south-east detail (continental divide)")
+            mar = c(2, 2, 4, 2),
+            main = "Parsnip River Watershed Group\nsouth-east detail")
 
 # Hydro / floodplain
 terra::plot(valleys_inset, col = c(NA, "#2c7a2c"), alpha = 0.55,
