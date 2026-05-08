@@ -1,5 +1,12 @@
 # Changelog
 
+## flooded 0.3.1
+
+- Fix Parsnip River Watershed Group vignette: corrected geography (the
+  south-east inset is the headwaters around Arctic Lake on the
+  continental divide, not the Williston-bound confluences) and switched
+  all prose mentions from `PARS` to “Parsnip River Watershed Group”.
+
 ## flooded 0.3.0
 
 - New

@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">flooded</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -74,11 +74,11 @@
 <p>This vignette runs the <code>flooded</code> pipeline on the Parsnip
 River Watershed Group (<code>PARS</code>, 5,597 km², north-eastern BC)
 and demonstrates the AOI-driven helper <a href="../reference/fl_dem_aoi.html"><code>flooded::fl_dem_aoi()</code></a>.</p>
-<p>PARS sits between Prince George and Mackenzie, BC. The Parsnip River
-flows north and enters the southern arm of Williston Reservoir at
-Mackenzie, joining the Peace River system. From there the drainage runs
-Peace → Slave → Mackenzie River, ultimately discharging to the Arctic
-Ocean via the Mackenzie Delta.</p>
+<p>The Parsnip River Watershed Group sits between Prince George and
+Mackenzie, BC. The Parsnip River flows north and enters the southern arm
+of Williston Reservoir at Mackenzie, joining the Peace River system.
+From there the drainage runs Peace → Slave → Mackenzie River, ultimately
+discharging to the Arctic Ocean via the Mackenzie Delta.</p>
 <div class="section level2">
 <h2 id="why-floodplains">Why floodplains<a class="anchor" aria-label="anchor" href="#why-floodplains"></a>
 </h2>
@@ -114,8 +114,8 @@ ecological effect) lives in <code><a href="../reference/fl_params.html">flooded:
 the recurrent-inundation footprint. The active parameter values are
 shown in the table below.</p>
 <table class="table">
-<caption>Active parameter values for the PARS run.
-<code>flood_factor = 4</code> (<code>ff04</code>); other values are
+<caption>Active parameter values for the Parsnip River Watershed Group
+run. <code>flood_factor = 4</code> (<code>ff04</code>); other values are
 package defaults from <code><a href="../reference/fl_params.html">flooded::fl_params()</a></code>.</caption>
 <colgroup>
 <col width="13%">
@@ -226,8 +226,8 @@ touch the network or database. The hydro / context layers ship as a
 single multi-layer GeoPackage and the rasters as separate GeoTIFFs
 (raster tiles in GPKG would lose the continuous DTM precision and the
 binary valleys semantics — wrong format for analytical layers).</p>
-<p>Direct downloads of the cached PARS bundle from the repo (open in
-QGIS or any GDAL-aware tool):</p>
+<p>Direct downloads of the cached Parsnip River Watershed Group bundle
+from the repo (open in QGIS or any GDAL-aware tool):</p>
 <ul>
 <li>
 <a href="https://github.com/NewGraphEnvironment/flooded/raw/main/inst/vignette-data/pars.gpkg" class="external-link"><code>pars.gpkg</code></a>
@@ -308,10 +308,10 @@ masks would otherwise carve donut holes around.</p>
 <h2 id="valley-confinement">Valley confinement<a class="anchor" aria-label="anchor" href="#valley-confinement"></a>
 </h2>
 <p><code><a href="../reference/fl_valley_confine.html">flooded::fl_valley_confine()</a></code> runs the full VCA pipeline
-on the cached DEM, streams, and waterbodies. On PARS at 30 m (~20
-Mcells) it takes a couple of minutes single-threaded;
-<code>terra::terraOptions(threads = N)</code> parallelises the heavy
-raster ops.</p>
+on the cached DEM, streams, and waterbodies. On the Parsnip River
+Watershed Group at 30 m (~20 Mcells) it takes a couple of minutes
+single-threaded; <code>terra::terraOptions(threads = N)</code>
+parallelises the heavy raster ops.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">valleys</span> <span class="op">&lt;-</span> <span class="fu">flooded</span><span class="fu">::</span><span class="fu"><a href="../reference/fl_valley_confine.html">fl_valley_confine</a></span><span class="op">(</span></span>
 <span>  dem <span class="op">=</span> <span class="va">dem</span>,</span>
@@ -327,12 +327,13 @@ raster ops.</p>
 <h2 id="floodplain-map-full-wsg">Floodplain map — full WSG<a class="anchor" aria-label="anchor" href="#floodplain-map-full-wsg"></a>
 </h2>
 <div class="figure">
-<img src="pars-floodplain_files/figure-html/map-floodplain-1.png" class="r-plt" alt="PARS unconfined valleys (green) over MRDEM-30 hillshade. Parks (light green polygon), First Nations reserves (light grey polygon, black diamond marker at centroid + label), accessible order 3+ streams in blue, lakes and wetlands in light blue, forest service / resource roads grey, railways black-dashed, watershed boundary heavy black." width="1050"><p class="caption">
-PARS unconfined valleys (green) over MRDEM-30 hillshade. Parks (light
-green polygon), First Nations reserves (light grey polygon, black
-diamond marker at centroid + label), accessible order 3+ streams in
-blue, lakes and wetlands in light blue, forest service / resource roads
-grey, railways black-dashed, watershed boundary heavy black.
+<img src="pars-floodplain_files/figure-html/map-floodplain-1.png" class="r-plt" alt="Parsnip River Watershed Group unconfined valleys (green) over MRDEM-30 hillshade. Parks (light green polygon), First Nations reserves (light grey polygon, black diamond marker at centroid + label), accessible order 3+ streams in blue, lakes and wetlands in light blue, forest service / resource roads grey, railways black-dashed, watershed boundary heavy black." width="1050"><p class="caption">
+Parsnip River Watershed Group unconfined valleys (green) over MRDEM-30
+hillshade. Parks (light green polygon), First Nations reserves (light
+grey polygon, black diamond marker at centroid + label), accessible
+order 3+ streams in blue, lakes and wetlands in light blue, forest
+service / resource roads grey, railways black-dashed, watershed boundary
+heavy black.
 </p>
 </div>
 </div>
@@ -340,16 +341,22 @@ grey, railways black-dashed, watershed boundary heavy black.
 <h2 id="detail-map-south-east-corner">Detail map — south-east corner<a class="anchor" aria-label="anchor" href="#detail-map-south-east-corner"></a>
 </h2>
 <p>The full-WSG view compresses a lot of detail. Cropping to the
-bottom-right quadrant — the lower confluences where the trunk approaches
-Williston — shows the per-reach floodplain pattern, individual channels,
-lakes / wetlands, and the named First Nations reserves at full
-resolution.</p>
+south-eastern corner — the headwaters of the Parsnip River, where Arctic
+Lake Provincial Park sits on the continental divide between Arctic Ocean
+and Pacific Ocean drainages — shows the per-reach floodplain pattern,
+individual channels, lakes / wetlands, and the named First Nations
+reserves at full resolution. Streams just inside the Parsnip River
+Watershed Group here drain north via Williston Reservoir → Peace → Slave
+→ Mackenzie to the Arctic; a short distance south of the divide, streams
+drain into the Fraser and out to the Pacific.</p>
 <div class="figure">
-<img src="pars-floodplain_files/figure-html/map-detail-1.png" class="r-plt" alt="South-east corner of PARS at full resolution. Parks (light green), First Nations reserves (light grey polygon with black diamond marker + formal english_name label at centroid), waterbodies, valleys, named streams (italic blue labels), roads (grey), railways (black dashed)." width="1050"><p class="caption">
-South-east corner of PARS at full resolution. Parks (light green), First
-Nations reserves (light grey polygon with black diamond marker + formal
-english_name label at centroid), waterbodies, valleys, named streams
-(italic blue labels), roads (grey), railways (black dashed).
+<img src="pars-floodplain_files/figure-html/map-detail-1.png" class="r-plt" alt="South-east corner of the Parsnip River Watershed Group at full resolution — the headwaters around Arctic Lake on the continental divide. Parks (light green), First Nations reserves (light grey polygon with black diamond marker + formal english_name label at centroid), waterbodies, valleys, named streams (italic blue labels), roads (grey), railways (black dashed)." width="1050"><p class="caption">
+South-east corner of the Parsnip River Watershed Group at full
+resolution — the headwaters around Arctic Lake on the continental
+divide. Parks (light green), First Nations reserves (light grey polygon
+with black diamond marker + formal english_name label at centroid),
+waterbodies, valleys, named streams (italic blue labels), roads (grey),
+railways (black dashed).
 </p>
 </div>
 </div>
