@@ -27,11 +27,11 @@ This vignette runs the `flooded` pipeline on the Parsnip River Watershed
 Group (`PARS`, 5,597 km², north-eastern BC) and demonstrates the
 AOI-driven helper [`flooded::fl_dem_aoi()`][fl_dem_aoi].
 
-PARS sits between Prince George and Mackenzie, BC. The Parsnip River
-flows north and enters the southern arm of Williston Reservoir at
-Mackenzie, joining the Peace River system. From there the drainage runs
-Peace → Slave → Mackenzie River, ultimately discharging to the Arctic
-Ocean via the Mackenzie Delta.
+The Parsnip River Watershed Group sits between Prince George and
+Mackenzie, BC. The Parsnip River flows north and enters the southern
+arm of Williston Reservoir at Mackenzie, joining the Peace River
+system. From there the drainage runs Peace → Slave → Mackenzie River,
+ultimately discharging to the Arctic Ocean via the Mackenzie Delta.
 
 [fl_dem_aoi]: ../reference/fl_dem_aoi.html
 
@@ -101,7 +101,7 @@ p_tab <- p_tab[, c("parameter", "value", "unit", "effect", "citation_keys")]
 names(p_tab)[names(p_tab) == "citation_keys"] <- "source"
 knitr::kable(
   p_tab, row.names = FALSE,
-  caption = "Active parameter values for the PARS run. `flood_factor = 4` (`ff04`); other values are package defaults from `flooded::fl_params()`."
+  caption = "Active parameter values for the Parsnip River Watershed Group run. `flood_factor = 4` (`ff04`); other values are package defaults from `flooded::fl_params()`."
 )
 ```
 
@@ -138,7 +138,7 @@ multi-layer GeoPackage and the rasters as separate GeoTIFFs (raster
 tiles in GPKG would lose the continuous DTM precision and the binary
 valleys semantics — wrong format for analytical layers).
 
-Direct downloads of the cached PARS bundle from the repo (open in QGIS
+Direct downloads of the cached Parsnip River Watershed Group bundle from the repo (open in QGIS
 or any GDAL-aware tool):
 
 - [`pars.gpkg`](https://github.com/NewGraphEnvironment/flooded/raw/main/inst/vignette-data/pars.gpkg)
@@ -259,7 +259,7 @@ would otherwise carve donut holes around.
 ## Valley confinement
 
 `flooded::fl_valley_confine()` runs the full VCA pipeline on the cached
-DEM, streams, and waterbodies. On PARS at 30 m (~20 Mcells) it takes a
+DEM, streams, and waterbodies. On the Parsnip River Watershed Group at 30 m (~20 Mcells) it takes a
 couple of minutes single-threaded; `terra::terraOptions(threads = N)`
 parallelises the heavy raster ops.
 
@@ -277,7 +277,7 @@ floodplain <- flooded::fl_valley_poly(valleys)
 
 ## Floodplain map — full WSG
 
-```{r map-floodplain, echo = FALSE, fig.cap = "PARS unconfined valleys (green) over MRDEM-30 hillshade. Parks (light green polygon), First Nations reserves (light grey polygon, black diamond marker at centroid + label), accessible order 3+ streams in blue, lakes and wetlands in light blue, forest service / resource roads grey, railways black-dashed, watershed boundary heavy black."}
+```{r map-floodplain, echo = FALSE, fig.cap = "Parsnip River Watershed Group unconfined valleys (green) over MRDEM-30 hillshade. Parks (light green polygon), First Nations reserves (light grey polygon, black diamond marker at centroid + label), accessible order 3+ streams in blue, lakes and wetlands in light blue, forest service / resource roads grey, railways black-dashed, watershed boundary heavy black."}
 hill <- terra::shade(
   terra::terrain(dem, "slope", unit = "radians"),
   terra::terrain(dem, "aspect", unit = "radians")
@@ -285,7 +285,7 @@ hill <- terra::shade(
 
 terra::plot(hill, col = grey(0:100 / 100), legend = FALSE, axes = FALSE,
             mar = c(2, 2, 2, 2),
-            main = "PARS — functional floodplain (ff04), accessible order 3+")
+            main = "Parsnip River Watershed Group — functional floodplain (ff04), accessible order 3+")
 
 # Hydro / floodplain
 terra::plot(valleys, col = c(NA, "#2c7a2c"), alpha = 0.55,
@@ -352,12 +352,17 @@ if (!is.null(reserves) && "english_name" %in% names(reserves) &&
 
 ## Detail map — south-east corner
 
-The full-WSG view compresses a lot of detail. Cropping to the bottom-right
-quadrant — the lower confluences where the trunk approaches Williston —
-shows the per-reach floodplain pattern, individual channels, lakes /
-wetlands, and the named First Nations reserves at full resolution.
+The full-WSG view compresses a lot of detail. Cropping to the
+south-eastern corner — the headwaters of the Parsnip River, where Arctic
+Lake Provincial Park sits on the continental divide between Arctic
+Ocean and Pacific Ocean drainages — shows the per-reach floodplain
+pattern, individual channels, lakes / wetlands, and the named First
+Nations reserves at full resolution. Streams just inside the Parsnip
+River Watershed Group here drain north via Williston Reservoir → Peace
+→ Slave → Mackenzie to the Arctic; a short distance south of the
+divide, streams drain into the Fraser and out to the Pacific.
 
-```{r map-detail, echo = FALSE, fig.cap = "South-east corner of PARS at full resolution. Parks (light green), First Nations reserves (light grey polygon with black diamond marker + formal english_name label at centroid), waterbodies, valleys, named streams (italic blue labels), roads (grey), railways (black dashed)."}
+```{r map-detail, echo = FALSE, fig.cap = "South-east corner of the Parsnip River Watershed Group at full resolution — the headwaters around Arctic Lake on the continental divide. Parks (light green), First Nations reserves (light grey polygon with black diamond marker + formal english_name label at centroid), waterbodies, valleys, named streams (italic blue labels), roads (grey), railways (black dashed)."}
 e <- sf::st_bbox(aoi)
 inset_bbox <- sf::st_bbox(c(
   xmin = unname(e["xmin"] + (e["xmax"] - e["xmin"]) * 0.55),
@@ -390,7 +395,8 @@ hill_inset <- terra::shade(
 )
 
 terra::plot(hill_inset, col = grey(0:100 / 100), legend = FALSE, axes = FALSE,
-            mar = c(2, 2, 2, 2), main = "PARS — south-east detail")
+            mar = c(2, 2, 2, 2),
+            main = "Parsnip River Watershed Group — south-east detail (continental divide)")
 
 # Hydro / floodplain
 terra::plot(valleys_inset, col = c(NA, "#2c7a2c"), alpha = 0.55,
