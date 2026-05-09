@@ -222,12 +222,9 @@ vignette</a>.</p>
 </h2>
 <p>The vignette renders against pre-computed outputs from
 <code>data-raw/wsg_vignette_data.R</code> so it builds fast and doesn’t
-touch the network or database. The hydro / context layers ship as a
-single multi-layer GeoPackage and the rasters as separate GeoTIFFs
-(raster tiles in GPKG would lose the continuous DTM precision and the
-binary valleys semantics — wrong format for analytical layers).</p>
-<p>Direct downloads of the cached Parsnip River Watershed Group bundle
-from the repo (open in QGIS or any GDAL-aware tool):</p>
+touch the network or database. Direct downloads of the cached Parsnip
+River Watershed Group bundle from the repo (open in QGIS or any
+GDAL-aware tool):</p>
 <ul>
 <li>
 <a href="https://github.com/NewGraphEnvironment/flooded/raw/main/inst/vignette-data/pars.gpkg" class="external-link"><code>pars.gpkg</code></a>
@@ -255,46 +252,12 @@ exists with Copernicus TanDEM-X / CDEM-derived fallback elsewhere.
 <code><a href="../reference/fl_dem_aoi.html">flooded::fl_dem_aoi()</a></code> reads it via <code>/vsicurl/</code>,
 so the only bytes transferred are those intersecting the AOI — bandwidth
 scales with the AOI, not with the COG size.</p>
-<p>The DEM was fetched in <code>data-raw/wsg_vignette_data.R</code> with
-a single call, passing the streams as the AOI so the crop hugs the
-stream corridor (a memory-efficient pattern for large watersheds with
-sparse stream networks):</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dem</span> <span class="op">&lt;-</span> <span class="fu">flooded</span><span class="fu">::</span><span class="fu"><a href="../reference/fl_dem_aoi.html">fl_dem_aoi</a></span><span class="op">(</span><span class="va">streams</span>, buffer <span class="op">=</span> <span class="fl">2000</span><span class="op">)</span></span></code></pre></div>
-<p>The default <code>source = NULL</code> resolves to the canonical
-MRDEM-30 DTM <code>/vsicurl/</code> URL inside
-<code><a href="../reference/fl_dem_aoi.html">flooded::fl_dem_aoi()</a></code>. <code>buffer = 2000</code> extends
-the AOI by 2 km in metres before crop. To override the source — e.g., to
-fetch a LidarBC COG — pass
-<code>source = "/vsicurl/https://.../tile.tif"</code>.</p>
 </div>
 <div class="section level2">
 <h2 id="streams-and-waterbodies">Streams and waterbodies<a class="anchor" aria-label="anchor" href="#streams-and-waterbodies"></a>
 </h2>
 <p>Streams are habitat segments modelled as accessible to bull trout
-from <a href="https://github.com/smnorris/bcfishpass" class="external-link">bcfishpass</a>
-outputs. bcfishpass runs weekly on a hosted virtual machine and
-republishes the <code>streams_bt_vw</code> view, so the data is current
-to within a week of any upstream FWA, observation, or barrier
-change.</p>
-<p>This run is built against bcfishpass v0.7.14-125-g6e9cf1c (LINEAR
-model, completed 2026-05-05). The version stamp is cached at data-raw
-time (see <code>data-raw/wsg_vignette_data.R</code>) so the vignette
-renders without touching the database.</p>
-<p>The streams query is a single <a href="https://newgraphenvironment.github.io/fresh/reference/frs_db_query.html" class="external-link"><code>fresh::frs_db_query()</code></a>
-call — every row in <code>bcfishpass.streams_bt_vw</code> is already
-classified accessible (<code>access IN (1, 2)</code> = assessed or
-modelled), so filtering to “best accessible habitat order 3+” needs no
-working-table classification:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">streams</span> <span class="op">&lt;-</span> <span class="fu">fresh</span><span class="fu">::</span><span class="fu"><a href="https://newgraphenvironment.github.io/fresh/reference/frs_db_query.html" class="external-link">frs_db_query</a></span><span class="op">(</span><span class="va">conn</span>, <span class="st">"</span></span>
-<span><span class="st">  SELECT segmented_stream_id, blue_line_key, waterbody_key,</span></span>
-<span><span class="st">         upstream_area_ha, map_upstream, channel_width, stream_order,</span></span>
-<span><span class="st">         gradient, mapping_code, access, spawning, rearing, geom</span></span>
-<span><span class="st">  FROM bcfishpass.streams_bt_vw</span></span>
-<span><span class="st">  WHERE watershed_group_code = 'PARS'</span></span>
-<span><span class="st">    AND access IN (1, 2)</span></span>
-<span><span class="st">    AND stream_order &gt;= 3"</span><span class="op">)</span></span></code></pre></div>
+from <a href="https://github.com/smnorris/bcfishpass" class="external-link">bcfishpass</a>.</p>
 <p>Waterbodies (lakes + wetlands) come from
 <code>whse_basemapping.fwa_lakes_poly</code> and
 <code>whse_basemapping.fwa_wetlands_poly</code> joined on
@@ -312,7 +275,7 @@ on the cached DEM, streams, and waterbodies. On the Parsnip River
 Watershed Group at 30 m (~20 Mcells) it takes a couple of minutes
 single-threaded; <code>terra::terraOptions(threads = N)</code>
 parallelises the heavy raster ops.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">valleys</span> <span class="op">&lt;-</span> <span class="fu">flooded</span><span class="fu">::</span><span class="fu"><a href="../reference/fl_valley_confine.html">fl_valley_confine</a></span><span class="op">(</span></span>
 <span>  dem <span class="op">=</span> <span class="va">dem</span>,</span>
 <span>  streams <span class="op">=</span> <span class="va">streams</span>,</span>

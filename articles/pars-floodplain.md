@@ -81,13 +81,9 @@ vignette](https://newgraphenvironment.github.io/flooded/articles/valley-confinem
 
 The vignette renders against pre-computed outputs from
 `data-raw/wsg_vignette_data.R` so it builds fast and doesn’t touch the
-network or database. The hydro / context layers ship as a single
-multi-layer GeoPackage and the rasters as separate GeoTIFFs (raster
-tiles in GPKG would lose the continuous DTM precision and the binary
-valleys semantics — wrong format for analytical layers).
-
-Direct downloads of the cached Parsnip River Watershed Group bundle from
-the repo (open in QGIS or any GDAL-aware tool):
+network or database. Direct downloads of the cached Parsnip River
+Watershed Group bundle from the repo (open in QGIS or any GDAL-aware
+tool):
 
 - [`pars.gpkg`](https://github.com/NewGraphEnvironment/flooded/raw/main/inst/vignette-data/pars.gpkg)
   — vectors: `aoi`, `streams`, `waterbodies`, `floodplain`, `railways`,
@@ -112,54 +108,10 @@ reads it via `/vsicurl/`, so the only bytes transferred are those
 intersecting the AOI — bandwidth scales with the AOI, not with the COG
 size.
 
-The DEM was fetched in `data-raw/wsg_vignette_data.R` with a single
-call, passing the streams as the AOI so the crop hugs the stream
-corridor (a memory-efficient pattern for large watersheds with sparse
-stream networks):
-
-``` r
-
-dem <- flooded::fl_dem_aoi(streams, buffer = 2000)
-```
-
-The default `source = NULL` resolves to the canonical MRDEM-30 DTM
-`/vsicurl/` URL inside
-[`flooded::fl_dem_aoi()`](https://newgraphenvironment.github.io/flooded/reference/fl_dem_aoi.md).
-`buffer = 2000` extends the AOI by 2 km in metres before crop. To
-override the source — e.g., to fetch a LidarBC COG — pass
-`source = "/vsicurl/https://.../tile.tif"`.
-
 ## Streams and waterbodies
 
 Streams are habitat segments modelled as accessible to bull trout from
-[bcfishpass](https://github.com/smnorris/bcfishpass) outputs. bcfishpass
-runs weekly on a hosted virtual machine and republishes the
-`streams_bt_vw` view, so the data is current to within a week of any
-upstream FWA, observation, or barrier change.
-
-This run is built against bcfishpass v0.7.14-125-g6e9cf1c (LINEAR model,
-completed 2026-05-05). The version stamp is cached at data-raw time (see
-`data-raw/wsg_vignette_data.R`) so the vignette renders without touching
-the database.
-
-The streams query is a single
-[`fresh::frs_db_query()`](https://newgraphenvironment.github.io/fresh/reference/frs_db_query.html)
-call — every row in `bcfishpass.streams_bt_vw` is already classified
-accessible (`access IN (1, 2)` = assessed or modelled), so filtering to
-“best accessible habitat order 3+” needs no working-table
-classification:
-
-``` r
-
-streams <- fresh::frs_db_query(conn, "
-  SELECT segmented_stream_id, blue_line_key, waterbody_key,
-         upstream_area_ha, map_upstream, channel_width, stream_order,
-         gradient, mapping_code, access, spawning, rearing, geom
-  FROM bcfishpass.streams_bt_vw
-  WHERE watershed_group_code = 'PARS'
-    AND access IN (1, 2)
-    AND stream_order >= 3")
-```
+[bcfishpass](https://github.com/smnorris/bcfishpass).
 
 Waterbodies (lakes + wetlands) come from
 `whse_basemapping.fwa_lakes_poly` and
