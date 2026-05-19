@@ -6,7 +6,7 @@ Portable floodplain delineation from DEM and stream network using the Valley Con
 
 **Repository:** NewGraphEnvironment/flooded
 **Primary Language:** R (package)
-**Version:** 0.2.0
+**Version:** 0.3.1
 **License:** MIT
 
 ## Ecosystem
@@ -31,17 +31,22 @@ R/
   fl_flood_surface.R    — cost-distance flood surface
   fl_flood_assemble.R   — combine flood + slope masks
   fl_flood_trim.R       — remove disconnected patches
+  fl_flood_depth.R      — flood depth lookup from cost-surface raster
   fl_valley_poly.R      — raster → sf polygon conversion
   fl_cost_distance.R    — weighted cost-distance from streams
-  fl_mask*.R            — slope/distance masking helpers
-  fl_patch*.R           — patch connectivity and removal
+  fl_mask.R             — slope masking helper
+  fl_mask_distance.R    — distance-from-stream mask helper
+  fl_patch_conn.R       — patch connectivity
+  fl_patch_rm.R         — patch removal
   fl_stream_rasterize.R — burn streams into DEM grid
+  fl_dem_aoi.R          — fetch DEM clip from MRDEM-30 (default source) via /vsicurl/
   fl_params.R           — load VCA parameter legend CSV
   fl_scenarios.R        — load flood factor scenario CSV
 vignettes/
   valley-confinement.Rmd — full walkthrough with bundled test data
   stac-dem.Rmd           — fetch DEM from STAC catalog
-tests/testthat/          — unit tests for each fl_* function
+  pars-floodplain.Rmd    — Parsnip River WSG using fl_dem_aoi() + cached outputs
+tests/testthat/          — unit tests for each fl_* function (17 test files, ~81 test_that blocks)
 ```
 
 ## Key Patterns
@@ -51,6 +56,67 @@ tests/testthat/          — unit tests for each fl_* function
 - `terra::terraOptions(threads = N)` for parallel raster ops
 - Bankfull regression requires both `upstream_area` (ha) and `precip` (mm)
 - Optional `whitebox` dependency for advanced hydro operations
+
+### Design decisions
+
+- **Pre-built vignette artifacts:** `.Rmd.orig` is source, baked `.Rmd` for pkgdown (stac-dem pattern). `pars-floodplain` skips this — uses cached `.rds` / `.tif` / `.gpkg` outputs instead, because the `.Rmd.orig` pattern breaks bookdown figure cross-references.
+- **25 m TRIM resampled to 10 m** is not real 10 m detail — note this when comparing TRIM-derived outputs to true 10 m or 1 m lidar.
+- **1 m lidar reveals anthropogenic barriers** ("pop-ups") — diagnostic value beyond floodplain area itself.
+- **Channel-width buffer auto-detect** from streams sf. DEM correction only — the buffer is a coarse-DEM gap-filler, not an ecological feature.
+- **NA `channel_width`** on order 1 streams: skip the buffer, still included in flood model via stream rasterization.
+- **No hardcoded side-channel buffers** — let VCA do its job.
+- **Waterbodies:** optional user-supplied sf. No buffer, no spatial filter — user pre-filters.
+- **Roads / rails / urban:** flooded detects them; `drift` decides what to do.
+- **Default DEM source for `fl_dem_aoi()`:** MRDEM-30 (NRCan, public S3 COG, `/vsicurl/`).
+
+## Reference docs
+
+- [`inst/notes/methodology.md`](inst/notes/methodology.md) — channel-width models (bcfishpass vs VCA), flood-factor scenarios (ff02/ff04/ff06), citations, DEM-resolution compensation
+- [`inst/research/vca_parameter_rationale.md`](inst/research/vca_parameter_rationale.md) — VCA parameter provenance, verified citations
+
+Note: this R package uses `inst/notes/` (not `docs/`) for soul-style durable knowledge because `docs/` is the pkgdown build target and is gitignored. `inst/` content also travels with the installed package via `system.file()`.
+
+## Working Conventions
+
+### Appendix port workflow — package vignette → fp_template → region report
+
+Three-stage pattern for porting package vignettes (flooded, cd, etc.) into reporting appendices.
+
+**Why:** packages evolve; their `inst/` data layout may change. Frozen committed data in the report repo means the report renders deterministically. Re-running the build is a deliberate step, not a render-time dependency.
+
+#### Stages
+
+1. **Package `hold/`** (gitignored) — prep the appendix-form `.Rmd`. Tone-tweak the vignette into reader-friendly form, add Methods + Results sections, render HTML preview via a thin `hold/render_preview.Rmd` wrapper using `bookdown::html_document2` + the package's `references.bib`. Confirm `hold/` is in `.gitignore`.
+2. **fp_template** — file an issue to land the prepped appendix as the canonical structure. Build script at `scripts/gis/<name>.R`, cached data at `data/gis/`, appendix `.Rmd` reads local data only.
+3. **Region report** (fp_peace, fp_skeena, fp_fraser, …) — file an issue to apply the template appendix with region-specific data. Usually a single variable swap (region / WSG code) + re-run the build script.
+
+#### Decoupling rules
+
+- Report **may** depend on the package (for the build script — uses `flooded::*` etc.)
+- Report must NOT depend on the package's internal data layout — no `system.file("...", package = "<pkg>")` calls at render time
+- Cached data is committed in the report repo
+
+#### Tone for appendix
+
+Differs from vignette tone:
+
+- **Less technical** — readers are engineers / biologists reviewing the report, not package users
+- **Results-forward** — lead with "here's what we found," not "here's how the algorithm works"
+- **Short Methods** — one or two paragraphs naming the package + key citations. Detail belongs in the package vignette.
+- **Code chunks visible** — the host report sets `echo` globally; don't add chunk-level `echo = FALSE`
+- **Drop package-internal jargon** — "validated against field-mapped sites by Hall et al." → "Hall et al.'s bankfull-depth regression was calibrated against field-mapped sites."
+
+#### Body integration
+
+In addition to the appendix, add a short Methods paragraph + short Results paragraph **in the main body chapter** that reference the appendix via `\@ref(appendix-<topic>)`. Inline R variables (`fp_area_ha`, etc.) live in a shared `flood-rollup` chunk that's either moved to early loading or duplicated as a quiet `include = FALSE` chunk at the chapter top — variable names stay identical so the next watershed group is a single chunk-data swap.
+
+#### Worked example
+
+Filed 2026-05-12: fish_passage_peace_2025_reporting#14 (Parsnip pilot from flooded). Prepped in `flooded/hold/9999-appendix-floodplain.Rmd`. Stage 2 (fp_template backfill) still to do.
+
+#### How to apply
+
+When porting a vignette to an appendix in fp_* reports, walk through the three stages and ask: is there an fp_template issue yet (stage 2), or are we going direct to a region report (stage 3)? Direct works for a pilot but means future regions re-prep from scratch.
 
 <\!-- BEGIN SOUL CONVENTIONS — DO NOT EDIT BELOW THIS LINE -->
 
