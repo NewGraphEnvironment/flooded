@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">flooded</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,12 +38,16 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.3.2" id="flooded-032">flooded 0.3.2<a class="anchor" aria-label="anchor" href="#flooded-032"></a></h2>
+<ul><li>Drop the internal <code>rtj/docs/dem-sources.md</code> reference from <code><a href="../reference/fl_dem_aoi.html">fl_dem_aoi()</a></code> documentation and NEWS — MRDEM-30 is described as the default DEM source without pointing readers at a private doc they can’t access.</li>
+</ul></div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.1" id="flooded-031">flooded 0.3.1<a class="anchor" aria-label="anchor" href="#flooded-031"></a></h2>
 <ul><li>Fix Parsnip River Watershed Group vignette: corrected geography (the south-east inset is the headwaters around Arctic Lake on the continental divide, not the Williston-bound confluences) and switched all prose mentions from <code>PARS</code> to “Parsnip River Watershed Group”.</li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.0" id="flooded-030">flooded 0.3.0<a class="anchor" aria-label="anchor" href="#flooded-030"></a></h2>
-<ul><li>New <code><a href="../reference/fl_dem_aoi.html">fl_dem_aoi()</a></code> — AOI-driven DEM fetch helper. Defaults to MRDEM-30 via <code>/vsicurl/</code> (the rtj-doc-settled choice for watershed-scale BC work) but accepts any local path, <code>/vsicurl/</code> URL, or <code>/vsis3/</code> S3 URL via <code>source =</code>. Buffered crop happens in the source raster’s CRS, reprojection after crop. Replaces hand-rolled per-project DEM plumbing (<a href="https://github.com/NewGraphEnvironment/flooded/issues/34" class="external-link">#34</a>).</li>
+<ul><li>New <code><a href="../reference/fl_dem_aoi.html">fl_dem_aoi()</a></code> — AOI-driven DEM fetch helper. Defaults to MRDEM-30 via <code>/vsicurl/</code> (a sensible default for watershed-scale BC work) but accepts any local path, <code>/vsicurl/</code> URL, or <code>/vsis3/</code> S3 URL via <code>source =</code>. Buffered crop happens in the source raster’s CRS, reprojection after crop. Replaces hand-rolled per-project DEM plumbing (<a href="https://github.com/NewGraphEnvironment/flooded/issues/34" class="external-link">#34</a>).</li>
 <li>New <code>vignettes/pars-floodplain.Rmd</code> — watershed-scale showcase running <code><a href="../reference/fl_dem_aoi.html">fl_dem_aoi()</a></code> + <code><a href="../reference/fl_valley_confine.html">fl_valley_confine()</a></code> end-to-end on the Parsnip River WSG (5,597 km²). Designed to port to a bookdown report appendix (<a href="https://github.com/NewGraphEnvironment/flooded/issues/34" class="external-link">#34</a>).</li>
 <li>New <code>data-raw/wsg_vignette_data.R</code> — generic, parameterised by <code>wsg &lt;- "PARS"</code>. Re-runs the full pipeline for any 4-letter BC watershed group, namespaces outputs by WSG code (<a href="https://github.com/NewGraphEnvironment/flooded/issues/34" class="external-link">#34</a>).</li>
 <li>bcfishpass model version + date are cached at data-raw time as <code>inst/vignette-data/&lt;wsg&gt;_meta.rds</code> so the vignette renders without a database connection (<a href="https://github.com/NewGraphEnvironment/flooded/issues/34" class="external-link">#34</a>).</li>

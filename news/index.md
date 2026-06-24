@@ -1,5 +1,12 @@
 # Changelog
 
+## flooded 0.3.2
+
+- Drop the internal `rtj/docs/dem-sources.md` reference from
+  [`fl_dem_aoi()`](https://newgraphenvironment.github.io/flooded/reference/fl_dem_aoi.md)
+  documentation and NEWS — MRDEM-30 is described as the default DEM
+  source without pointing readers at a private doc they can’t access.
+
 ## flooded 0.3.1
 
 - Fix Parsnip River Watershed Group vignette: corrected geography (the
@@ -11,11 +18,11 @@
 
 - New
   [`fl_dem_aoi()`](https://newgraphenvironment.github.io/flooded/reference/fl_dem_aoi.md)
-  — AOI-driven DEM fetch helper. Defaults to MRDEM-30 via `/vsicurl/`
-  (the rtj-doc-settled choice for watershed-scale BC work) but accepts
-  any local path, `/vsicurl/` URL, or `/vsis3/` S3 URL via `source =`.
-  Buffered crop happens in the source raster’s CRS, reprojection after
-  crop. Replaces hand-rolled per-project DEM plumbing
+  — AOI-driven DEM fetch helper. Defaults to MRDEM-30 via `/vsicurl/` (a
+  sensible default for watershed-scale BC work) but accepts any local
+  path, `/vsicurl/` URL, or `/vsis3/` S3 URL via `source =`. Buffered
+  crop happens in the source raster’s CRS, reprojection after crop.
+  Replaces hand-rolled per-project DEM plumbing
   ([\#34](https://github.com/NewGraphEnvironment/flooded/issues/34)).
 - New `vignettes/pars-floodplain.Rmd` — watershed-scale showcase running
   [`fl_dem_aoi()`](https://newgraphenvironment.github.io/flooded/reference/fl_dem_aoi.md) +
