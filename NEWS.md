@@ -1,10 +1,14 @@
+# flooded 0.3.2
+
+- Drop the internal `rtj/docs/dem-sources.md` reference from `fl_dem_aoi()` documentation and NEWS — MRDEM-30 is described as the default DEM source without pointing readers at a private doc they can't access.
+
 # flooded 0.3.1
 
 - Fix Parsnip River Watershed Group vignette: corrected geography (the south-east inset is the headwaters around Arctic Lake on the continental divide, not the Williston-bound confluences) and switched all prose mentions from `PARS` to "Parsnip River Watershed Group".
 
 # flooded 0.3.0
 
-- New `fl_dem_aoi()` — AOI-driven DEM fetch helper. Defaults to MRDEM-30 via `/vsicurl/` (the rtj-doc-settled choice for watershed-scale BC work) but accepts any local path, `/vsicurl/` URL, or `/vsis3/` S3 URL via `source =`. Buffered crop happens in the source raster's CRS, reprojection after crop. Replaces hand-rolled per-project DEM plumbing (#34).
+- New `fl_dem_aoi()` — AOI-driven DEM fetch helper. Defaults to MRDEM-30 via `/vsicurl/` (a sensible default for watershed-scale BC work) but accepts any local path, `/vsicurl/` URL, or `/vsis3/` S3 URL via `source =`. Buffered crop happens in the source raster's CRS, reprojection after crop. Replaces hand-rolled per-project DEM plumbing (#34).
 - New `vignettes/pars-floodplain.Rmd` — watershed-scale showcase running `fl_dem_aoi()` + `fl_valley_confine()` end-to-end on the Parsnip River WSG (5,597 km²). Designed to port to a bookdown report appendix (#34).
 - New `data-raw/wsg_vignette_data.R` — generic, parameterised by `wsg <- "PARS"`. Re-runs the full pipeline for any 4-letter BC watershed group, namespaces outputs by WSG code (#34).
 - bcfishpass model version + date are cached at data-raw time as `inst/vignette-data/<wsg>_meta.rds` so the vignette renders without a database connection (#34).

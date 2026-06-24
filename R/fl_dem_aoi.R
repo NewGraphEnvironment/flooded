@@ -3,8 +3,8 @@
 #' Returns a `SpatRaster` of elevation cropped to a buffered AOI. Source is a
 #' local file, an HTTP COG (`/vsicurl/`), or an S3 COG (`/vsis3/`). Defaults to
 #' MRDEM-30 — NRCan's Medium-Resolution Digital Elevation Model (30 m, all of
-#' Canada, public S3, no auth) — the source-of-truth choice for watershed-scale
-#' BC floodplain work as decided in `rtj/docs/dem-sources.md`.
+#' Canada, public S3, no auth) — a sensible default for watershed-scale BC
+#' floodplain work.
 #'
 #' @param aoi An `sf` or `sfc` object — polygon, lines, or points. Buffered by
 #'   `buffer` (via [sf::st_buffer()]) before crop. To crop tightly along a

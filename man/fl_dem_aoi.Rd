@@ -34,8 +34,8 @@ A \code{SpatRaster} cropped to the buffered AOI extent, projected to
 Returns a \code{SpatRaster} of elevation cropped to a buffered AOI. Source is a
 local file, an HTTP COG (\verb{/vsicurl/}), or an S3 COG (\verb{/vsis3/}). Defaults to
 MRDEM-30 — NRCan's Medium-Resolution Digital Elevation Model (30 m, all of
-Canada, public S3, no auth) — the source-of-truth choice for watershed-scale
-BC floodplain work as decided in \code{rtj/docs/dem-sources.md}.
+Canada, public S3, no auth) — a sensible default for watershed-scale BC
+floodplain work.
 }
 \details{
 MRDEM-30 (\verb{s3://canelevation-dem/mrdem-30/mrdem-30-dtm.tif}) is a single
