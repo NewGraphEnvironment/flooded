@@ -15,23 +15,23 @@ runs unstable (measured; see findings.md).
 - [x] Draft the mechanism issue, cross-referencing NewGraphEnvironment/floodplains#40
 - [x] File as #40; create branch `40-fl-valley-attribute-attribute-valley-cel` off main
 - [x] Lock the name `fl_valley_attribute()` pre-baseline (verb form, matches `fl_valley_confine()`)
-- [ ] Land PWF baseline (task_plan.md, findings.md, progress.md)
-- [ ] Spawn concurrent Plan-agent review -> `planning/active/review-40.md` (do not wait on it)
+- [x] Land PWF baseline (task_plan.md, findings.md, progress.md)
+- [x] Spawn concurrent Plan-agent review -> `planning/active/review-40.md` (do not wait on it)
 
 ## Phase 2: Tests first — the contract
 
 `tests/testthat/test-fl_valley_attribute.R`, failing until Phase 3. Bundled `inst/testdata/`
 (`dem.tif`, `streams.gpkg` — has `gnis_name`, `blue_line_key`, `stream_order`).
 
-- [ ] **Coverage, no orphans** — every valley cell falls in >=1 group
-- [ ] **Containment** — each group's polygons lie within the global valley extent
-- [ ] **Overlap preserved** — confluence cells belong to >=2 groups; count > 0
-- [ ] **Degenerate grouping** — a single constant group reproduces `fl_valley_poly()` output
-- [ ] **Grouping invariance** — `gnis_name` vs `blue_line_key` give the same union
-- [ ] **Crop safety** — one group attributed on a cropped window == on the full grid
-- [ ] **Errors / edges** — missing `group` column, non-`sf` streams, geometry mismatch, `NA` group
+- [x] **Coverage, no orphans** — every valley cell falls in >=1 group
+- [x] **Containment** — each group's polygons lie within the global valley extent
+- [x] **Overlap preserved** — confluence cells belong to >=2 groups; count > 0
+- [x] **Degenerate grouping** — a single constant group reproduces `fl_valley_poly()` output
+- [x] **Grouping invariance** — `gnis_name` vs `blue_line_key` give the same union
+- [x] **Crop safety** — one group attributed on a cropped window == on the full grid
+- [x] **Errors / edges** — missing `group` column, non-`sf` streams, geometry mismatch, `NA` group
       values, a group whose streams fall outside the valley
-- [ ] **Delineation untouched** — `fl_valley_confine()` output unchanged by this branch
+- [x] **Delineation untouched** — `fl_valley_confine()` output unchanged by this branch
 
 ## Phase 3: Implement `fl_valley_attribute()`
 
