@@ -117,10 +117,48 @@ intersection, and waterbodies get no spatial filter, so those cells can satisfy 
 group; `attr(x, "fl_fallback_cells")` reports how many. An unusually large count is also the signal
 that `max_width` / `cost_threshold` do not match the values the delineation was built with.
 
+### Only stream cells seed the cost surface
+
+`fl_cost_distance()` encodes seeds by setting stream cells to zero and calling
+`terra::costDist(target = 0)`, which seeds on *every* zero cell. Until 0.4.1 that included any cell
+whose friction was already exactly zero, so flat ground acted as a free cost source. Fixed by
+flooring `friction == 0` to `1e-6` before seeding (flooded#41).
+
+Flat ground stays cheap to *cross* — the floor accumulates 0.1 over a 100 km path at 10 m against a
+default `cost_threshold` of 2500 — it just stops being a *source*. Negative friction is deliberately
+not floored, so `costDist()`'s own rejection of a negative cost surface is left intact.
+
+Which DEMs contain exact zeros, and what changes when they do — measured on both datasets this
+package ships:
+
+| DEM | exact-zero slope cells | cost mask (`< 2500`) | valley cells |
+|---|---|---|---|
+| bundled `dem.tif` / `slope.tif`, 10 m | 0 of 45,726 (min 1.42e-14) | unchanged | 53,635 -> 53,635 |
+| `pars_dem.tif` (MRDEM-30, 30 m, 20.9 Mcell) | 80 of 10.7 M | -2,289 cells (214 ha), 0 added | 521,028 -> 521,028 |
+
+Two things worth separating. MRDEM-30 — the package default source — **does** produce exact zeros
+at watershed scale, so a small clip returning none is not evidence about the source. And the fix
+only ever *removes* cells from the cost mask, never adds, because it can only raise a cost that was
+spuriously zero.
+
+But a change in the cost mask is not a change in the delineation. Both shipped datasets come out
+bit-identical, because `fl_valley_confine()` intersects cost with slope, distance and flood and then
+runs morphological cleanup — enough to absorb all 2,289 Parsnip cells. That is a property of these
+two datasets, not a guarantee: wherever cost is the binding criterion (flat terrain, a lax
+`slope_threshold`, a large `flood_factor`) the delineation will move.
+
+The 1 m lidar run in `vignettes/stac-dem.Rmd` emits `[costDist] distance algorithm did not
+converge`, which is the shape of large zero-cost plateaus — suggestive, not confirmed, since that
+vignette is pre-baked and was not re-run.
+
+It matters most under attribution. Cost is what separates one watercourse's floodplain from
+another's, so a flat patch inside a group's corridor would spread that group's mask across ground
+its own streams never reach — cost failing to discriminate exactly where floodplains are, on flat
+ground.
+
 ### See also
 
 - `fl_valley_attribute()` docs — corridor cropping (`crop_margin`) is an approximation, not a bound
-- flooded#41 — `fl_cost_distance()` seeds every zero-friction cell; matters more per-group
 - flooded#44 — production-scale timing is unmeasured; the k=5 figure does not establish k=340
 - NewGraphEnvironment/floodplains#40 — driver-side half (config surface, key column on the gpkg)
 

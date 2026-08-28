@@ -1,3 +1,35 @@
+# flooded 0.4.1
+
+- Fix `fl_cost_distance()` seeding on every zero-friction cell rather than only stream cells (#41).
+  Seeds are encoded by setting stream cells to `0` and calling `terra::costDist(target = 0)`, which
+  matches *every* zero cell — so any cell whose friction was already exactly zero acted as a free
+  cost source. Friction exactly equal to `0` is now floored to `1e-6` before seeding. Flat ground
+  stays cheap to cross (0.1 accumulated over a 100 km path at 10 m, against a default
+  `cost_threshold` of 2500); it simply stops being a source. Negative friction is deliberately not
+  floored, so `terra::costDist()`'s own rejection of a negative cost surface is left intact.
+- The fix strictly *removes* spurious reach from the cost mask; it never adds any. Measured on the
+  two DEMs this package ships, and the answer differs by dataset — check your own rather than
+  assuming:
+
+  | DEM | exact-zero slope cells | cost-mask change | delineation change |
+  |---|---|---|---|
+  | bundled `dem.tif` / `slope.tif`, 10 m | 0 of 45,726 | none | none |
+  | `pars_dem.tif` (MRDEM-30, 30 m, 20.9 Mcell) | 80 of 10.7 M | -2,289 cells (214 ha), 0 added | none |
+
+  So MRDEM-30 *does* contain exact zeros, the cost mask *does* move — and on both shipped datasets
+  the delineation does not, because the slope, distance and flood criteria plus morphological
+  cleanup absorb every affected cell. `fl_valley_confine()` returns the same 53,635 cells on the
+  bundled tile and the same 521,028 cells on the Parsnip Watershed Group, with zero cells differing
+  in either direction. The shipped vignette artifacts are therefore still current.
+- Do not read that as a general guarantee. Where cost is the binding criterion — flatter terrain, a
+  laxer `slope_threshold`, a larger `flood_factor` — results will move. Exposure is highest on
+  integer-metre DEMs, hydro-flattened lake surfaces and void-filled plateaus. Check with
+  `sum(terra::values(slope) == 0, na.rm = TRUE)`.
+- The effect is largest under `fl_valley_attribute()`, where cost is what separates one watercourse's
+  floodplain from another's: a flat patch inside a group's corridor would have spread that group's
+  mask across ground its own streams never reach.
+- Fix a stray one-space indent in `fl_valley_poly()`.
+
 # flooded 0.4.0
 
 - New `fl_valley_attribute()` — attribute a finished `fl_valley_confine()` delineation to the stream groups that produced it, so a floodplain can be filtered and queried per watercourse or reach rather than only per network (#40). Returns one `sf` row per group; rows overlap where ground is genuinely shared between watercourses, which near a confluence is most of it. The delineation is never recomputed, so changing the grouping key relabels the output without moving a boundary.

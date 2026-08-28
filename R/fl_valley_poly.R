@@ -29,7 +29,7 @@ fl_valley_poly <- function(x, dissolve = TRUE) {
   x_mask <- terra::ifel(x == 1, 1L, NA)
 
   # Polygonize
- polys <- terra::as.polygons(x_mask, dissolve = dissolve)
+  polys <- terra::as.polygons(x_mask, dissolve = dissolve)
 
   # Name the column on the SpatVector, before it becomes an sf. Renaming by
   # position afterwards hits the geometry column when as.polygons() returns no

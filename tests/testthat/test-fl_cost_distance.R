@@ -60,3 +60,157 @@ test_that("fl_cost_distance errors on mismatched grids", {
 
   expect_error(fl_cost_distance(r1, r2), "same extent")
 })
+
+# --- Zero-friction cells must not seed (#41) -------------------------------
+#
+# The bundled tile cannot reach this failure mode: slope.tif has no cell equal
+# to zero (min 1.42e-14), and neither does slope derived from dem.tif. These
+# fixtures are synthetic for that reason, not for convenience.
+
+# 50x50 at 10 m, friction 10% everywhere, one stream cell at [45, 45].
+# `flat` adds a 6x6 patch of exactly-zero friction at rows/cols 10-15, far from
+# the stream — the shape a hydro-flattened lake or a void-filled plateau takes.
+zero_friction_grid <- function(flat = TRUE) {
+  friction <- terra::rast(nrows = 50, ncols = 50, vals = 10,
+                          xmin = 0, xmax = 500, ymin = 0, ymax = 500,
+                          crs = "EPSG:3005")
+  if (flat) friction[10:15, 10:15] <- 0
+  streams <- terra::rast(friction)
+  terra::values(streams) <- NA
+  streams[45, 45] <- 1
+  list(friction = friction, streams = streams)
+}
+
+test_that("only stream cells are cost-distance seeds", {
+  g <- zero_friction_grid()
+
+  # Premise: the fixture must actually contain exact-zero friction, or the
+  # assertion below passes for nothing.
+  expect_gt(sum(terra::values(g$friction, mat = FALSE) == 0, na.rm = TRUE), 0)
+
+  cd <- fl_cost_distance(g$friction, g$streams)
+
+  zero_cells <- which(terra::values(cd, mat = FALSE) == 0)
+  seed_cells <- which(!is.na(terra::values(g$streams, mat = FALSE)))
+  expect_equal(zero_cells, seed_cells)
+})
+
+test_that("a flat patch is not a cost sink", {
+  g <- zero_friction_grid()
+  cd <- fl_cost_distance(g$friction, g$streams)
+
+  # Under the bug the patch centre reads 0 — cheaper than ground adjacent to
+  # the stream itself, which is the tell.
+  expect_gt(cd[12, 12][[1]], cd[45, 44][[1]])
+})
+
+test_that("the floor is negligible, not merely cheaper than sloped ground", {
+  # Guards the opposite over-correction: a floor high enough to make flat
+  # ground effectively impassable at scale.
+  #
+  # The obvious framing — "crossing the flat patch costs less than crossing
+  # sloped ground" — is far too weak to catch it, because any floor below the
+  # sloped friction satisfies it. Measured: a floor of 1 passes that version,
+  # while costing 1e5 over a 100 km path, or 40x a default cost_threshold of
+  # 2500. So assert negligibility against the sloped case instead.
+  #
+  # The ratio is the floor divided by the sloped friction, so 3e-5 passes any
+  # floor up to 1e-4 (300x headroom over the 1e-6 in use) and rejects 1e-3 and
+  # above, which is where a floor starts to consume the cost budget.
+  flat <- terra::rast(nrows = 50, ncols = 50, vals = 0,
+                      xmin = 0, xmax = 500, ymin = 0, ymax = 500,
+                      crs = "EPSG:3005")
+  sloped <- terra::setValues(flat, 10)
+  streams <- terra::rast(flat)
+  terra::values(streams) <- NA
+  streams[1, 1] <- 1
+
+  across_flat <- fl_cost_distance(flat, streams)[50, 50][[1]]
+  across_slope <- fl_cost_distance(sloped, streams)[50, 50][[1]]
+
+  expect_gt(across_slope, 0)                       # premise: the reference is real
+  expect_lt(across_flat / across_slope, 3e-5)
+})
+
+test_that("negative friction still errors", {
+  # terra rejects a negative cost surface. Flooring `<= 0` rather than `== 0`
+  # would silently disable that guard and turn meaningless input into
+  # plausible-looking output.
+  friction <- terra::rast(nrows = 20, ncols = 20, vals = 10,
+                          xmin = 0, xmax = 200, ymin = 0, ymax = 200,
+                          crs = "EPSG:3005")
+  friction[5, 5] <- -3
+  streams <- terra::rast(friction)
+  terra::values(streams) <- NA
+  streams[18, 18] <- 1
+
+  # The message is terra's, not this package's — matching loosely on "negative"
+  # so a reworded upstream error does not read as the guard having gone.
+  expect_error(fl_cost_distance(friction, streams), "negative")
+})
+
+test_that("integer-typed friction survives the floor", {
+  # An integer raster must promote to float, or the floor rounds back to zero
+  # and the fix silently does nothing.
+  friction <- terra::rast(nrows = 20, ncols = 20,
+                          xmin = 0, xmax = 200, ymin = 0, ymax = 200,
+                          crs = "EPSG:3005")
+  terra::values(friction) <- rep(10L, 400)
+  friction[5:8, 5:8] <- 0L
+
+  tf <- tempfile(fileext = ".tif")
+  on.exit(unlink(tf), add = TRUE)
+  terra::writeRaster(friction, tf, datatype = "INT2S", overwrite = TRUE)
+  friction <- terra::rast(tf)
+  expect_equal(terra::datatype(friction), "INT2S")
+
+  streams <- terra::rast(friction)
+  terra::values(streams) <- NA
+  streams[18, 18] <- 1
+
+  cd <- fl_cost_distance(friction, streams)
+  expect_equal(sum(terra::values(cd, mat = FALSE) == 0, na.rm = TRUE), 1L)
+})
+
+test_that("NA friction remains an impassable barrier", {
+  friction <- terra::rast(nrows = 20, ncols = 20, vals = 10,
+                          xmin = 0, xmax = 200, ymin = 0, ymax = 200,
+                          crs = "EPSG:3005")
+  friction[, 10] <- NA  # a wall the full height of the grid
+  streams <- terra::rast(friction)
+  terra::values(streams) <- NA
+  streams[1, 1] <- 1
+
+  cd <- fl_cost_distance(friction, streams)
+
+  expect_true(is.na(cd[10, 15][[1]]))   # sealed off behind the wall
+  expect_true(is.na(cd[10, 10][[1]]))   # the wall itself
+  expect_false(is.na(cd[10, 5][[1]]))   # same side as the stream
+})
+
+test_that("the fix cannot move any bundled-data result", {
+  slope <- terra::rast(testdata_path("slope.tif"))
+  dem <- terra::rast(testdata_path("dem.tif"))
+
+  # Premise, asserted here so a future test-data swap fails on this line —
+  # naming the real cause — rather than somewhere downstream. Every
+  # bundled-data baseline in this suite rests on it.
+  expect_equal(sum(terra::values(slope, mat = FALSE) == 0, na.rm = TRUE), 0L)
+
+  # The slope = NULL path in fl_valley_confine() derives slope rather than
+  # reading it, so it needs the premise checked too.
+  slope_deg <- terra::terrain(dem, "slope", unit = "degrees")
+  derived <- tan(slope_deg * pi / 180) * 100
+  expect_equal(sum(terra::values(derived, mat = FALSE) == 0, na.rm = TRUE), 0L)
+
+  # Cost is the only route by which this change reaches fl_valley_confine() or
+  # fl_valley_attribute(), so equality here covers both.
+  streams_sf <- sf::st_read(testdata_path("streams.gpkg"), quiet = TRUE)
+  stream_r <- fl_stream_rasterize(streams_sf, dem, field = "channel_width")
+
+  unfloored <- terra::costDist(terra::ifel(!is.na(stream_r), 0, slope), target = 0)
+  expect_equal(
+    as.vector(terra::values(fl_cost_distance(slope, stream_r))),
+    as.vector(terra::values(unfloored))
+  )
+})
