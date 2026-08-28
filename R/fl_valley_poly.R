@@ -31,10 +31,19 @@ fl_valley_poly <- function(x, dissolve = TRUE) {
   # Polygonize
  polys <- terra::as.polygons(x_mask, dissolve = dissolve)
 
-  # Convert to sf and clean
+  # Name the column on the SpatVector, before it becomes an sf. Renaming by
+  # position afterwards hits the geometry column when as.polygons() returns no
+  # features, producing an sf whose sf_column no longer points at a geometry.
+  names(polys) <- "valley"
+
   out <- sf::st_as_sf(polys) |>
     sf::st_make_valid()
 
-  names(out)[1] <- "valley"
-  out
+  # An all-NA mask yields a SpatVector with no attribute columns, so the name
+  # above lands nowhere and the promised `valley` column would be missing.
+  if (!"valley" %in% names(out)) {
+    out[["valley"]] <- integer(0)
+  }
+
+  out[, "valley"]
 }

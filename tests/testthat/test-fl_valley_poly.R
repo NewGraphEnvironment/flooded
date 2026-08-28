@@ -40,3 +40,23 @@ test_that("fl_valley_poly returns empty sf for all-zero raster", {
   expect_s3_class(poly, "sf")
   expect_equal(nrow(poly), 0L)
 })
+
+test_that("fl_valley_poly returns a usable sf when there are no valley cells", {
+  # An all-zero raster used to yield an sf whose sf_column pointed at a column
+  # that had been renamed out from under it — every accessor then errored.
+  dem <- terra::rast(testdata_path("dem.tif"))
+  empty <- dem * 0L
+
+  out <- fl_valley_poly(empty)
+
+  expect_s3_class(out, "sf")
+  expect_equal(nrow(out), 0L)
+  expect_true("valley" %in% names(out))
+  expect_equal(attr(out, "sf_column"), "geometry")
+  expect_silent(sf::st_geometry(out))
+  expect_output(print(out))
+
+  f <- tempfile(fileext = ".gpkg")
+  on.exit(unlink(f), add = TRUE)
+  expect_silent(sf::st_write(out, f, quiet = TRUE))
+})
