@@ -11,7 +11,7 @@ seed points with cost zero."><meta property="og:image" content="https://newgraph
 
     <a class="navbar-brand me-2" href="../index.html">flooded</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -79,6 +79,18 @@ nearest stream.</p>
 weighted distance. The <code>friction</code> raster defines per-cell traversal cost
 and <code>streams</code> identifies seed cells (cost = 0).</p>
 <p>Cells that are <code>NA</code> in <code>friction</code> are impassable barriers.</p>
+<p>Seeds are encoded by setting stream cells to zero in the friction surface,
+which is only unambiguous if no other cell is zero. Friction rasters do
+contain exact zeros — integer-metre DEMs, hydro-flattened lake surfaces and
+void-filled plateaus all quantize to perfectly flat — so cells with friction
+exactly <code>0</code> are floored to <code>1e-6</code> before seeding. Flat ground therefore
+remains cheap to cross but is no longer a cost source: at 10 m resolution a
+100 km path over floored ground accumulates 0.1, against a typical
+<code>cost_threshold</code> of 2500.</p>
+<p>Negative friction is not floored — <code><a href="https://rspatial.github.io/terra/reference/costDist.html" class="external-link">terra::costDist()</a></code> rejects a negative
+cost surface, and that error is left intact.</p>
+<p>If your friction is in units whose typical values approach <code>1e-6</code>, floor the
+raster yourself before calling.</p>
     </div>
 
     <div class="section level2">

@@ -422,7 +422,7 @@ valleys_no_precip <- fl_valley_confine(
 n_no <- sum(values(valleys_no_precip) == 1, na.rm = TRUE)
 cat("Without precip:", n_no, "cells (",
     round(100 * n_no / ncell(dem), 1), "%)\n")
-#> Without precip: 27522 cells ( 5.3 %)
+#> Without precip: 27211 cells ( 5.2 %)
 cat("With precip:   ", n_valley, "cells (",
     round(100 * n_valley / ncell(dem), 1), "%)\n")
 #> With precip:    53635 cells ( 10.3 %)
@@ -555,20 +555,20 @@ by_stream <- fl_valley_attribute(
   group = "gnis_name",
   dem = dem
 )
-#> ℹ 859 valley cells outside every group's thresholds - 859 assigned to the nearest group.
+#> ℹ 1643 valley cells outside every group's thresholds - 1643 assigned to the nearest group.
 
 by_stream[, "gnis_name"]
 #> Simple feature collection with 5 features and 1 field
-#> Geometry type: MULTIPOLYGON
+#> Geometry type: GEOMETRY
 #> Dimension:     XY
 #> Bounding box:  xmin: 976027.5 ymin: 1054668 xmax: 983727.5 ymax: 1060008
 #> Projected CRS: NAD83 / BC Albers
 #>            gnis_name                       geometry
 #> 1      Bulkley River MULTIPOLYGON (((978377.5 10...
 #> 2      Cesford Creek MULTIPOLYGON (((979057.5 10...
-#> 3    Richfield Creek MULTIPOLYGON (((977487.5 10...
-#> 4 Robert Hatch Creek MULTIPOLYGON (((977487.5 10...
-#> 5               <NA> MULTIPOLYGON (((978457.5 10...
+#> 3    Richfield Creek MULTIPOLYGON (((978307.5 10...
+#> 4 Robert Hatch Creek MULTIPOLYGON (((977437.5 10...
+#> 5               <NA> POLYGON ((978457.5 1057198,...
 ```
 
 A cell is attributed to a watercourse when it is a valley cell *and* it
@@ -598,11 +598,11 @@ knitr::kable(
 
 | Watercourse        | Area (ha) |
 |:-------------------|----------:|
-| Bulkley River      |     502.4 |
-| Richfield Creek    |     252.3 |
-| unnamed            |     235.2 |
+| Bulkley River      |     500.8 |
+| Richfield Creek    |     251.9 |
+| unnamed            |     233.7 |
 | Cesford Creek      |     211.3 |
-| Robert Hatch Creek |     132.7 |
+| Robert Hatch Creek |     132.2 |
 
 Floodplain area attributable to each watercourse. Overlapping rows mean
 these do not sum to the total delineated area. {.table}
@@ -652,7 +652,7 @@ delineation exactly; the count is reported and stored on the result:
 ``` r
 
 attr(by_stream, "fl_fallback_cells")
-#> [1] 859
+#> [1] 1643
 ```
 
 ## Performance

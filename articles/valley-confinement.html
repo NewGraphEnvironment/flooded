@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">flooded</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -435,7 +435,7 @@ result:</p>
 <span><span class="va">n_no</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/values.html" class="external-link">values</a></span><span class="op">(</span><span class="va">valleys_no_precip</span><span class="op">)</span> <span class="op">==</span> <span class="fl">1</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Without precip:"</span>, <span class="va">n_no</span>, <span class="st">"cells ("</span>,</span>
 <span>    <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="fl">100</span> <span class="op">*</span> <span class="va">n_no</span> <span class="op">/</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">ncell</a></span><span class="op">(</span><span class="va">dem</span><span class="op">)</span>, <span class="fl">1</span><span class="op">)</span>, <span class="st">"%)\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Without precip: 27522 cells ( 5.3 %)</span></span>
+<span><span class="co">#&gt; Without precip: 27211 cells ( 5.2 %)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"With precip:   "</span>, <span class="va">n_valley</span>, <span class="st">"cells ("</span>,</span>
 <span>    <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="fl">100</span> <span class="op">*</span> <span class="va">n_valley</span> <span class="op">/</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">ncell</a></span><span class="op">(</span><span class="va">dem</span><span class="op">)</span>, <span class="fl">1</span><span class="op">)</span>, <span class="st">"%)\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; With precip:    53635 cells ( 10.3 %)</span></span></code></pre></div>
@@ -547,20 +547,20 @@ which watercourse.</p>
 <span>  group <span class="op">=</span> <span class="st">"gnis_name"</span>,</span>
 <span>  dem <span class="op">=</span> <span class="va">dem</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> 859 valley cells outside every group's thresholds - 859 assigned to the nearest group.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> 1643 valley cells outside every group's thresholds - 1643 assigned to the nearest group.</span></span>
 <span></span>
 <span><span class="va">by_stream</span><span class="op">[</span>, <span class="st">"gnis_name"</span><span class="op">]</span></span>
 <span><span class="co">#&gt; Simple feature collection with 5 features and 1 field</span></span>
-<span><span class="co">#&gt; Geometry type: MULTIPOLYGON</span></span>
+<span><span class="co">#&gt; Geometry type: GEOMETRY</span></span>
 <span><span class="co">#&gt; Dimension:     XY</span></span>
 <span><span class="co">#&gt; Bounding box:  xmin: 976027.5 ymin: 1054668 xmax: 983727.5 ymax: 1060008</span></span>
 <span><span class="co">#&gt; Projected CRS: NAD83 / BC Albers</span></span>
 <span><span class="co">#&gt;            gnis_name                       geometry</span></span>
 <span><span class="co">#&gt; 1      Bulkley River MULTIPOLYGON (((978377.5 10...</span></span>
 <span><span class="co">#&gt; 2      Cesford Creek MULTIPOLYGON (((979057.5 10...</span></span>
-<span><span class="co">#&gt; 3    Richfield Creek MULTIPOLYGON (((977487.5 10...</span></span>
-<span><span class="co">#&gt; 4 Robert Hatch Creek MULTIPOLYGON (((977487.5 10...</span></span>
-<span><span class="co">#&gt; 5               &lt;NA&gt; MULTIPOLYGON (((978457.5 10...</span></span></code></pre></div>
+<span><span class="co">#&gt; 3    Richfield Creek MULTIPOLYGON (((978307.5 10...</span></span>
+<span><span class="co">#&gt; 4 Robert Hatch Creek MULTIPOLYGON (((977437.5 10...</span></span>
+<span><span class="co">#&gt; 5               &lt;NA&gt; POLYGON ((978457.5 1057198,...</span></span></code></pre></div>
 <p>A cell is attributed to a watercourse when it is a valley cell
 <em>and</em> it sits within <code>max_width / 2</code> of that
 watercourse <em>and</em> its cost-distance from it is under
@@ -591,15 +591,15 @@ rows mean these do not sum to the total delineated area.</caption>
 <tbody>
 <tr class="odd">
 <td align="left">Bulkley River</td>
-<td align="right">502.4</td>
+<td align="right">500.8</td>
 </tr>
 <tr class="even">
 <td align="left">Richfield Creek</td>
-<td align="right">252.3</td>
+<td align="right">251.9</td>
 </tr>
 <tr class="odd">
 <td align="left">unnamed</td>
-<td align="right">235.2</td>
+<td align="right">233.7</td>
 </tr>
 <tr class="even">
 <td align="left">Cesford Creek</td>
@@ -607,7 +607,7 @@ rows mean these do not sum to the total delineated area.</caption>
 </tr>
 <tr class="odd">
 <td align="left">Robert Hatch Creek</td>
-<td align="right">132.7</td>
+<td align="right">132.2</td>
 </tr>
 </tbody>
 </table>
@@ -647,7 +647,7 @@ assigned to the nearest watercourse so the attribution covers the
 delineation exactly; the count is reported and stored on the result:</p>
 <div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">by_stream</span>, <span class="st">"fl_fallback_cells"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 859</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 1643</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="performance">Performance<a class="anchor" aria-label="anchor" href="#performance"></a>

@@ -39,6 +39,22 @@ identifies seed cells (cost = 0).
 
 Cells that are `NA` in `friction` are impassable barriers.
 
+Seeds are encoded by setting stream cells to zero in the friction
+surface, which is only unambiguous if no other cell is zero. Friction
+rasters do contain exact zeros — integer-metre DEMs, hydro-flattened
+lake surfaces and void-filled plateaus all quantize to perfectly flat —
+so cells with friction exactly `0` are floored to `1e-6` before seeding.
+Flat ground therefore remains cheap to cross but is no longer a cost
+source: at 10 m resolution a 100 km path over floored ground accumulates
+0.1, against a typical `cost_threshold` of 2500.
+
+Negative friction is not floored —
+[`terra::costDist()`](https://rspatial.github.io/terra/reference/costDist.html)
+rejects a negative cost surface, and that error is left intact.
+
+If your friction is in units whose typical values approach `1e-6`, floor
+the raster yourself before calling.
+
 ## Examples
 
 ``` r
