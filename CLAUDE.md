@@ -538,6 +538,38 @@ Add new checks here when a bug class is discovered — they compound over time.
 - Empty variable before destructive operation (rm, destroy) — add guard: `[ -n "$VAR" ] || exit 1`
 - `grep` returning empty silently — downstream commands get empty input
 
+### A preview flag is only safe if it previews
+
+- `--dry-run`, `DRY=1`, `--plan` conventionally mean "show me what would happen".
+  **Nothing enforces that.** A flag that skips the *expensive* step while still
+  performing the *destructive* one is worse than no flag, because it is exactly
+  what people reach for when they are unsure.
+- Symptom: you run the preview to check something unrelated, and `git status`
+  afterwards shows deletions you never asked for.
+- Caught 2026-08-27 in floodplains#44: `run_region.R` prints
+  `[DRY] plan + configs written; no pipeline runs` — it skips the pipeline, not
+  the config write. A `DRY=1` run to verify an unrelated one-line change deleted a
+  watershed group's second-species scenario rows, every literature citation in two
+  `flood_scenarios.csv` files, and a `break_points.csv`. 50 deletions from a
+  command documented as "plan only".
+- Before trusting one, read what it actually gates. If you own it, make the flag
+  return **before the first write**, not before the first slow call.
+- Cheap audit either way: run `git status` immediately after a dry run.
+
+### `git add -A` after a generator sweeps its side effects into your commit
+
+- Config regenerators, formatters, codegen, lockfile updaters and "plan" commands
+  all rewrite files you did not edit. Staged wholesale, they ride into a commit
+  whose message describes something else, and the diff stat is the only warning.
+- Stage the paths you actually changed (`git add <path>`), or read
+  `git diff --cached --stat` before committing and reconcile every file against
+  your intent. **A commit touching six files when you edited one is the signal.**
+- Caught 2026-08-27 in floodplains, same session as the dry-run entry above and
+  compounding with it: the preview created the unexpected changes and `git add -A`
+  committed them — a "one-line config change" of 6 files, 28 insertions and
+  **50 deletions**. Reset before it left the branch, but only because the file
+  count looked wrong.
+
 ### Never silence stderr on a mutating command, and never chain one with `;`
 
 - `cmd_that_moves_things 2>/dev/null; next_command` combines two mistakes that
@@ -642,61 +674,32 @@ Add new checks here when a bug class is discovered — they compound over time.
   - Fix: use `sed -E` (POSIX ERE) so `+`, `|`, `?`, `(...)` all work without escapes on both flavors. The same regex becomes `sed -E 's/[^a-z0-9]+/-/g'`.
 - **`s|pat|repl|` delimiter conflicts with `|` in alternation/replacement on BSD.** Pick a delimiter that does not appear in pattern or replacement (`#`, `,`, `:` are common choices). Compound `s|x|y|; s|^| /||` chains where the trailing `||` looks like an empty delimiter break on BSD sed even when GNU accepts them.
 - **Don't parse `ls`.** BSD `ls` emits ANSI colour codes when stdout is a TTY *or* when `CLICOLOR_FORCE` is set in env (often by shell rc files), and the codes leak through pipes. Downstream `grep`/`sed` chokes on the embedded escapes (`[01;31m...[0m`).
+  - **A third cause, and the one that bites agents: an alias in the invoking shell.** Measured 2026-08-28 — in an agent Bash call `ls` was aliased to `command ls --color`, so `ls -A dir | grep -v '^\.gitkeep$'` returned `^[[0m^[[00m.gitkeep^[[0m`, the grep failed to filter it, and a directory-empty guard false-failed on a correct tree. The identical command was fine inside a script file, where no alias applies and `ls` resolved to GNU coreutils — so testing it from a script *proves nothing about how it will run inline*. `CLICOLOR_FORCE` was not involved in that instance; check `type ls` before trusting either.
   - Use `find <dir> -maxdepth 1 -mindepth 1 -type d -exec basename {} \;` for directory listings, or `printf '%s\n' <dir>/*/` for a glob, or `for d in <dir>/*/; do basename "$d"; done`.
 - **When writing a snippet you expect to ship in a `skills/` SKILL.md or any cloud-init runcmd**: it must be POSIX-portable. Default to `sed -E`, avoid `\+`/`\|`, and don't pipe `ls`.
 
+### `&` binds to the whole `&&` list, so assignments never reach the parent
+
+- `cmd1 && VAR=$(...) && nohup prog > "$VAR.log" & disown` backgrounds the
+  **entire list**, not just `nohup`. `VAR` is assigned inside the background
+  subshell, so it is empty in the parent — and a following `tail -f "$VAR.log"`
+  reads the wrong path or errors while the job runs fine, writing somewhere you
+  are not looking.
+- The symptom lies about which side failed: the `tail` says
+  `No such file or directory`, which reads as "the job never started". It started.
+- Fix: assign **before** the list — `VAR=$(...); cmd1 && nohup ... &` — or
+  `printf` the resolved path from inside the backgrounded shell so the parent can
+  read it from output.
+- Hit twice in one floodplains session (2026-08-27) launching detached runs.
+
 ### `gh` CLI
 - **`gh pr create` resolves branch from CWD, not `--repo`**. Specifying `--repo NewGraphEnvironment/X` does NOT switch branch resolution — the command still reads the current working directory's checked-out branch. To open a PR in repo X, `cd` into X's checkout first, or pass `--head <branch>` explicitly.
-- **`gh issue create` with heredoc bodies fails on prose containing special shell characters** (apostrophes, dollar signs, backticks). Use `--body-file /tmp/issue.md` instead — every project's `newgraph.md` convention specifies this; codified here for the underlying class.
+- **`gh issue create` / `gh pr create` with heredoc bodies fail on prose containing special shell characters** (apostrophes, dollar signs, backticks). Use `--body-file /tmp/issue.md` instead — every project's `newgraph.md` convention specifies this; codified here for the underlying class. The two are written interchangeably, so the trap applies to both: `gh pr create --body "$(cat <<'EOF' … EOF)"` breaks the parser on a prose apostrophe and bash reports `unexpected EOF while looking for matching '"'`, aborting the whole command before anything runs.
 - **Before `gh pr merge`, verify the branch is fully pushed.** `gh pr merge` merges the REMOTE branch — commits made locally but never pushed are silently excluded, so the PR merges "successfully" while `main` is missing work you know you committed. Check `git status -sb` shows no `ahead N` before merging (or that `git rev-list --count @{u}..HEAD` is 0). Worse: if you then delete the local branch (`--delete-branch`, or a follow-up `git branch -D`), the unpushed commits become **dangling** — recoverable via `git reflog` / `git fsck --lost-found` then `git cherry-pick`, but only if you notice they're missing. Caught twice 2026-07 in `floodplains`: PR #6 merged 1 of 3 branch commits (the drift#34 `changes_only` fix + a CLAUDE.md update were unpushed → stranded as danglers → recovered and re-merged via a follow-up PR); a second branch sat 4-ahead-unpushed at compact time. The same check belongs in the `gh-pr-merge` skill's pre-merge step.
 
 ### Process Visibility
 - Secrets passed as command-line args are visible in `ps aux`
 - Use env files, stdin pipes, or temp files with `chmod 600` instead
-
-## Cloud-Init (YAML)
-
-### ASCII
-- Must be pure ASCII — em dashes, curly quotes, arrows cause silent parse failure
-- Check with: `perl -ne 'print "$.: $_" if /[^\x00-\x7F]/' file.yaml`
-
-### YAML flow-mapping in runcmd
-- Any runcmd item containing both `{` and `:` is at risk of being parsed as a YAML flow-mapping (dict), not a literal string. Cloud-init's shellify hits a non-string and throws TypeError, **aborting all subsequent runcmd steps silently** while `final_message` still fires.
-- Don't write: `- test -s /file || { echo "FATAL: ..." }` — the `:` inside braces makes YAML see a dict.
-- Do write: use `- |` block scalar with explicit `if/then/fi`:
-  ```yaml
-  - |
-    if [ ! -s /file ]; then
-      echo "FATAL: ..." >&2
-      exit 1
-    fi
-  ```
-- Validate post-edit: `python3 -c "import yaml; runcmd=yaml.safe_load(open('cloud-init.yaml').read().split(chr(10),1)[1])['runcmd']; print([type(x).__name__ for x in runcmd if not isinstance(x,str)] or 'all strings')"`. If the output is anything other than `all strings`, the runcmd will fail.
-
-### State
-- `cloud-init clean` causes full re-provisioning on next boot — almost never what you want before snapshot
-- Use `tailscale logout` not `tailscale down` before snapshot (deregister vs disconnect)
-- Wipe `/var/lib/tailscale/*` before snapshot too — `tailscale logout` deauthorizes server-side but local node identity blob persists in tailscaled.state. Snapshot restored elsewhere inherits prior key material until `tailscale up` runs again.
-- Wipe `/etc/ssh/ssh_host_*` before snapshot — otherwise droplets spawned from the same image share host identity.
-
-### Template Variables
-- Secrets rendered via `templatefile()` are readable at `169.254.169.254` metadata endpoint
-- Acceptable for ephemeral machines, document the tradeoff
-- Heredocs in runcmd that write secrets: `<<'EOF'` (quoted) prevents bash from re-expanding `$X` sequences in already-substituted credential strings. AWS keys rarely contain `$` but base64-padded secrets might.
-
-### Repo + key install ordering
-- `apt-key adv --keyserver` is deprecated on Ubuntu 24.04 noble — silently fails AND APT ignores resulting keyring. Use `gpg --dearmor` + `signed-by=` keyring file pattern.
-- Repo .list files in `write_files:` trigger the implicit `package_update` BEFORE runcmd installs the keyring → first apt-get update fails with NO_PUBKEY. Put the repo line in runcmd alongside the key install, not in write_files.
-
-### Cloud-init users vs DO SSH key injection
-- DO injects `ssh_key_ids` only into `/root/.ssh/authorized_keys` (cloud-init's `cc_ssh` module). Cloud-init `users:` block with `ssh_authorized_keys: []` does NOT pick those up.
-- Non-root users that need SSH access must copy from root's keys in runcmd:
-  ```yaml
-  - mkdir -p /home/<user>/.ssh
-  - cp /root/.ssh/authorized_keys /home/<user>/.ssh/authorized_keys
-  - chown -R <user>:<user> /home/<user>/.ssh
-  ```
-- Guard with `test -s /root/.ssh/authorized_keys` to fail loudly if `cc_ssh` hasn't run before runcmd (rare race).
 
 ## Spatial CLIs (bcdata, ogr, gdal)
 
@@ -710,120 +713,6 @@ Add new checks here when a bug class is discovered — they compound over time.
 - The trap: that reads as a broken query, not as "zero features," so a real and meaningful **absence** looks like tooling failure. Don't conclude a layer is unavailable from this error.
 - **Prove absence before acting on it.** Re-run the same query against a wider bbox known to contain features; if that returns rows, the empty result is real data. Caught 2026-08-22 establishing that BC's FTEN trail layers are genuinely empty over an entire island — the wider-box control returned 851 features, which is what turned "the query is broken" into "the province has no trails here."
 - Wrap counts defensively: `try: json.load(...)` around the parse, and treat the failure as `0 features` only after the wider-box control passes.
-
-## OpenTofu / Terraform
-
-### State
-- Parsing `tofu state show` text output is fragile — use `tofu output` instead
-- Missing outputs that scripts need — add them to main.tf
-- Snapshot/image IDs in tfvars after deleting the snapshot — stale reference
-
-### Duplicate module blocks across envs double-track global resources
-- A module instantiated in two env dirs (e.g. `module "iam"` in both `env/prod` and `env/dev`) means account-global resources (IAM users, roles) can be tracked in BOTH local states. Removing the module block from one env turns its state copies into pending DESTROYS — which would delete the real resource out from under the other env.
-- Caught 2026-07-18 (rtj#185): `env/dev` state secretly held `role_terraform_awshak` — the role every `role-assume.sh` apply depends on — and a config cleanup turned it into a planned destroy.
-- Fix: `tofu state rm '<addresses>'` in the env relinquishing ownership (no cloud change; auto-backs-up state), leaving exactly one owning env. Verify the resource survives (`aws iam get-role ...`).
-- Review check: any plan that destroys resources in a shared/global-resource module → first confirm which OTHER env states track the same addresses (`grep <name> env/*/terraform.tfstate` or check the remote backend keys).
-
-### Destructive Operations
-- Validate resource IDs before destroy: `[ -n "$ID" ] || exit 1`
-- `tofu destroy` without `-target` destroys everything including reserved IPs
-- Snapshot ID extraction by name: use `awk -v n="$NAME" '$2 == n {print $1}'` (exact match on column 2). `grep -F "$NAME"` is substring-match and can grab a stale snapshot whose name contains the new name as a substring.
-
-### "Has been deleted" in plan output is not authoritative — verify against the cloud API first
-- The AWS provider (5.x and some 6.x) has a known class of bug where a transient read error (false 404, regional-endpoint hiccup) is interpreted as "resource deleted outside of OpenTofu." The plan will show the resource and any children scheduled for destroy + recreate (`forces replacement` cascades through children that interpolate the parent's id/arn).
-- If you didn't delete the resource and the plan says it's gone, **verify against the cloud API before applying**: `aws s3 head-bucket --bucket X`, `aws iam get-role --role-name X`, etc. A `tofu plan -refresh=true` re-run a moment later often reports "No changes."
-- Caught 2026-05-14 in rtj env/prod for stac-era5-land: bucket fully intact (60 objects, 307 MB) but plan said deleted with 5 child resources "must be replaced." Apply would have clobbered the policy + lifecycle configs against the still-existing bucket. Recovery via `-target` on the unrelated resource being added (rtj#157 then codifies `lifecycle { prevent_destroy = true }` on the bucket + load-bearing children).
-- **Belt-and-suspenders defense:** add `lifecycle { prevent_destroy = true }` to high-value resources (S3 buckets, RDS instances, anything irreplaceable) in their module. Tofu will refuse to plan a destroy until the lifecycle line itself is removed in config — converts the failure mode from "apply silently clobbers" into "plan errors with `Instance cannot be destroyed`." Don't apply it to count-based resources where `count: 1 → 0` is a legitimate transition.
-
-### Check IaC ownership before CLI-mutating cloud config
-- Before changing bucket policies, lifecycle rules, IAM policies, etc. with the aws CLI, grep the Terraform modules for the resource. If tofu owns it, a CLI change is not "drift" — it is **reverted on the next apply** (silent rule deletion). `put-bucket-lifecycle-configuration` additionally REPLACES the whole config, so a CLI "add one rule" can also clobber tofu-owned rules immediately.
-- Caught 2026-07-18 (water-temp-bc#23): a NoncurrentVersionExpiration rule was one `aws s3api put` away from being applied — rtj `modules/s3` owns `aws_s3_bucket_lifecycle_configuration`, so it would have first clobbered the IA-transition rule, then been reverted. Correct path was a module variable + `tofu apply` (rtj#187).
-- Corollary: when a pipeline's write pattern evolves (append-only → rewrite-in-place), **re-audit the IAM verbs its role actually needs**. water-temp-bc's GHA role lacked `s3:DeleteObject`; the first compaction run half-applied a `sync --delete` and left the store with duplicate keys until manually repaired (rtj#147 reopened). Check for an existing module toggle first — `allow_delete` already existed.
-
-## DigitalOcean
-
-### Snapshot disk-size constraint
-- DO snapshots include the source droplet's disk size. New droplets from a snapshot must have disk **>=** snapshot disk. Resize **up** is fine; resize **down** below the snapshot disk is impossible without rebuilding.
-- Build the snapshot at the smallest droplet size you'd ever want to spin from it. Sizes vs disks at writing: `g-4vcpu-16gb` = 50 GB, `g-8vcpu-32gb` / `m-4vcpu-32gb` = 100 GB, `m-8vcpu-64gb` = 200 GB.
-- If your workload requires X GB RAM minimum, your snapshot floor is whatever droplet has X GB AND the smallest disk class.
-
-### Reserved IP detach behavior
-- Targeted destroy (`tofu destroy -target=module.droplet -target=...assignment...`) preserves the reserved IP at $4/mo. Full `tofu destroy` releases it (next apply gets a NEW IP).
-
-### Reserved IP assignment race (rtj#55, rtj#85)
-- DO returns 422 "Droplet already has a pending event" when reserved IP assignment fires immediately after droplet+firewall creation. The droplet's internal event queue takes time to drain.
-- **Every DO droplet module that uses a reserved IP MUST have:**
-  1. `time_sleep` resource between droplet creation and IP assignment, with `create_duration ≥ 60s` (10s and 30s have both been observed to race; 60s has more headroom)
-  2. `depends_on = [time_sleep.<name>]` on the `digitalocean_reserved_ip_assignment` resource
-  3. A retry fallback in the wrapping shell script (`up.sh` style) that detects the 422 in tofu output and uses `doctl compute reserved-ip-action assign <ip> <droplet-id>` to recover. Tofu doesn't retry; it leaves state half-applied (assignment recorded but DO didn't actually attach).
-- **Snapshot-based spins are MORE prone to the race** than first-boot from blank Ubuntu (more startup events compete for the droplet's event queue).
-- **Audit existing modules:** `grep -L 'time_sleep' env/do/*/<host>/main.tf` finds modules missing the gate. As of 2026-05-02, openclaw and geoserv have no `time_sleep` — they will race eventually.
-- **`depends_on` alone does not re-create the gate on a replace.** A `time_sleep` with `depends_on` but no `triggers` stays untouched in state when the droplet is replaced (`tofu apply -replace=...`), so the settle delay silently doesn't run and the reassignment races anyway. Verified empirically on OpenTofu 1.12.0. A *targeted destroy* does sweep dependents, so `tofu destroy -target=module.droplet` + `apply` is safe while `-replace` is not. Add `triggers = { droplet_id = module.droplet.id }` to close it, and prefer targeted destroy in any documented rebuild recipe.
-
-### SSH keys apply at droplet creation only — guard the ForceNew edit
-- DO injects `ssh_key_ids` into `/root/.ssh/authorized_keys` **once, at first boot** (cloud-init's `cc_ssh`) and never revisits the list. A key registered after a droplet was built therefore never reaches it, no matter what tfvars says. Symptom: a machine that reaches freshly-built hosts fine is denied by an older one.
-- `ssh_keys` is **`ForceNew: true`** in the DO provider (a `TypeSet`, so reordering is safe). "Just add the key to tfvars" therefore plans a **destroy/recreate of the running host** — and doesn't even grant the new machine access to the host it destroyed. On a production database or tile server that is a catastrophe dressed as a one-line fix.
-- **Guard the shared droplet module** with `lifecycle { ignore_changes = [ssh_keys] }`. It is safe precisely because DO cannot apply the change anyway: the only possible effect of that diff is an unwanted replace. `ignore_changes` governs updates only — creates and replaces recompute from config, so a deliberate rebuild still picks up the current list.
-- Document the tradeoff where operators hit it: after the guard, editing `ssh_key_ids` produces **no plan diff at all**, and a typo'd key ID surfaces at create rather than at plan.
-- To authorize a machine on a running droplet, append its pubkey — with `printf '\n%s\n'`, never `printf '%s\n'`. If the remote `authorized_keys` lacks a trailing newline (common once anyone has appended by hand), a bare append concatenates onto the last line and invalidates **both** keys — locking you out via the procedure meant to prevent lockout. `ssh-copy-id` handles this correctly.
-- Check *which* file. DO's injection targets root only. A non-root SSH user has keys only if that env's cloud-init explicitly copied them at first boot — and that copy is one-time, so appending to root's file later grants the non-root user nothing.
-- Caught in rtj#193: one machine had no path to a production STAC host for months because its key was registered after the droplet was built, and the obvious remediation would have destroyed the host.
-
-## Docker / Postgres
-
-### Postgis init time
-- `imresamu/postgis` (and similar postgis images) on first cold start (empty data volume) take **5-12 min** to install all extensions — varies with disk IO and noisy-neighbor lottery on cloud hosts. Health-wait scripts must allow 15 min minimum, ideally with hard-fail + log dump on timeout.
-
-### Tuning vs host RAM
-- fresh's `docker/docker-compose.yml` defaults are tuned for a 128 GB host (`shared_buffers=32GB`, `shm_size=36gb`). On smaller hosts, postgres OOMs at startup with "could not map anonymous shared memory".
-- 32 GB host floor: use the M1/cypher 32 GB-host preset (`scripts/fwapg/compose.override.m1.yml`) which sets `shared_buffers=8GB, shm_size=12gb`.
-- Below 32 GB: postgres can technically start with smaller `shared_buffers` but fwapg work becomes painful. Don't run fwapg pipelines on <32 GB hosts.
-
-### `search_path` is data, not config
-- `ALTER DATABASE <db> SET search_path TO ...` is a database-level setting **stored in the postgres data dir**. Wiped with `docker compose down -v`. Must be re-applied on every restore.
-- Codify in your restore script, not in cloud-init or compose env (those don't apply to db-level settings).
-
-### `pkill <R/Python/etc. client>` does NOT cancel its Postgres query
-- Killing the client (R, Python, psql) closes its connection. The libpq backend on the server keeps running the in-flight query until it finishes — **server-side orphan**. The orphaned backend holds whatever locks it had (table, view, advisory). Every later `DROP VIEW` / `LOCK TABLE` / `ALTER` on the same object blocks behind it indefinitely — *silent hangs* indistinguishable from a slow query.
-- Caught 2026-05-25 in link#205: a `pkill`'d `wsg_run_one.R` left a `frs_network_features` SELECT running 1h45m; subsequent recomputes wedged on `DROP VIEW barriers_bt_access` for 1h08m before someone noticed.
-- **Always terminate the server-side backend**, not just the client:
-  ```sql
-  SELECT pid, pg_terminate_backend(pid)
-  FROM pg_stat_activity
-  WHERE datname='<db>' AND state='active' AND now()-query_start > interval '3 minutes'
-    AND pid <> pg_backend_pid();
-  ```
-  Then kill the client. Order matters when you don't know which side will block.
-
-### Set `statement_timeout` + `lock_timeout` on long DB ops
-- Any long-running DB op from an R/Python/etc. client should set both at session start, ideally via env (`PGOPTIONS='-c statement_timeout=600000 -c lock_timeout=60000'`) or on the connection itself (`DBI::dbExecute(conn, "SET statement_timeout = '600000'")`). A runaway query then cancels server-side (no orphan); a blocked `DROP VIEW` gives up rather than wedging behind a zombie lock. Without it, silent hangs become indistinguishable from "still working" and you wait hours.
-- Pick a generous-but-bounded timeout (10× expected query time). The point isn't tight enforcement — it's "fail loud instead of fail silent."
-
-### Function-as-join-predicate: index visibility depends on inlineability
-- `JOIN b ON some_function(a.cols, b.cols)` — Postgres can only use the underlying indexes if `some_function` is `LANGUAGE sql` (inlineable). `plpgsql` functions are opaque and force per-row evaluation → seq scan / nested loop without indexes. Verify with `\df+ <function>` (look at `Language`) and `EXPLAIN` (look for the function body expanded into Filter / Index Cond).
-- Caught in link#205 with `whse_basemapping.fwa_downstream` — it IS `LANGUAGE sql` + the planner did inline it; the symptom was elsewhere (see below). But if a function-based join is slow and the function is plpgsql, that's the first thing to look at.
-
-### Joining on a per-tenant key (e.g. `id_segment` per-WSG) against a multi-tenant table is cartesian
-- `id_segment` in link's persist schema is unique *within* a WSG, not globally (link#203). `WHERE id_segment IN (SELECT id_segment FROM streams WHERE wsg=aoi)` against persist matches access rows from *every* WSG sharing those id_segment values → N(WSGs)× duplicates → PK violations downstream and 50× memory.
-- Fix: filter by the full tenant key (`watershed_group_code = aoi`) when the table has it. Pattern: introspect via `information_schema.columns` at runtime and branch — the same function can serve a working schema (single tenant, no WSG col) and persist (multi-tenant, with WSG col).
-
-### View vs. real table changes the planner's join direction
-- A `CREATE VIEW v AS SELECT * FROM big_table WHERE … ` carries no row-count statistics. Used as a join input, the planner may pick the other side (big) as the outer driver, blowing nested-loop cost ~1000× — the symptom looks like "the indexes aren't being used" but it's actually a wrong-direction nested loop.
-- Caught in link#205: AOI-scoping streams via a `VIEW` left Postgres thinking the 26k FINA segments were as big as the 800k persist barriers; it picked barriers as outer; 71M estimated result rows; >10 min wall.
-- Fix when AOI-scoping into a smaller dataset: **materialise as a real `CREATE TABLE` with indexes + `ANALYZE`**. The planner then sees the small row count and picks it as outer. Drop the table on `on.exit` if it's transient.
-
-### Two-statement DELETE/INSERT into a persist table is not atomic
-- A "DELETE WHERE wsg='X'; INSERT …" pair into a persist table from an orchestration script: if the INSERT fails (e.g. duplicate key from a subtle JOIN bug), the DELETE already ran → **data loss for that WSG**. Wrap in a single transaction (`BEGIN; … ; COMMIT`) when the persist table is the only source of truth, so a failed INSERT rolls back the DELETE. (link#205 lost FINA's `streams_mapping_code` to this; the surrounding cheap-recompute orchestration in `wsg_recompute_one.R` should wrap both statements in a tx.)
-
-## Tailscale
-
-### ACL "users" semantics
-- Tailscale SSH ACL `"users": ["autogroup:nonroot"]` for `tag:compute` blocks `ssh root@<node>` over the tailnet. Use `ssh <user>@<node>` + sudo for root operations.
-- For SSH-as-root from off-tailnet (regular OpenSSH on the public IP), the ACL doesn't apply — but you need the SSH key registered on the node.
-
-### Reusable + ephemeral auth keys
-- Cypher-style ephemeral compute droplets need both flags on the auth key: **Reusable** (same key works across destroy/recreate) + **Ephemeral** (tailnet entries auto-clean when offline >5 min).
-- Tag the key (e.g. `tag:compute`) at creation time. Nodes joining with that key inherit the tag automatically — no `--advertise-tags` needed at `tailscale up` time.
 
 ## Security
 
@@ -1626,7 +1515,7 @@ For non-trivial issue-driven work, follow this checklist. Each step exists for a
 
 1. **Start with `/planning-init <N>`** — given an issue number, enters plan mode for codebase exploration, presents a phase breakdown for user approval, then scaffolds branch + PWF baseline with the approved phases. One command replaces the manual issue → explore → plan → branch → scaffold dance.
 2. **Write robust tests first** — failing tests that reproduce the issue or document the new behavior. Tests are the contract; they fail until the work makes them pass.
-3. **Name with intent** — functions, parameters, internal helpers carry the naming style of the package they live in. Look at existing exports as the guide; consistency over cleverness. (Per-package naming convention TBD — see soul issue tracking.)
+3. **Name with intent** — functions, parameters, internal helpers carry the naming style of the package they live in. Look at existing exports as the guide; consistency over cleverness. For files rather than functions — shell scripts and operational R scripts under `scripts/` or `data-raw/` — the standard is the `noun_verb-detail` pattern in `newgraph.md`, noun first.
 4. **Examples that run** — every exported function gets a runnable `@examples` block. Pkgdown renders them; CI executes them. An example that doesn't run is documentation rot.
 5. **Code-check before each commit** — `/code-check` on staged diff. Catches what tests miss: edge cases, hard-coded paths, unguarded variables, security issues.
 6. **Atomic commits** — each commit bundles code change + checkbox flip in `task_plan.md`. The diff and the progress live in the same commit; `git log -- planning/` tells the full story.
@@ -1805,6 +1694,24 @@ A `Monitor` filter must also match the failure states, not just the success
 one — silence looks identical to "still running", so a watcher that greps only
 for the happy path stays quiet through a crash.
 
+### Don't edit files a long-running suite is still reading
+
+`devtools::test()` and its equivalents load each test file **when they reach it**,
+not at launch. A 30-minute run therefore reads whatever is on disk at that moment,
+so edits made mid-run are half-applied and the result describes a tree that never
+existed.
+
+Cost two full Docker suites (~1 hour) on rfp#178, both reporting `FAIL 1`. The
+failure was a test written *during* the run, executing against source from *before*
+the fix that made it pass — nearly reported as a regression. **The tell is a moving
+denominator:** 3490 passes, then 3496, then 3500, on "the same" tree.
+
+Before a long run, commit. While it runs, do work that touches nothing it reads —
+issue bodies, PR text, reading, planning. If an edit cannot wait, kill the run
+rather than let it produce a result that has to be re-litigated. And when a long run
+fails, get the `file:line` before forming any theory: a mid-flight edit and a real
+regression look identical in a summary line.
+
 ## 6. Subagents Are Evidence, Not Dependencies
 
 **Spawn on your own judgment. Don't block on one. Don't trust its status. Verify its claims in both directions.**
@@ -1923,6 +1830,102 @@ Subagent output is evidence, not verdict. Both failure modes are real:
 The rule that separates them: **cheap probe first, then act.** Reproduce the
 claim before you fix it, and before you dismiss it. A finding you cannot
 reproduce is a finding you do not yet understand.
+
+
+## 7. Evidence, Not Impressions
+
+**Measure before you characterise. Presence is not provenance. "Unknowable" is a
+claim.**
+
+Six principles that all fail the same way: something *feels* established — because
+it is visible, because it is present, because someone said so — and gets offered
+with the confidence of a measurement.
+
+### Measure before you characterise
+
+When a decision turns on **what something contains**, open it and count. Do not
+describe it from its structure, from an issue's claim about it, or from a tag list.
+A heading tells you a thing is *present*, never that it is *populated* — an empty
+`<conditionalstyles/>` and one with rules look identical in a list of child names.
+
+Four instances in one rfp session, each corrected by the user's follow-up question
+rather than by review: a tradeoff described as three times its real size; an issue's
+stale claim repeated as current; an installed version reported as sixteen releases
+behind when a parallel session had updated it eighteen minutes earlier; and "nothing
+on main addresses this" from a local `main` three commits behind — one `git fetch`
+away from the truth.
+
+**A measurement carries the time it was taken.** One made earlier in the same
+session is not a current one, least of all for anything another session can change
+underneath it. For anything git-backed, `git fetch` first: reading a local clone and
+reporting it as the state of the world is the same error with a longer fuse.
+
+**And before hand-rolling a parser for a probe, check whether the code already has
+one.** A bespoke parser silently narrows the population it can see, and the result
+looks like a measurement rather than a sample — worse than not measuring, because it
+carries a number. Measured 10 of 80 with a hand-written matcher; routed through the
+package's own resolver it was 14 of 117.
+
+### Presence is not provenance
+
+When something's **presence** is offered as evidence for **how it got there**, find
+the fact that actually discriminates. A QGIS project's `3.30.1` stamp was offered as
+evidence a desktop had opened it — but the template it was copied from carries that
+stamp, so a never-opened project reads the same. What actually proved it was a
+tracking key the template does not contain.
+
+The tell: reaching for the *most visible* fact rather than the *discriminating* one,
+because the visible fact is consistent with the conclusion. **Consistency is not
+support.** Before offering "X shows Y", ask what else would produce X. If anything
+would, X is not evidence.
+
+When the user pushes back on an inference, re-derive rather than defend. The
+conclusion often survives; the reasoning that reaches it is usually different.
+
+### "It can only be answered by testing" is a claim with an author
+
+An issue or a colleague saying a question needs a field season, a device or a deploy
+is stating a claim, not a property of the problem. Spend the cheap probe first.
+
+rfp#186 opened with "three questions decide whether this is viable, and none can be
+answered by reading." Two fell in about twenty minutes — one to reading a call
+graph, one to re-reading a file already on disk — turning "run a field season, then
+decide what to build" into "build it, then confirm one thing."
+
+The claim is usually made by someone who knows the domain, at a moment before they
+looked. Not wrong so much as **unexamined**, which is what lets it survive into the
+plan. Then **bound what the probe closed**: reading a desktop plugin says nothing
+about the mobile app. An over-claimed probe is worse than none.
+
+### A real bug is not necessarily the reported bug
+
+A defect found while investigating a symptom is **evidence, not the answer**. Before
+offering it as the cause, check that it produces *exactly* the symptom described,
+including the details that sound incidental.
+
+Two confident wrong causes in a row on rfp#196 — a layer missing from a map theme
+(a real bug, fixed) and a sub-pixel geometry (a real measurement). Both true;
+neither explained the report. The actual cause was draw order, and the user named it
+himself. The discriminating fact was in his words all along: *"as soon as I stop
+tracking I can't see the track"* rules out both theories in one line.
+
+Finding a genuine defect feels like finding *the* defect — the relief of having an
+explanation is what stops the check. Write the reported symptom out and ask whether
+the proposed cause produces **all** of it. Say which parts are still unexplained:
+"this is a real bug and it may not be your bug" is honest and cheap.
+
+### An enumeration is not a checklist
+
+A probe listing what exists — subkeys present, columns found, files listed — answers
+"what is here", never "what do we want". Scope arriving this way looks
+evidence-backed, so it survives review.
+
+On rfp#68, "the two Mergin subkeys that exist" became "the settings to verify",
+then an item on a field checklist a human had to walk outdoors to complete. Nothing
+in the codebase read or wrote `PhotoNaming`. Before a probe's output becomes work,
+grep for each item and ask whether anything consumes it. When it duplicates
+something already done another way, name the comparison — the existing approach
+usually wins for a reason worth stating.
 
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
@@ -2227,7 +2230,7 @@ Before a second attempt, name the failure class. A **deterministic** failure
 returns the same result to the same inputs, so re-running unchanged only spends a
 turn — change the inputs or change the approach. A **transient** failure
 (network, a provider read, a rate limit, a resource still settling) is the case
-where a re-run *is* the attempt: `code-check.md` prescribes exactly that for a
+where a re-run *is* the attempt: `code-check-infra.md` prescribes exactly that for a
 tofu plan that falsely reports a resource deleted. The rule is not "never retry";
 it is never retry unchanged while expecting a different answer.
 
@@ -2266,7 +2269,8 @@ never make that trip and should not — the ledger's job is to stop one task
 repeating itself.
 
 When a failure does generalize, it graduates to the convention that owns its
-class: `code-check.md` for a bug class in a diff, `ci-monitoring.md` for CI
+class: `code-check.md` for a bug class in a diff (or `code-check-infra.md` when it
+is specific to provisioning), `ci-monitoring.md` for CI
 behaviour, the domain convention otherwise.
 
 ## Skills
