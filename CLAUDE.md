@@ -6,7 +6,7 @@ Portable floodplain delineation from DEM and stream network using the Valley Con
 
 **Repository:** NewGraphEnvironment/flooded
 **Primary Language:** R (package)
-**Version:** 0.4.0
+**Version:** 0.4.1
 **License:** MIT
 
 ## Ecosystem
@@ -538,6 +538,30 @@ Add new checks here when a bug class is discovered — they compound over time.
 - Empty variable before destructive operation (rm, destroy) — add guard: `[ -n "$VAR" ] || exit 1`
 - `grep` returning empty silently — downstream commands get empty input
 
+### Never silence stderr on a mutating command, and never chain one with `;`
+
+- `cmd_that_moves_things 2>/dev/null; next_command` combines two mistakes that
+  cover for each other. The redirect hides the diagnostic, and `;` runs the next
+  command regardless — so a mutation that "succeeded" doing the **wrong thing**
+  leaves no trace, and the only symptom is an unrelated error one command later.
+- Caught 2026-08 archiving a planning directory:
+  ```bash
+  git mv planning/active $(basename planning/active) 2>/dev/null; mv planning/active "$dest"
+  ```
+  The `git mv` succeeded — it moved `planning/active` to `./active` at the repo
+  root, which is not what was meant. Nothing said so. The failure surfaced as
+  `mv: cannot stat 'planning/active'` from the *next* command, which reads like
+  the directory was never there.
+- Two rules, and the first is the load-bearing one:
+  - **`2>/dev/null` belongs on reads, not writes.** A probe that may legitimately
+    fail (`grep -q`, `test`, a `gh` call you expect to 404) can be quiet. A
+    command that moves, deletes, or writes must be allowed to speak.
+  - **Chain mutations with `&&`.** `;` between two steps of one operation says
+    "these are unrelated", which is exactly what they are not.
+- Same class as the `set -e` / pipefail entries above, but it survives them: `;`
+  defeats `set -e` for the preceding command by design, so a script with
+  `set -euo pipefail` at the top is not protected.
+
 ### `cmd > file` truncates before `cmd` runs — a failed command leaves a poisoned empty file
 - The shell creates/truncates the redirect target **before** the command executes. If the command then fails (times out, wrong arg, no network), you're left with a **zero-byte file** — not the absence of a file. `set -euo pipefail` does not save you: the truncation already happened before the command's non-zero exit fires.
 - The trap springs on the *next* run when an **existence-only guard** treats that empty file as valid: `[ -f "$f" ] || cmd > "$f"` sees the file, skips regeneration forever, and every downstream reader silently consumes an empty value. For a secret/credential cache this reads as a confusing auth failure (empty header → `403`) with no obvious cause.
@@ -896,6 +920,36 @@ prevented it.
 - General rule: before moving content into a chunk, name what else was reading it
   as prose.
 
+### `fs::dir_ls(glob = )` matches the FULL path, so a bare filename pattern matches nothing
+
+- `fs::dir_ls(dir, glob = "form_*.gpkg")` returns **zero** for a directory full of
+  `form_*.gpkg` files. The glob is tested against the whole path
+  (`/Users/.../project/form_pscis.gpkg`), which does not start with `form_`.
+- It fails **silently and in the safe-looking direction** — an empty result reads
+  as "this project has none", not as "the pattern was wrong". Seen 2026-08-27 in
+  rtj#221: a harvest driver found no forms in a project holding four, and a
+  second glob (`"*/form_*.gpkg"`) masked it by accidentally matching.
+- Use an anchored `regexp` instead, which is matched the same way but says so:
+  `fs::dir_ls(dir, regexp = "/form_[^/]+\\.gpkg$", recurse = FALSE, type = "file")`.
+- Set `recurse` deliberately while you are there. A recursive search of a Mergin
+  project picks up `.mergin/`'s own cache copies and anything under `hold/` —
+  stale duplicates that then get processed as if they were live.
+
+### Do not build an exact-match edit from a formatted display
+
+- Reading a file through a pretty-printer and then writing a string replacement
+  against what you saw will fail whenever the formatter changed the bytes.
+  `sed -n '10,20p' file | sed 's/^/  /'` adds two spaces to every line; a
+  subsequent `replace(old, new)` built from that output silently matches nothing.
+- The failure looks like the file changed under you, so the instinct is to re-read
+  it — through the same formatter — and conclude the text is right and the tool is
+  broken. Cost two failed edit rounds in rtj#221 before `repr()` on the raw lines
+  showed the real indent was **two** spaces where the padded display implied four.
+- Print the bytes you intend to match: `repr()` in Python, `cat -A`, or
+  `writeLines()` — never a column-shifted copy.
+- Same family as diagnosing PATH in the shell that actually runs: inspect the
+  thing you are acting on, not a convenience rendering of it.
+
 ### `glue()` trims common leading whitespace
 - `glue::glue()` strips the common indentation of its input, so a template whose
   output must preserve exact indentation (XML, YAML, Makefiles, Python) comes
@@ -906,6 +960,26 @@ prevented it.
 - Related, and the opposite mistake: glue does **not** re-parse interpolated
   values, so literal `{...}` inside a *value* is safe. Don't rewrite a working
   generator to escape braces that were never a problem — probe it first.
+
+### `f(g(x)) <- v` needs a `g<-`, not an evaluated `g(x)`
+
+- R parses **any** call on the left of `<-` as a replacement function, all the
+  way down. `xml2::xml_text(node_for(ml)) <- expr` does not evaluate
+  `node_for(ml)` and assign into the result — it looks for `` `node_for<-` ``
+  and errors with `could not find function "node_for<-"`.
+- It reads as correct because the single-call form is idiomatic and works:
+  `xml_text(node) <- v`, `names(x) <- v`, `levels(f) <- v`. Only the *nested*
+  form breaks, so the habit is what leads you into it.
+- Fix: assign the inner result first.
+  ```r
+  target <- node_for(ml)       # not xml_text(node_for(ml)) <- expr
+  xml2::xml_text(target) <- expr
+  ```
+- The error names a function nobody wrote, which sends you looking for a missing
+  import or a typo rather than at the line's shape. Caught 2026-08-27 in rfp#201
+  with `xml2::xml_text(.qgs_preview_node(ml)) <- expr`.
+- Applies to every replacement form — `attr<-`, `[[<-`, `dim<-`, `st_crs<-`. If
+  the left side has two calls, one of them has to move to its own line.
 
 ### `on.exit()` at a script's top level never fires
 - `on.exit()` registers a handler on the *current frame*. At the top level of a
@@ -1422,18 +1496,33 @@ When importing config from one location into a canonical one (legacy `~/.bash_pr
 
 ### Restore the bug and confirm the test fails
 - The rule above says a fixture that cannot reach the failure mode is worthless. This is the thirty-second check that tells you which kind you just wrote: **put the defect back, run the test, watch it go red.** A test that stays green against the code it was written to reject is decoration, and reading it will not tell you that — every case below looked correct on the page.
-- Cheapest form when the fix is inside a package: patch the namespace rather than editing the source back and forth.
-  ```r
-  ns <- asNamespace("pkg"); orig <- get("f", ns)
-  unlockBinding("f", ns); assign("f", broken_version, ns)
-  # run the assertion -- it must fail here
-  assign("f", orig, ns); lockBinding("f", ns)
+- Cheapest form when the fix is inside a package: patch the binding rather than editing the source back and forth. For a data-shaped bug, feed the function the input the fix was about and assert the old answer is gone.
+- **In R, patching only `asNamespace()` gives a false green for anything test code calls directly.** `pkgload::load_all()` (so `devtools::test()`, so every local run) creates **two** bindings: the namespace, and an attached `package:<pkg>` on the search path. Test code resolves through the search path and never consults the namespace, so the obvious recipe leaves the test calling the *original* function while reporting success.
+  Measured 2026-08-28 in flooded#41, restoring a fully-reverted bug under `test_file()`:
   ```
-  For a data-shaped bug, feed the function the input the fix was about and assert the old answer is gone.
+  unpatched                          FAIL = 0     zeros = 1    (fixed behaviour)
+  asNamespace("flooded") patched     FAIL = 0     zeros = 1    <- false green, bug not reached
+  + as.environment("package:flooded") FAIL = 3    zeros = 400  <- broken code actually runs
+  ```
+  Which binding you want depends on who calls:
+
+  | the call under test | patch |
+  |---|---|
+  | test code -> an exported function | `as.environment("package:<pkg>")` |
+  | one package function -> another (internal call path) | `asNamespace("<pkg>")` |
+  | either, on testthat >= 3.2.0 | `local_mocked_bindings(f = ..., .package = "<pkg>")` |
+
+  ```r
+  for (e in list(asNamespace("pkg"), as.environment("package:pkg"))) {
+    unlockBinding("f", e); assign("f", broken_version, e)
+  }
+  ```
+- **Do not reason about which environment — print a value that proves the patch took.** One line, before the assertion, whose output can only come from the broken version. That is what turns "I patched it" into "the broken code ran", and it is the same check whether the language is R, Python or JS. Assigning into `globalenv()` also appears to work in R, by *shadowing* the attached copy earlier on the search path — a workaround that happens to produce the right answer for the wrong reason, and silently fails the moment the caller is inside the package.
 - Three instances in one PR (gq#52, 2026-08), all written by someone who had just read the fixture rule directly above:
   - A scale-bar test asserting the bar stays within `share` of the frame — threshold hardcoded at **0.75** against a `share` of **0.35**, so a bar at 2.1x the requested size passed. Every width in the fixture also happened to round *down*, so none could overrun even at the right threshold.
   - A clamp test for a bbox padded past ±90 — the box chosen padded the **x** axis, so the latitude clamp it was named for could never fire.
   - An `options(str=)` independence test routed through real registry data whose values stayed distinct at one decimal. With the buggy key restored it still passed; a synthetic `1.32 / 1.34` pair made it fire.
+- A fourth, of a different kind, from the entry above: the restoration *harness* can be the thing that is broken. A green run proves nothing until you have evidence the defect was actually executing.
 - What they share is the tell: the **assertion** is correct and the **input** cannot reach it. So review the fixture against the bug, not the assertion against the spec — the assertion is the part that reads well and the part that is usually already right.
 - Sibling of the interop rule above, at one remove: a test that inspects a structure its consumer would reject is the same failure. In that same PR, 18 tests read a legend object and none passed it to the renderer, which refused it outright.
 
@@ -1449,6 +1538,61 @@ When importing config from one location into a canonical one (legacy `~/.bash_pr
 - Caught twice in one file 2026-08-24 (crate#9) — once in a canonical column list and once in a variant's column list. Both found by a guard that asserted every declared name `is.character()`; reading the YAML had not found either.
 - Worth an assertion rather than vigilance: after parsing any config that carries user-chosen names, check they are all strings. The failure is invisible otherwise, because the wrong value is a perfectly valid one.
 
+### List the container; do not construct the sibling path
+- Probing for a related object by editing a known-good path — swapping a
+  directory, appending a suffix, substituting a product name — assumes the
+  naming convention is uniform across the whole store. It usually is not, and
+  the places it is not are invisible from any single example.
+- The failure is a **404, which reads as "that product does not exist"** rather
+  than "I guessed the name wrong". So the wrong conclusion arrives looking like
+  evidence, and it is the confident kind: a checked path that returned nothing.
+- Measured 2026-08-27 in the BC LidarBC objectstore. Swapping `/dem/` for
+  `/dsm/` in a tile's URL:
+  ```
+  2022  dem/bc_082f037_xli1m_utm11_2022.tif
+        dsm/bc_082f037_xli1m_utm11_2022.tif        <- same basename, swap works
+  2017  dem/bc_082f037_xli1m_utm11_2017.tif
+        dsm/bc_082f037_xli1m_utm11_2017_dsm.tif    <- suffixed, swap 404s
+  ```
+  A probe run against a 2017 tile concluded "there is no surface model and no
+  CHM", and that became the central constraint of a project plan — ruling out
+  canopy measurement entirely — for weeks. Listing the prefix instead showed
+  `dem, dsm, orthophoto, pointcloud` immediately, with DSM present in 25 of 38
+  mapsheet-years.
+- **Enumerate the container** (`?list-type=2&delimiter=/&prefix=…`, `ls`, the
+  API's own listing endpoint) and match on the fields that actually identify the
+  thing — tile, date, product — rather than on a name you assembled.
+- When pairing two families this way, **report the unpaired members**. An item
+  with no partner is a real gap, and silently dropping it turns a coverage hole
+  into an apparently complete result.
+
+### A verifier built on the writer's own library shares its blind spot
+- After rewriting a file, the natural check is to parse both versions and
+  compare their structure. That check is worth much less than it looks when
+  the same library does both jobs: **anything the library does not model, it
+  will neither preserve nor miss.** The comparison comes back identical, and
+  the loss is invisible precisely where it matters.
+- Live case, 2026-08-27: Python's `ElementTree` **silently drops the
+  `<!DOCTYPE>`** when it writes. A `.qgs` carries one. The structural check —
+  root tag, layer count, theme count, tree nodes — reported IDENTICAL, because
+  `ElementTree` does not need a DOCTYPE to parse either. R's `xml2::write_xml`
+  preserves it, which is why the same operation through the package's own
+  writer had never shown the problem.
+- The prologue is the usual casualty in XML (DOCTYPE, processing
+  instructions, comments, namespace prefixes, attribute order), but the shape
+  is general: JSON writers drop key order and numeric precision, YAML writers
+  drop anchors and comments, image libraries drop EXIF.
+- Two habits that catch it:
+  - **Diff the bytes at the boundaries**, not just the parsed structure —
+    `head -2` and `tail -2` on both files costs nothing and is exactly where
+    prologue loss shows.
+  - **Check what the real consumer needs**, then assert that specifically. The
+    generic "did the structure survive" question cannot ask it for you.
+- Sibling of *"A round-trip through your own reader proves nothing about
+  interop"* above, one level meaner: there the reader was too generous, here
+  the **verifier** is, so the failure survives a check that was written
+  specifically to catch it.
+
 ### Canonicalize serialized documents before diffing them
 - XML and JSON emitters are free to vary attribute order, whitespace, and regenerated ids without changing meaning. Comparing two such documents raw reports differences that are not differences — and the noise scales with document size, so it looks like a real signal.
 - Normalize first: C14N for XML (`ET.canonicalize(strip_text=True)` sorts attributes), key-sorted dumps for JSON, and mask any regenerated identifiers (uuids, timestamps, generator version stamps).
@@ -1460,6 +1604,13 @@ When importing config from one location into a canonical one (legacy `~/.bash_pr
 - That direction is survivable because it is loud. The dangerous one is a wrapper that exits 0 on a comparison it never performed, which reads as "verified".
 - For anything whose output you are about to treat as evidence, bypass the lookup: `command diff`, `\diff`, or a tool with no common wrapper — `cmp -s` for byte-equality, `md5` / `sha256sum` for a value you can print. Printing the digest beats printing a verdict: it stays checkable after the fact.
 - `type <cmd>` tells you what you actually have. Worth running the first time a verification step returns something surprising, before believing the surprise.
+
+### A comparison test proves nothing if the fixture makes both sides identical
+- A test of the form "configuration A and configuration B produce the same result" is only a test when A and B *can* differ in the data it runs on. When the fixture makes them equivalent, the assertion holds for every implementation — correct or broken — and the green tick is indistinguishable from a real pass.
+- Measured 2026-08-27 in flooded#40: a test asserted that grouping a floodplain by `gnis_name` and by `blue_line_key` produced the same union of ground. In the bundled test data those two columns are a **bijection** — 5 groups each, one-to-one — so the two runs were the same run with different labels. The test could not fail. Replaced with a constructed coarsening (merge the 5 fine groups into 2, assert each coarse group equals the union of its members, cell for cell), which is the property that actually mattered and can be broken.
+- The tell is that both sides come from the *same* fixture column set. Before writing the assertion, compute the cross-tabulation — `table(a, b)` — and look at it. A diagonal means you have one test, not two.
+- Same shape, different dress: comparing two code paths that a small fixture drives down the same branch, or two parameter values that both fall outside a threshold the data never approaches. Check that the fixture reaches the distinction, not just that the code contains it.
+- Generally: when a test passes on the first run, ask what edit to the code under test would make it fail. If you cannot name one, the test is documentation, not verification.
 
 ### Documentation Staleness
 - Moving/renaming scripts: update CLAUDE.md, READMEs, usage comments
@@ -1656,7 +1807,75 @@ for the happy path stays quiet through a crash.
 
 ## 6. Subagents Are Evidence, Not Dependencies
 
-**Don't block on one. Don't trust its status. Verify its claims in both directions.**
+**Spawn on your own judgment. Don't block on one. Don't trust its status. Verify its claims in both directions.**
+
+### Spawning is your call, not the user's
+
+Deciding to spawn a subagent is an engineering judgment, the same kind as choosing
+to write a test or run a grep. **Do not ask permission for it.**
+
+The user is usually not positioned to answer. Knowing whether a fan-out beats a
+sequential read requires knowing the shape of the work — which you have and they do
+not, so the question forces them to guess at a technical call. Under **Always Away**
+it is worse than useless: the work stalls until they wake up, for an answer that was
+yours to make. *"I wouldn't be in the know enough to know when that is"*
+(airvine, 2026-08-27) is the whole problem in one line.
+
+This does not soften §1's asks — *"if uncertain, ask"* and *"if something is unclear,
+stop and ask"*. Those are about **what the user wants**: intent, scope, an ambiguous
+requirement, a tradeoff only they can weigh. This is about **how you carry it out**.
+Ask about intent; decide about mechanism. A question starting "should I use…" is
+almost always the second kind, and almost always yours to answer.
+
+**Spawn without asking when:**
+
+- A skill or convention mandates it — `/code-check`'s review rounds, the Plan review
+  in `planning.md`. That decision is already made; re-asking it is friction carrying
+  no information.
+- You want fresh eyes on your own work. The mechanism and the measurements behind it
+  are in `code-check/SKILL.md`.
+- A sweep over many files will **locate** what matters faster than reading serially.
+  The sweep finds candidates; it does not replace the read — `planning.md` is
+  explicit that agents sometimes report existing files as absent, so read directly
+  whatever you are going to act on.
+- Independent items can run concurrently and nothing downstream needs them ordered.
+
+**Do it yourself when:**
+
+- One grep answers it.
+- The work depends on conversation context a subagent will not have.
+- You would sit idle waiting — spawn and keep working, or do it inline.
+
+**Bounds and defaults you enforce yourself, rather than converting into questions:**
+
+- **Two or three concurrent is the working default, and about five per task** is
+  where spend stops being incidental. Concurrency and cumulative total are different
+  quantities — `/code-check`'s three rounds plus a Plan review plus an ad-hoc sweep
+  never exceeds three at once while spending well past a handful. Bound both.
+- Past that total, **say so in your next message.** An escape you grant yourself
+  silently is not a bound; it has to land in front of the user, after the fact.
+- **Do not let a subagent fan out again.** Intent does not enforce this — the child
+  decides what it calls — so use the structure: the `Explore` and `Plan` types are
+  defined without the `Agent` tool and *cannot* spawn. `general-purpose` can, so when
+  you use it (as `/code-check` does), put "do not spawn subagents" in the prompt. The
+  one case on record — a research agent that had spawned 5 children and deadlocked
+  for **~3 hours** while still reporting as running (below) — never had a root cause
+  established, which is exactly why this bound is structural rather than advisory.
+- Unnamed, delivering by file — `planning.md` carries the mechanics.
+- **Report after, not before.** Say what you spawned, and relay what it found (per
+  `code-check/SKILL.md` — a subagent's report never reaches the user on its own). A
+  user can object to a spawn that already happened; they cannot usefully approve one
+  that has not.
+
+**What is genuinely the user's call is budget, not mechanism.** A workflow or
+deep-research run fanning out dozens of agents is a spending decision and needs an
+explicit ask. Two or three reviewers is not — that is just doing the work.
+
+Worth being concrete about the value, because the cost is the visible half and the
+benefit is not: on 2026-08-27 two reviewers over one conventions draft returned
+**20 findings**, caught **six** false factual claims in it, and killed a section that
+would otherwise have shipped contradicting `code-check.md`. None of that review
+happens if the spawn waits on a user who is away.
 
 ### Don't block
 
@@ -1858,7 +2077,14 @@ Skip planning for single-file edits, quick fixes, or tasks with obvious next ste
 
    That mis-spawn is what produced the silent-delivery failures below, so check `name` before suspecting settings. Teammate mode (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` + `teammateMode`, merged globally from `soul/settings/defaults.json`) shapes what a *named* spawn becomes; it is not by itself why findings go missing, and an unnamed spawn delivers fine with it enabled.
 
-   **Have the agent write findings to a file, and report only the path.** Message delivery has silently failed twice: one review arrived as idle notifications with no content, and one was routed to a different session on the user's phone — which only surfaced because the user mentioned it. From this side an idle ping is indistinguishable from an agent that had nothing to say, so the loss is invisible. A file (`planning/active/review-<N>.md`) survives routing, survives the agent exiting, and is greppable later. Put the instruction in the first prompt, not as a follow-up.
+   **Get the findings into a file — but check who is doing the writing.** Message delivery has silently failed twice: one review arrived as idle notifications with no content, and one was routed to a different session on the user's phone, surfacing only because the user mentioned it. From this side an idle ping is indistinguishable from an agent that had nothing to say, so the loss is invisible. A file (`planning/active/review-<N>.md`) survives routing, survives the agent exiting, and is greppable later.
+
+   **The `Plan` and `Explore` agent types have no Write tool, so they cannot write that file.** Both plan reviews on 2026-08-26 (gq#61, gq#40) were instructed to and were structurally unable to; one said so outright — *"I have no Write/Edit tools and am explicitly barred from creating files; an agent instruction can't lift that"* — and returned the full review as reply text instead. Both arrived intact, ~26 findings each. So:
+
+   - **Read-only agent** (`Plan`, `Explore`): ask for the findings **in the reply**, then write them to `planning/active/review-<N>.md` yourself. The file is still the deliverable; you are just the one creating it.
+   - **Agent type that can write**: put the file-path instruction in the first prompt, not as a follow-up.
+
+   Asking for a file the agent cannot produce costs a round-trip, and — worse — sets you up to read an absent file as an absent review. Check the agent type's tools before writing the instruction.
 
    **Review the fixes, not just the code.** The second pass is where the value concentrates, because a fix written under a wrong assumption reproduces the same defect. Measured on gq#52: pass 1 found 13 defects, pass 2 found 7 more — including a blocker sitting *inside the fix* for pass 1's blocker, the same class twice (`lty`, then `fill_alpha`) because completeness was reasoned about rather than computed. Pass 3, scoped narrowly to the file edited most, found no new instances; **convergence is the signal to stop, not a fixed number of rounds.**
 
