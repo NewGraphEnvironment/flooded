@@ -35,25 +35,36 @@ runs unstable (measured; see findings.md).
 
 ## Phase 3: Implement `fl_valley_attribute()`
 
-- [ ] `R/fl_valley_attribute.R` — validate inputs, `compareGeom()`, `group` names a column
-- [ ] Derive slope from `dem` as `fl_valley_confine.R:135-138` when `slope = NULL`
-- [ ] Per group: crop to the group's bbox + margin (`max_width`), reusing `fl_stream_rasterize()`,
+- [x] `R/fl_valley_attribute.R` — validate inputs, `compareGeom()`, `group` names a column
+- [x] Derive slope from `dem` as `fl_valley_confine.R:135-138` when `slope = NULL`
+- [x] Per group: crop to the group's bbox + margin (`max_width`), reusing `fl_stream_rasterize()`,
       `fl_mask_distance()`, `fl_cost_distance()`, `fl_mask()`, `fl_valley_poly()`
-- [ ] Intersect with the cropped global valley raster, polygonize, tag with the group value
-- [ ] Return `sf`, one row per group; overlapping rows where ground is shared
-- [ ] `NA` group values form their own group (keeps the coverage guarantee); documented
-- [ ] roxygen: runnable `@examples` on bundled data, `@seealso`, note that `max_width` /
+- [x] Intersect with the cropped global valley raster, polygonize, tag with the group value
+- [x] Return `sf`, one row per group; overlapping rows where ground is shared
+- [x] `NA` group values form their own group (keeps the coverage guarantee); documented
+- [x] roxygen: runnable `@examples` on bundled data, `@seealso`, note that `max_width` /
       `cost_threshold` must match the VCA run
-- [ ] `devtools::document()`
+- [x] `devtools::document()`
 
 ## Phase 4: Verify, document, release
 
-- [ ] Re-run the measurements against the new function; confirm coverage / overlap numerically
-- [ ] Time it and note the scaling shape (MORR: k=33 by `gnis_name`, k=340 by `blue_line_key`)
-- [ ] Vignette section in `vignettes/valley-confinement.Rmd` — natural language, no `\@ref()`
+- [x] Re-run the measurements against the new function; confirm coverage / overlap numerically
+- [x] Time it and note the scaling shape (MORR: k=33 by `gnis_name`, k=340 by `blue_line_key`)
+- [x] Vignette section in `vignettes/valley-confinement.Rmd` — natural language, no `\@ref()`
       (does not resolve under `html_vignette2`); `fig.cap` on chunks
-- [ ] `lintr::lint_package()`, `devtools::test()`, `devtools::check()` clean
+- [x] `lintr::lint_package()`, `devtools::test()`, `devtools::check()` clean
 - [ ] `NEWS.md` + version bump 0.3.2 -> 0.4.0 as the **final** commit
+
+## Code review (3 rounds, per planning conventions)
+
+- [x] Round 1 -> `review-round1.md`: 2 bugs (corrupt empty `sf`; silently dropped groups),
+      2 fragile. All fixed.
+- [x] Round 2 -> `review-round2.md`: a bug *inside* round 1's fix (dropped-group warning fired
+      before the coverage fallback, so it named groups that were in the output with 39 ha), plus
+      empty geometries aborting the whole call and a `group = "geometry"` collision. All fixed.
+- [x] Round 3 -> `review-round3.md`: converged inside `fl_valley_attribute()`. Named the mechanism
+      — renaming an `sf` column by position — and found the last instance of it at
+      `fl_valley_poly.R:38`. Fixed there too, plus an internal assert so the family cannot return.
 
 ## Phase 5: Hand off to the driver
 
@@ -62,7 +73,7 @@ runs unstable (measured; see findings.md).
 
 ## Validation
 
-- [ ] Tests pass
-- [ ] `/code-check` clean on each commit
+- [x] Tests pass
+- [x] `/code-check` clean on each commit
 - [ ] PWF checkboxes match landed work
 - [ ] `/planning-archive` on completion, then `/gh-pr-push`
