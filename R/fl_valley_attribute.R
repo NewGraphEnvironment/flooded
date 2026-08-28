@@ -129,7 +129,7 @@ fl_valley_attribute <- function(valleys, streams, group,
   )
 
   if (identical(group, "geometry")) {
-    stop("`group` cannot be \"geometry\" — it would collide with the output's ",
+    stop("`group` cannot be \"geometry\": it would collide with the output's ",
          "geometry column.", call. = FALSE)
   }
 

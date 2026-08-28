@@ -1,3 +1,9 @@
+# flooded 0.4.0
+
+- New `fl_valley_attribute()` — attribute a finished `fl_valley_confine()` delineation to the stream groups that produced it, so a floodplain can be filtered and queried per watercourse or reach rather than only per network (#40). Returns one `sf` row per group; rows overlap where ground is genuinely shared between watercourses, which near a confluence is most of it. The delineation is never recomputed, so changing the grouping key relabels the output without moving a boundary.
+- Per-group VCA runs were measured and rejected: they disagree with the whole-network run in both directions, which would make a river's floodplain depend on what else was in the run. See the function's Details and the vignette section "Whose floodplain is it?" for the mechanism and its limits.
+- Fix `fl_valley_poly()` on a delineation with no valley cells — it renamed an `sf` column by position, which detached the geometry column and made every accessor error.
+
 # flooded 0.3.2
 
 - Drop the internal `rtj/docs/dem-sources.md` reference from `fl_dem_aoi()` documentation and NEWS — MRDEM-30 is described as the default DEM source without pointing readers at a private doc they can't access.
