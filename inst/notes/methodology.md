@@ -117,10 +117,39 @@ intersection, and waterbodies get no spatial filter, so those cells can satisfy 
 group; `attr(x, "fl_fallback_cells")` reports how many. An unusually large count is also the signal
 that `max_width` / `cost_threshold` do not match the values the delineation was built with.
 
+### Only stream cells seed the cost surface
+
+`fl_cost_distance()` encodes seeds by setting stream cells to zero and calling
+`terra::costDist(target = 0)`, which seeds on *every* zero cell. Until 0.4.1 that included any cell
+whose friction was already exactly zero, so flat ground acted as a free cost source. Fixed by
+flooring `friction == 0` to `1e-6` before seeding (flooded#41).
+
+Flat ground stays cheap to *cross* — the floor accumulates 0.1 over a 100 km path at 10 m against a
+default `cost_threshold` of 2500 — it just stops being a *source*. Negative friction is deliberately
+not floored, so `costDist()`'s own rejection of a negative cost surface is left intact.
+
+Which DEMs actually contain exact zeros, measured over the Bulkley test AOI:
+
+| source | exact-zero slope cells |
+|---|---|
+| bundled `slope.tif` / slope derived from `dem.tif` | 0 (min 1.42e-14) |
+| MRDEM-30 via `fl_dem_aoi()`, 30 m | 0 of 45,726 (min 0.0041) |
+
+So neither the bundled tile nor the package's default DEM source is affected here, and no bundled
+result moved — `fl_valley_confine()` returns the same 53,635 cells before and after. The exposure is
+elsewhere: integer-metre DEMs, hydro-flattened lake surfaces, and void-filled plateaus all quantize
+to perfectly flat. The 1 m lidar run in `vignettes/stac-dem.Rmd` emits
+`[costDist] distance algorithm did not converge`, which is the shape of large zero-cost plateaus —
+suggestive, not confirmed, since that vignette is pre-baked and was not re-run.
+
+It matters most under attribution. Cost is what separates one watercourse's floodplain from
+another's, so a flat patch inside a group's corridor would spread that group's mask across ground
+its own streams never reach — cost failing to discriminate exactly where floodplains are, on flat
+ground.
+
 ### See also
 
 - `fl_valley_attribute()` docs — corridor cropping (`crop_margin`) is an approximation, not a bound
-- flooded#41 — `fl_cost_distance()` seeds every zero-friction cell; matters more per-group
 - flooded#44 — production-scale timing is unmeasured; the k=5 figure does not establish k=340
 - NewGraphEnvironment/floodplains#40 — driver-side half (config surface, key column on the gpkg)
 

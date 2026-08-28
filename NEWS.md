@@ -1,3 +1,22 @@
+# flooded 0.4.1
+
+- Fix `fl_cost_distance()` seeding on every zero-friction cell rather than only stream cells (#41).
+  Seeds are encoded by setting stream cells to `0` and calling `terra::costDist(target = 0)`, which
+  matches *every* zero cell — so any cell whose friction was already exactly zero acted as a free
+  cost source. Friction exactly equal to `0` is now floored to `1e-6` before seeding. Flat ground
+  stays cheap to cross (0.1 accumulated over a 100 km path at 10 m, against a default
+  `cost_threshold` of 2500); it simply stops being a source. Negative friction is deliberately not
+  floored, so `terra::costDist()`'s own rejection of a negative cost surface is left intact.
+- No bundled or default-source result moves: the bundled tile and a 30 m MRDEM-30 clip over the same
+  AOI both contain zero exact-zero slope cells, and `fl_valley_confine()` returns the same 53,635
+  valley cells as before. The exposure is elsewhere — integer-metre DEMs, hydro-flattened lake
+  surfaces and void-filled plateaus all quantize to perfectly flat. Check your own DEM with
+  `sum(terra::values(slope) == 0, na.rm = TRUE)` before assuming a run is unaffected.
+- The effect is largest under `fl_valley_attribute()`, where cost is what separates one watercourse's
+  floodplain from another's: a flat patch inside a group's corridor would have spread that group's
+  mask across ground its own streams never reach.
+- Fix a stray one-space indent in `fl_valley_poly()`.
+
 # flooded 0.4.0
 
 - New `fl_valley_attribute()` — attribute a finished `fl_valley_confine()` delineation to the stream groups that produced it, so a floodplain can be filtered and queried per watercourse or reach rather than only per network (#40). Returns one `sf` row per group; rows overlap where ground is genuinely shared between watercourses, which near a confluence is most of it. The delineation is never recomputed, so changing the grouping key relabels the output without moving a boundary.

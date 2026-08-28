@@ -29,6 +29,21 @@ weighted distance. The \code{friction} raster defines per-cell traversal cost
 and \code{streams} identifies seed cells (cost = 0).
 
 Cells that are \code{NA} in \code{friction} are impassable barriers.
+
+Seeds are encoded by setting stream cells to zero in the friction surface,
+which is only unambiguous if no other cell is zero. Friction rasters do
+contain exact zeros — integer-metre DEMs, hydro-flattened lake surfaces and
+void-filled plateaus all quantize to perfectly flat — so cells with friction
+exactly \code{0} are floored to \code{1e-6} before seeding. Flat ground therefore
+remains cheap to cross but is no longer a cost source: at 10 m resolution a
+100 km path over floored ground accumulates 0.1, against a typical
+\code{cost_threshold} of 2500.
+
+Negative friction is not floored — \code{\link[terra:costDist]{terra::costDist()}} rejects a negative
+cost surface, and that error is left intact.
+
+If your friction is in units whose typical values approach \code{1e-6}, floor the
+raster yourself before calling.
 }
 \examples{
 dem <- terra::rast(system.file("testdata/dem.tif", package = "flooded"))

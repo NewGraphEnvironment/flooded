@@ -94,6 +94,54 @@ on flat ground — and membership degenerates toward the distance buffer.
 #40's coverage argument ("a valley cell's global cost is reproduced by its own group's seeds") is
 *strengthened* by this fix, not perturbed.
 
+## Revised during implementation: floor `== 0`, not `<= 0`
+
+The issue proposed `terra::ifel(friction <= 0, 1e-6, friction)`. Probing found that
+`terra::costDist()` **rejects a negative cost surface outright**:
+
+```
+Error: [costDist] negative friction values not allowed
+```
+
+So flooring `<= 0` would have silently disabled a real guard, converting meaningless input into
+plausible-looking output — the same failure direction the rest of this fix exists to close. Landed
+as `friction == 0` instead, which eliminates exactly the set that `costDist(target = 0)` would
+mistake for seeds and nothing more. Verified the guard still fires after the change.
+
+`NA == 0` is `NA`, so barriers are still untouched.
+
+## Does the default DEM source hit this? Measured, and no
+
+| source (Bulkley test AOI) | exact-zero slope cells |
+|---|---|
+| bundled `slope.tif` | 0 of 45,726 (min 1.42e-14) |
+| slope derived from `dem.tif` by the `slope = NULL` path | 0 (min 1.42e-14) |
+| MRDEM-30 at 30 m via `fl_dem_aoi()` | 0 of 45,726 (min 0.0041) |
+
+An honest negative result, and it bounds the claim: the package default source is unaffected over
+this AOI, so the NEWS entry should not imply a general result change. The exposure is integer-metre
+DEMs, hydro-flattened lake surfaces and void-filled plateaus. One clip is not proof MRDEM-30 never
+contains zeros — a clip over a large lake might.
+
+Confirmed unmoved on bundled data end to end: `fl_valley_confine()` returns 53,635 valley cells and
+`fl_valley_attribute(group = "gnis_name")` the same 5 rows and 0 fallback cells as before the fix.
+
+## Bug-restoration check
+
+Tests were run against the unfixed function before Phase 3. Three went red — and only the three
+that target the bug:
+
+```
+test-fl_cost_distance.R:95   zero_cells != seed_cells  (37 zeros vs 1 expected)
+test-fl_cost_distance.R:104  patch centre 0.0 <= near-stream 50.0
+test-fl_cost_distance.R:156  INT2S output had 17 zeros, expected 1
+[ FAIL 3 | WARN 0 | SKIP 0 | PASS 18 ]
+```
+
+The other new tests pass in both states by design — they guard the *opposite* over-correction
+(flooring high enough to make flat ground a barrier) and terra's negative-friction guard, neither of
+which the bug touches.
+
 ## Errors Encountered
 
 | Error | Resolution |

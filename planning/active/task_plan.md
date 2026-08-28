@@ -13,44 +13,52 @@ constructed to mean "stream cell" and nothing else.
 
 ## Phase 1: Branch + PWF baseline
 
-- [ ] Branch `41-fl-cost-distance-seeds-every-zero-friction-c` off main
-- [ ] `planning/active/` — `task_plan.md`, `findings.md`, `progress.md`
+- [x] Branch `41-fl-cost-distance-seeds-every-zero-friction-c` off main
+- [x] `planning/active/` — `task_plan.md`, `findings.md`, `progress.md`
 
 ## Phase 2: Tests first — must be red before Phase 3
 
-- [ ] **Only stream cells are seeds** — `which(cost == 0)` is exactly the stream cell indices
-- [ ] **A flat patch is no longer a cost sink** — patch-centre cost exceeds near-stream cost
-- [ ] **The floor does not turn flat ground into a barrier** — crossing flat ground costs less than
+- [x] **Only stream cells are seeds** — `which(cost == 0)` is exactly the stream cell indices
+- [x] **A flat patch is no longer a cost sink** — patch-centre cost exceeds near-stream cost
+- [x] **The floor does not turn flat ground into a barrier** — crossing flat ground costs less than
       an equal-length path over 10 %-friction ground
-- [ ] **Negative friction is floored too**
-- [ ] **Integer-typed friction survives the floor** (`INT2S`, no zeros after flooring)
-- [ ] **NA friction stays a barrier**
-- [ ] **Bundled data is unchanged** — premise (`sum(slope <= 0) == 0`) asserted in the same test
-- [ ] **`fl_valley_confine()` on bundled data is unchanged** — raw vs pre-floored slope identical
-- [ ] Restore the bug via namespace patch, confirm the core tests go red, record in `progress.md`
+- [x] **Negative friction still errors** — revised during Phase 2. `costDist()` rejects a negative
+      cost surface, so flooring `<= 0` as the issue proposed would have disabled a real guard.
+      Floor `== 0` only; the test now asserts the guard survives
+- [x] **Integer-typed friction survives the floor** (`INT2S`, no zeros after flooring)
+- [x] **NA friction stays a barrier**
+- [x] **Bundled data is unchanged** — premise (`sum(slope <= 0) == 0`) asserted in the same test
+- [x] **The fix cannot move any bundled-data result** — revised: assert cost-raster equality plus
+      the no-exact-zeros premise, which implies the `fl_valley_confine()` claim without a second
+      full VCA run. Confirmed empirically too: 53,635 valley cells, unchanged
+- [x] Restore the bug via namespace patch, confirm the core tests go red, record in `progress.md`
 
 ## Phase 3: Fix + documentation
 
-- [ ] `R/fl_cost_distance.R` — floor before seeding, with the scale reasoning in a comment
-- [ ] Roxygen — `@details` paragraph on flooring and NA-as-barrier
-- [ ] `devtools::document()`
+- [x] `R/fl_cost_distance.R` — floor `friction == 0` before seeding, scale reasoning in a comment
+- [x] Roxygen — `@details` on flooring, NA-as-barrier, and the negative-friction guard
+- [x] `devtools::document()`
 
 ## Phase 4: Verify + measure
 
-- [ ] `devtools::test()`, `lintr::lint_package()`, `devtools::check()` clean
-- [ ] Measure whether MRDEM-30 (the package default DEM source) contains exact-zero slope cells
-- [ ] Record the finding in `inst/notes/methodology.md` (`:123` is a forward reference today)
-- [ ] Confirm `fl_valley_attribute()` output on bundled data is unmoved
+- [x] `devtools::test()` 246 pass / 0 fail; `check()` 0 errors 0 warnings 1 pre-existing NOTE
+      (`pkgdown/`); `lint_package()` leaves only two pre-existing lints outside this diff
+- [x] MRDEM-30 over the test AOI: **0** exact-zero slope cells (min 0.0041) — the default source is
+      unaffected here, so NEWS states that rather than implying a general result change
+- [x] `inst/notes/methodology.md` — forward reference replaced with the finding and the DEM table
+- [x] Confirmed unmoved: 53,635 valley cells, same 5 attribution rows, 0 fallback cells. Also
+      verified `costDist` target matching is exact equality (a 1e-14 cell reads 7.07e-14, not 0)
+      and that the zero set on bundled data is now identical to the 1,607 stream cells
 
 ## Phase 5: Release + close
 
 - [ ] `/code-check` on the staged diff
-- [ ] `NEWS.md` + `DESCRIPTION` `0.4.0` → `0.4.1` as the final commit
+- [x] `NEWS.md` + `DESCRIPTION` `0.4.0` → `0.4.1` as the final commit
 - [ ] `/planning-archive`, then PR
 
 ## Validation
 
-- [ ] Tests pass
+- [x] Tests pass
 - [ ] `/code-check` clean on each commit
 - [ ] PWF checkboxes match landed work
 - [ ] `/planning-archive` on completion
