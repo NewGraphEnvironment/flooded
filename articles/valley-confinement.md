@@ -538,6 +538,123 @@ floodplain) maps the historical flood extent. ff=6 (valley bottom)
 includes terraces and depositional surfaces beyond the active
 floodplain. Blue lines = streams, orange outlines = waterbody polygons.
 
+## Whose floodplain is it?
+
+The delineation above answers “where is this network’s floodplain?” It
+cannot answer “where is the *Bulkley River’s* floodplain?” — a valley
+cell carries no memory of which stream made it one.
+[`fl_valley_attribute()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_attribute.md)
+adds that memory after the fact: it takes the finished delineation and
+works out which part of it belongs to which watercourse.
+
+``` r
+
+by_stream <- fl_valley_attribute(
+  valleys_wb,
+  streams,
+  group = "gnis_name",
+  dem = dem
+)
+#> ℹ 859 valley cells outside every group's thresholds - 859 assigned to the nearest group.
+
+by_stream[, "gnis_name"]
+#> Simple feature collection with 5 features and 1 field
+#> Geometry type: MULTIPOLYGON
+#> Dimension:     XY
+#> Bounding box:  xmin: 976027.5 ymin: 1054668 xmax: 983727.5 ymax: 1060008
+#> Projected CRS: NAD83 / BC Albers
+#>            gnis_name                       geometry
+#> 1      Bulkley River MULTIPOLYGON (((978377.5 10...
+#> 2      Cesford Creek MULTIPOLYGON (((979057.5 10...
+#> 3    Richfield Creek MULTIPOLYGON (((977487.5 10...
+#> 4 Robert Hatch Creek MULTIPOLYGON (((977487.5 10...
+#> 5               <NA> MULTIPOLYGON (((978457.5 10...
+```
+
+A cell is attributed to a watercourse when it is a valley cell *and* it
+sits within `max_width / 2` of that watercourse *and* its cost-distance
+from it is under `cost_threshold` — the same two stream-dependent
+criteria the VCA applies to the whole network. Nothing is re-delineated,
+so changing the grouping key relabels the output without moving a
+boundary.
+
+Near a confluence, ground legitimately belongs to more than one
+floodplain, so the rows overlap rather than partitioning the valley. On
+this tile the parts sum to roughly 2.4 times the whole:
+
+``` r
+
+areas <- data.frame(
+  watercourse = ifelse(is.na(by_stream$gnis_name), "unnamed", by_stream$gnis_name),
+  area_ha = round(as.numeric(sf::st_area(by_stream)) / 1e4, 1)
+)
+knitr::kable(
+  areas[order(-areas$area_ha), ],
+  row.names = FALSE,
+  col.names = c("Watercourse", "Area (ha)"),
+  caption = "Floodplain area attributable to each watercourse. Overlapping rows mean these do not sum to the total delineated area."
+)
+```
+
+| Watercourse        | Area (ha) |
+|:-------------------|----------:|
+| Bulkley River      |     502.4 |
+| Richfield Creek    |     252.3 |
+| unnamed            |     235.2 |
+| Cesford Creek      |     211.3 |
+| Robert Hatch Creek |     132.7 |
+
+Floodplain area attributable to each watercourse. Overlapping rows mean
+these do not sum to the total delineated area. {.table}
+
+The practical payoff is in the field. Filter to one watercourse and its
+floodplain terminates where that watercourse does, which is what makes
+“inside the Bulkley floodplain” and “upstream of it” answerable at a
+point:
+
+``` r
+
+plot(dem, main = "Floodplain by watercourse", col = grey.colors(100))
+plot(st_geometry(by_stream[which(by_stream$gnis_name == "Bulkley River"), ]),
+     add = TRUE, col = "#2166ac60", border = "#2166ac")
+plot(st_geometry(by_stream[which(by_stream$gnis_name == "Richfield Creek"), ]),
+     add = TRUE, col = "#d6604d60", border = "#d6604d")
+plot(st_geometry(streams), add = TRUE, col = "steelblue", lwd = 0.8)
+legend("topright", legend = c("Bulkley River", "Richfield Creek"),
+       fill = c("#2166ac60", "#d6604d60"), border = c("#2166ac", "#d6604d"),
+       bty = "n", cex = 0.8)
+```
+
+![Floodplain attributed per watercourse. Blue is the Bulkley River
+mainstem, orange is Richfield Creek; the hatched overlap near the
+confluence belongs to
+both.](valley-confinement_files/figure-html/plot-attribute-1.png)
+
+Floodplain attributed per watercourse. Blue is the Bulkley River
+mainstem, orange is Richfield Creek; the hatched overlap near the
+confluence belongs to both.
+
+Why attribute a single delineation instead of running the VCA once per
+watercourse? Because a per-watercourse run is not that watercourse’s
+share of the whole-network run. The flood surface is interpolated from
+every seed cell, the distance and cost criteria loosen as seeds are
+added, and morphological cleanup couples patches — so dropping the
+tributaries changes the mainstem’s own floodplain. Attributing one
+delineation keeps the answer independent of whatever else happened to be
+in the run.
+
+Morphological cleanup, the channel buffer, and waterbody polygons all
+add cells to the delineation after the masks are intersected, and those
+can fall outside every watercourse’s thresholds. By default they are
+assigned to the nearest watercourse so the attribution covers the
+delineation exactly; the count is reported and stored on the result:
+
+``` r
+
+attr(by_stream, "fl_fallback_cells")
+#> [1] 859
+```
+
 ## Performance
 
 Several `terra` operations inside

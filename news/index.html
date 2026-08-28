@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">flooded</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,6 +37,12 @@
       <small>Source: <a href="https://github.com/NewGraphEnvironment/flooded/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.4.0" id="flooded-040">flooded 0.4.0<a class="anchor" aria-label="anchor" href="#flooded-040"></a></h2>
+<ul><li>New <code><a href="../reference/fl_valley_attribute.html">fl_valley_attribute()</a></code> — attribute a finished <code><a href="../reference/fl_valley_confine.html">fl_valley_confine()</a></code> delineation to the stream groups that produced it, so a floodplain can be filtered and queried per watercourse or reach rather than only per network (<a href="https://github.com/NewGraphEnvironment/flooded/issues/40" class="external-link">#40</a>). Returns one <code>sf</code> row per group; rows overlap where ground is genuinely shared between watercourses, which near a confluence is most of it. The delineation is never recomputed, so changing the grouping key relabels the output without moving a boundary.</li>
+<li>Per-group VCA runs were measured and rejected: they disagree with the whole-network run in both directions, which would make a river’s floodplain depend on what else was in the run. See the function’s Details and the vignette section “Whose floodplain is it?” for the mechanism and its limits.</li>
+<li>Fix <code><a href="../reference/fl_valley_poly.html">fl_valley_poly()</a></code> on a delineation with no valley cells — it renamed an <code>sf</code> column by position, which detached the geometry column and made every accessor error.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.2" id="flooded-032">flooded 0.3.2<a class="anchor" aria-label="anchor" href="#flooded-032"></a></h2>
 <ul><li>Drop the internal <code>rtj/docs/dem-sources.md</code> reference from <code><a href="../reference/fl_dem_aoi.html">fl_dem_aoi()</a></code> documentation and NEWS — MRDEM-30 is described as the default DEM source without pointing readers at a private doc they can’t access.</li>

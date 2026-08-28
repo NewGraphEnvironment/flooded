@@ -150,6 +150,8 @@ MIT
   : Load flood factor scenarios
 - [`fl_stream_rasterize()`](https://newgraphenvironment.github.io/flooded/reference/fl_stream_rasterize.md)
   : Rasterize a stream network onto a DEM grid
+- [`fl_valley_attribute()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_attribute.md)
+  : Attribute valley cells to the stream groups that produced them
 - [`fl_valley_confine()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_confine.md)
   : Delineate unconfined valleys using the Valley Confinement Algorithm
 - [`fl_valley_poly()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_poly.md)

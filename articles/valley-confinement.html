@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">flooded</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -532,12 +532,130 @@ floodplain. Blue lines = streams, orange outlines = waterbody polygons.
 </div>
 </div>
 <div class="section level2">
+<h2 id="whose-floodplain-is-it">Whose floodplain is it?<a class="anchor" aria-label="anchor" href="#whose-floodplain-is-it"></a>
+</h2>
+<p>The delineation above answers “where is this network’s floodplain?”
+It cannot answer “where is the <em>Bulkley River’s</em> floodplain?” — a
+valley cell carries no memory of which stream made it one.
+<code><a href="../reference/fl_valley_attribute.html">fl_valley_attribute()</a></code> adds that memory after the fact: it
+takes the finished delineation and works out which part of it belongs to
+which watercourse.</p>
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">by_stream</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fl_valley_attribute.html">fl_valley_attribute</a></span><span class="op">(</span></span>
+<span>  <span class="va">valleys_wb</span>,</span>
+<span>  <span class="va">streams</span>,</span>
+<span>  group <span class="op">=</span> <span class="st">"gnis_name"</span>,</span>
+<span>  dem <span class="op">=</span> <span class="va">dem</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> 859 valley cells outside every group's thresholds - 859 assigned to the nearest group.</span></span>
+<span></span>
+<span><span class="va">by_stream</span><span class="op">[</span>, <span class="st">"gnis_name"</span><span class="op">]</span></span>
+<span><span class="co">#&gt; Simple feature collection with 5 features and 1 field</span></span>
+<span><span class="co">#&gt; Geometry type: MULTIPOLYGON</span></span>
+<span><span class="co">#&gt; Dimension:     XY</span></span>
+<span><span class="co">#&gt; Bounding box:  xmin: 976027.5 ymin: 1054668 xmax: 983727.5 ymax: 1060008</span></span>
+<span><span class="co">#&gt; Projected CRS: NAD83 / BC Albers</span></span>
+<span><span class="co">#&gt;            gnis_name                       geometry</span></span>
+<span><span class="co">#&gt; 1      Bulkley River MULTIPOLYGON (((978377.5 10...</span></span>
+<span><span class="co">#&gt; 2      Cesford Creek MULTIPOLYGON (((979057.5 10...</span></span>
+<span><span class="co">#&gt; 3    Richfield Creek MULTIPOLYGON (((977487.5 10...</span></span>
+<span><span class="co">#&gt; 4 Robert Hatch Creek MULTIPOLYGON (((977487.5 10...</span></span>
+<span><span class="co">#&gt; 5               &lt;NA&gt; MULTIPOLYGON (((978457.5 10...</span></span></code></pre></div>
+<p>A cell is attributed to a watercourse when it is a valley cell
+<em>and</em> it sits within <code>max_width / 2</code> of that
+watercourse <em>and</em> its cost-distance from it is under
+<code>cost_threshold</code> — the same two stream-dependent criteria the
+VCA applies to the whole network. Nothing is re-delineated, so changing
+the grouping key relabels the output without moving a boundary.</p>
+<p>Near a confluence, ground legitimately belongs to more than one
+floodplain, so the rows overlap rather than partitioning the valley. On
+this tile the parts sum to roughly 2.4 times the whole:</p>
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">areas</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  watercourse <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">by_stream</span><span class="op">$</span><span class="va">gnis_name</span><span class="op">)</span>, <span class="st">"unnamed"</span>, <span class="va">by_stream</span><span class="op">$</span><span class="va">gnis_name</span><span class="op">)</span>,</span>
+<span>  area_ha <span class="op">=</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/geos_measures.html" class="external-link">st_area</a></span><span class="op">(</span><span class="va">by_stream</span><span class="op">)</span><span class="op">)</span> <span class="op">/</span> <span class="fl">1e4</span>, <span class="fl">1</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span></span>
+<span>  <span class="va">areas</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/order.html" class="external-link">order</a></span><span class="op">(</span><span class="op">-</span><span class="va">areas</span><span class="op">$</span><span class="va">area_ha</span><span class="op">)</span>, <span class="op">]</span>,</span>
+<span>  row.names <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  col.names <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Watercourse"</span>, <span class="st">"Area (ha)"</span><span class="op">)</span>,</span>
+<span>  caption <span class="op">=</span> <span class="st">"Floodplain area attributable to each watercourse. Overlapping rows mean these do not sum to the total delineated area."</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<table class="table">
+<caption>Floodplain area attributable to each watercourse. Overlapping
+rows mean these do not sum to the total delineated area.</caption>
+<thead><tr class="header">
+<th align="left">Watercourse</th>
+<th align="right">Area (ha)</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">Bulkley River</td>
+<td align="right">502.4</td>
+</tr>
+<tr class="even">
+<td align="left">Richfield Creek</td>
+<td align="right">252.3</td>
+</tr>
+<tr class="odd">
+<td align="left">unnamed</td>
+<td align="right">235.2</td>
+</tr>
+<tr class="even">
+<td align="left">Cesford Creek</td>
+<td align="right">211.3</td>
+</tr>
+<tr class="odd">
+<td align="left">Robert Hatch Creek</td>
+<td align="right">132.7</td>
+</tr>
+</tbody>
+</table>
+<p>The practical payoff is in the field. Filter to one watercourse and
+its floodplain terminates where that watercourse does, which is what
+makes “inside the Bulkley floodplain” and “upstream of it” answerable at
+a point:</p>
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">dem</span>, main <span class="op">=</span> <span class="st">"Floodplain by watercourse"</span>, col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/gray.colors.html" class="external-link">grey.colors</a></span><span class="op">(</span><span class="fl">100</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">by_stream</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="va">by_stream</span><span class="op">$</span><span class="va">gnis_name</span> <span class="op">==</span> <span class="st">"Bulkley River"</span><span class="op">)</span>, <span class="op">]</span><span class="op">)</span>,</span>
+<span>     add <span class="op">=</span> <span class="cn">TRUE</span>, col <span class="op">=</span> <span class="st">"#2166ac60"</span>, border <span class="op">=</span> <span class="st">"#2166ac"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">by_stream</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="va">by_stream</span><span class="op">$</span><span class="va">gnis_name</span> <span class="op">==</span> <span class="st">"Richfield Creek"</span><span class="op">)</span>, <span class="op">]</span><span class="op">)</span>,</span>
+<span>     add <span class="op">=</span> <span class="cn">TRUE</span>, col <span class="op">=</span> <span class="st">"#d6604d60"</span>, border <span class="op">=</span> <span class="st">"#d6604d"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">streams</span><span class="op">)</span>, add <span class="op">=</span> <span class="cn">TRUE</span>, col <span class="op">=</span> <span class="st">"steelblue"</span>, lwd <span class="op">=</span> <span class="fl">0.8</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"topright"</span>, legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Bulkley River"</span>, <span class="st">"Richfield Creek"</span><span class="op">)</span>,</span>
+<span>       fill <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"#2166ac60"</span>, <span class="st">"#d6604d60"</span><span class="op">)</span>, border <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"#2166ac"</span>, <span class="st">"#d6604d"</span><span class="op">)</span>,</span>
+<span>       bty <span class="op">=</span> <span class="st">"n"</span>, cex <span class="op">=</span> <span class="fl">0.8</span><span class="op">)</span></span></code></pre></div>
+<div class="figure">
+<img src="valley-confinement_files/figure-html/plot-attribute-1.png" class="r-plt" alt="Floodplain attributed per watercourse. Blue is the Bulkley River mainstem, orange is Richfield Creek; the hatched overlap near the confluence belongs to both." width="1050"><p class="caption">
+Floodplain attributed per watercourse. Blue is the Bulkley River
+mainstem, orange is Richfield Creek; the hatched overlap near the
+confluence belongs to both.
+</p>
+</div>
+<p>Why attribute a single delineation instead of running the VCA once
+per watercourse? Because a per-watercourse run is not that watercourse’s
+share of the whole-network run. The flood surface is interpolated from
+every seed cell, the distance and cost criteria loosen as seeds are
+added, and morphological cleanup couples patches — so dropping the
+tributaries changes the mainstem’s own floodplain. Attributing one
+delineation keeps the answer independent of whatever else happened to be
+in the run.</p>
+<p>Morphological cleanup, the channel buffer, and waterbody polygons all
+add cells to the delineation after the masks are intersected, and those
+can fall outside every watercourse’s thresholds. By default they are
+assigned to the nearest watercourse so the attribution covers the
+delineation exactly; the count is reported and stored on the result:</p>
+<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">by_stream</span>, <span class="st">"fl_fallback_cells"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 859</span></span></code></pre></div>
+</div>
+<div class="section level2">
 <h2 id="performance">Performance<a class="anchor" aria-label="anchor" href="#performance"></a>
 </h2>
 <p>Several <code>terra</code> operations inside
 <code><a href="../reference/fl_valley_confine.html">fl_valley_confine()</a></code> support multi-threading (focal filters,
 distance calculations, raster math). Set threads before running:</p>
-<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/terraOptions.html" class="external-link">terraOptions</a></span><span class="op">(</span>threads <span class="op">=</span> <span class="fl">12</span><span class="op">)</span>  <span class="co"># adjust to your machine</span></span></code></pre></div>
 <p>On an Apple M4 Max (16 cores, 12 performance), this reduced a
 Neexdzii Kwah run (~2,700 km², 27M cells, 1165 stream segments) from
@@ -549,7 +667,7 @@ which are single-threaded.</p>
 <h2 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
 </h2>
 <p>Key tuning parameters from <code><a href="../reference/fl_params.html">fl_params()</a></code>:</p>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">params</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fl_params.html">fl_params</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span></span>
 <span>  <span class="va">params</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"parameter"</span>, <span class="st">"default"</span>, <span class="st">"unit"</span>, <span class="st">"effect"</span><span class="op">)</span><span class="op">]</span>,</span>
