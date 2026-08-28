@@ -43,8 +43,10 @@ constructed to mean "stream cell" and nothing else.
 
 - [x] `devtools::test()` 246 pass / 0 fail; `check()` 0 errors 0 warnings 1 pre-existing NOTE
       (`pkgdown/`); `lint_package()` leaves only two pre-existing lints outside this diff
-- [x] MRDEM-30 over the test AOI: **0** exact-zero slope cells (min 0.0041) — the default source is
-      unaffected here, so NEWS states that rather than implying a general result change
+- [x] MRDEM-30: **0** exact zeros on the small test-AOI clip but **80** on the shipped 20.9 Mcell
+      `pars_dem.tif`. First reading generalized from one clip and was corrected after review — the
+      default source *does* produce exact zeros at scale. Cost mask moves 2,289 cells (214 ha,
+      0 added); the delineation does not move at all (521,028 cells both ways)
 - [x] `inst/notes/methodology.md` — forward reference replaced with the finding and the DEM table
 - [x] Confirmed unmoved: 53,635 valley cells, same 5 attribution rows, 0 fallback cells. Also
       verified `costDist` target matching is exact equality (a 1e-14 cell reads 7.07e-14, not 0)
@@ -52,13 +54,14 @@ constructed to mean "stream cell" and nothing else.
 
 ## Phase 5: Release + close
 
-- [ ] `/code-check` on the staged diff
+- [x] `/code-check` — round 1 found 2 real defects (fixed on branch), 1 disproved by measurement,
+      1 minor fragility (fixed)
 - [x] `NEWS.md` + `DESCRIPTION` `0.4.0` → `0.4.1` as the final commit
-- [ ] `/planning-archive`, then PR
+- [x] PR #45 opened; `/planning-archive` on merge
 
 ## Validation
 
 - [x] Tests pass
-- [ ] `/code-check` clean on each commit
-- [ ] PWF checkboxes match landed work
+- [x] `/code-check` run; findings folded in
+- [x] PWF checkboxes match landed work
 - [ ] `/planning-archive` on completion

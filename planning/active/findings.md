@@ -110,21 +110,46 @@ mistake for seeds and nothing more. Verified the guard still fires after the cha
 
 `NA == 0` is `NA`, so barriers are still untouched.
 
-## Does the default DEM source hit this? Measured, and no
+## Does the default DEM source hit this? Yes — corrected after review
 
-| source (Bulkley test AOI) | exact-zero slope cells |
-|---|---|
-| bundled `slope.tif` | 0 of 45,726 (min 1.42e-14) |
-| slope derived from `dem.tif` by the `slope = NULL` path | 0 (min 1.42e-14) |
-| MRDEM-30 at 30 m via `fl_dem_aoi()` | 0 of 45,726 (min 0.0041) |
+My first measurement was one 30 m MRDEM-30 clip over the Bulkley test AOI: **0** exact-zero slope
+cells. I wrote that into NEWS and `methodology.md` as "the default source is unaffected". A
+code-review agent caught that the package's own *other* MRDEM-30 dataset contradicts it. Verified:
 
-An honest negative result, and it bounds the claim: the package default source is unaffected over
-this AOI, so the NEWS entry should not imply a general result change. The exposure is integer-metre
-DEMs, hydro-flattened lake surfaces and void-filled plateaus. One clip is not proof MRDEM-30 never
-contains zeros — a clip over a large lake might.
+| DEM shipped by this package | exact-zero slope cells | cost mask (`< 2500`) | valley cells |
+|---|---|---|---|
+| bundled `dem.tif` / `slope.tif`, 10 m | 0 of 45,726 (min 1.42e-14) | unchanged | 53,635 -> 53,635 |
+| MRDEM-30 clip over the same AOI, 30 m | 0 of 45,726 (min 0.0041) | unchanged | n/a |
+| `pars_dem.tif` (MRDEM-30, 30 m, 20.9 Mcell) | **80** of 10.7 M | **-2,289 cells (214 ha)**, 0 added | 521,028 -> 521,028 |
 
-Confirmed unmoved on bundled data end to end: `fl_valley_confine()` returns 53,635 valley cells and
-`fl_valley_attribute(group = "gnis_name")` the same 5 rows and 0 fallback cells as before the fix.
+Textbook "an inventory is only complete relative to a boundary — name the boundary". The
+measurement was correct and the generalisation from it was not. A small clip returning zero is not
+evidence about the source; scale is what surfaces the zeros.
+
+### But the reviewer's conclusion from it was wrong in the other direction
+
+It reported the shipped `pars_valleys.tif` as **stale** — produced under the bug, published by
+pkgdown, feeding the fp_peace report. That inference came from the cost mask, an *intermediate*.
+Measuring the actual output instead — the shipped raster **is** the old code's output, so it is its
+own oracle — gives:
+
+```
+shipped(old): 521028 cells (48603.1 ha)
+current(new): 521028 cells (48603.1 ha)
+only in old : 0        only in new : 0
+```
+
+Bit-identical. `fl_valley_confine()` intersects cost with slope, distance and flood and then runs
+morphological cleanup, which absorbs all 2,289 cells. No shipped artifact needs regenerating —
+which matters, because `data-raw/wsg_vignette_data.R` needs an fwapg database connection that is not
+available here.
+
+Worth keeping as the general lesson: **a moved intermediate is not a moved output.** Both directions
+of this finding cost a measurement to settle, and both were worth making.
+
+One property that does generalise: the fix can only *raise* a cost that was spuriously zero, so it
+strictly removes cells from the cost mask and never adds (0 added, confirmed). Where cost is the
+binding criterion the delineation will shrink; it can never grow.
 
 ## Bug-restoration check
 
@@ -141,6 +166,27 @@ test-fl_cost_distance.R:156  INT2S output had 17 zeros, expected 1
 The other new tests pass in both states by design — they guard the *opposite* over-correction
 (flooring high enough to make flat ground a barrier) and terra's negative-friction guard, neither of
 which the bug touches.
+
+## Review round 1 — what landed
+
+| finding | verdict | action |
+|---|---|---|
+| shipped `pars_valleys.tif` is stale | **wrong** — cost mask moved, output did not (0 cells) | none; recorded above |
+| NEWS/methodology overclaim the default source is unaffected | **right** | rewritten with the two-DEM table |
+| over-correction guard cannot catch a floor of 1 | **right** | replaced with a negligibility ratio guard |
+| negative-friction test pins terra's error string | **right**, minor | loosened to `"negative"` with a comment |
+
+The third is the one worth remembering. The test asserted "crossing flat ground costs less than
+crossing sloped ground", which *any* floor below the sloped friction satisfies — so a floor of 1
+passed, while costing 1e5 over a 100 km path, 40x a default `cost_threshold`. The assertion was
+correct and the property it encoded was too weak. Replaced with a ratio bound (flat traverse under
+3e-5 of the sloped equivalent), then verified by restoration: floors of 1e-6 and 1e-4 pass, 1e-3 and
+1 fail, with the patch confirmed to have taken effect on each run.
+
+Also noted by the reviewer and worth carrying: under `pkgload::load_all()` / `test_file()`,
+`fl_cost_distance` resolves through `globalenv()` as well as the namespace, so a restoration probe
+that patches only `asNamespace("flooded")` gives a **false green**. Patch both, and print a value
+that proves the patch took before trusting the run.
 
 ## Errors Encountered
 

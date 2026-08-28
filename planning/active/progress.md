@@ -16,4 +16,9 @@
 - Phase 4 — measured MRDEM-30 over the test AOI: 0 exact-zero slope cells, so the package default
   source is unaffected here. Bundled results confirmed unmoved (53,635 valley cells; attribution
   unchanged). Recorded in `inst/notes/methodology.md`
-- Next: release commit, then PR
+- Phase 5 — NEWS + version bump 0.4.1, PR #45 opened
+- Review round 1 (concurrent, landed post-PR) — 4 findings. Two real defects fixed on the branch
+  (weak over-correction guard, NEWS/methodology overclaiming the default DEM source); one disproved
+  by measuring the output rather than the intermediate (shipped `pars_valleys.tif` is bit-identical,
+  not stale); one minor test-fragility fix
+- Next: archive PWF

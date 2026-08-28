@@ -104,18 +104,32 @@ test_that("a flat patch is not a cost sink", {
   expect_gt(cd[12, 12][[1]], cd[45, 44][[1]])
 })
 
-test_that("flooring makes flat ground cheap to cross, not a barrier", {
-  # The opposite over-correction — flooring to 1, or to the median friction —
-  # would satisfy every assertion above while making flat ground expensive.
-  # A path through genuinely flat ground must still cost less than an
-  # equal-length path over sloped ground.
-  flat <- zero_friction_grid(flat = TRUE)
-  ctrl <- zero_friction_grid(flat = FALSE)
+test_that("the floor is negligible, not merely cheaper than sloped ground", {
+  # Guards the opposite over-correction: a floor high enough to make flat
+  # ground effectively impassable at scale.
+  #
+  # The obvious framing — "crossing the flat patch costs less than crossing
+  # sloped ground" — is far too weak to catch it, because any floor below the
+  # sloped friction satisfies it. Measured: a floor of 1 passes that version,
+  # while costing 1e5 over a 100 km path, or 40x a default cost_threshold of
+  # 2500. So assert negligibility against the sloped case instead.
+  #
+  # The ratio is the floor divided by the sloped friction, so 3e-5 passes any
+  # floor up to 1e-4 (300x headroom over the 1e-6 in use) and rejects 1e-3 and
+  # above, which is where a floor starts to consume the cost budget.
+  flat <- terra::rast(nrows = 50, ncols = 50, vals = 0,
+                      xmin = 0, xmax = 500, ymin = 0, ymax = 500,
+                      crs = "EPSG:3005")
+  sloped <- terra::setValues(flat, 10)
+  streams <- terra::rast(flat)
+  terra::values(streams) <- NA
+  streams[1, 1] <- 1
 
-  through_flat <- fl_cost_distance(flat$friction, flat$streams)[12, 12][[1]]
-  over_slope <- fl_cost_distance(ctrl$friction, ctrl$streams)[12, 12][[1]]
+  across_flat <- fl_cost_distance(flat, streams)[50, 50][[1]]
+  across_slope <- fl_cost_distance(sloped, streams)[50, 50][[1]]
 
-  expect_lt(through_flat, over_slope)
+  expect_gt(across_slope, 0)                       # premise: the reference is real
+  expect_lt(across_flat / across_slope, 3e-5)
 })
 
 test_that("negative friction still errors", {
@@ -130,7 +144,9 @@ test_that("negative friction still errors", {
   terra::values(streams) <- NA
   streams[18, 18] <- 1
 
-  expect_error(fl_cost_distance(friction, streams), "negative friction")
+  # The message is terra's, not this package's — matching loosely on "negative"
+  # so a reworded upstream error does not read as the guard having gone.
+  expect_error(fl_cost_distance(friction, streams), "negative")
 })
 
 test_that("integer-typed friction survives the floor", {

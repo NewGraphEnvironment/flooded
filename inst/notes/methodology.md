@@ -128,19 +128,28 @@ Flat ground stays cheap to *cross* — the floor accumulates 0.1 over a 100 km p
 default `cost_threshold` of 2500 — it just stops being a *source*. Negative friction is deliberately
 not floored, so `costDist()`'s own rejection of a negative cost surface is left intact.
 
-Which DEMs actually contain exact zeros, measured over the Bulkley test AOI:
+Which DEMs contain exact zeros, and what changes when they do — measured on both datasets this
+package ships:
 
-| source | exact-zero slope cells |
-|---|---|
-| bundled `slope.tif` / slope derived from `dem.tif` | 0 (min 1.42e-14) |
-| MRDEM-30 via `fl_dem_aoi()`, 30 m | 0 of 45,726 (min 0.0041) |
+| DEM | exact-zero slope cells | cost mask (`< 2500`) | valley cells |
+|---|---|---|---|
+| bundled `dem.tif` / `slope.tif`, 10 m | 0 of 45,726 (min 1.42e-14) | unchanged | 53,635 -> 53,635 |
+| `pars_dem.tif` (MRDEM-30, 30 m, 20.9 Mcell) | 80 of 10.7 M | -2,289 cells (214 ha), 0 added | 521,028 -> 521,028 |
 
-So neither the bundled tile nor the package's default DEM source is affected here, and no bundled
-result moved — `fl_valley_confine()` returns the same 53,635 cells before and after. The exposure is
-elsewhere: integer-metre DEMs, hydro-flattened lake surfaces, and void-filled plateaus all quantize
-to perfectly flat. The 1 m lidar run in `vignettes/stac-dem.Rmd` emits
-`[costDist] distance algorithm did not converge`, which is the shape of large zero-cost plateaus —
-suggestive, not confirmed, since that vignette is pre-baked and was not re-run.
+Two things worth separating. MRDEM-30 — the package default source — **does** produce exact zeros
+at watershed scale, so a small clip returning none is not evidence about the source. And the fix
+only ever *removes* cells from the cost mask, never adds, because it can only raise a cost that was
+spuriously zero.
+
+But a change in the cost mask is not a change in the delineation. Both shipped datasets come out
+bit-identical, because `fl_valley_confine()` intersects cost with slope, distance and flood and then
+runs morphological cleanup — enough to absorb all 2,289 Parsnip cells. That is a property of these
+two datasets, not a guarantee: wherever cost is the binding criterion (flat terrain, a lax
+`slope_threshold`, a large `flood_factor`) the delineation will move.
+
+The 1 m lidar run in `vignettes/stac-dem.Rmd` emits `[costDist] distance algorithm did not
+converge`, which is the shape of large zero-cost plateaus — suggestive, not confirmed, since that
+vignette is pre-baked and was not re-run.
 
 It matters most under attribution. Cost is what separates one watercourse's floodplain from
 another's, so a flat patch inside a group's corridor would spread that group's mask across ground
