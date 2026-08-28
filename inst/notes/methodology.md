@@ -68,6 +68,62 @@ For a watershed: **look at the DEM resolution first, then choose `ff`.** For wat
 - `inst/research/vca_parameter_rationale.md` — research provenance verified via ragnar against source papers
 - `pars-floodplain` vignette — Parsnip River Watershed Group worked example on MRDEM-30
 
+## Attributing a floodplain to a watercourse
+
+`fl_valley_attribute()` answers "where is *this river's* floodplain?" by attributing a single
+whole-network delineation, not by re-running the VCA per watercourse.
+
+### Why per-group runs are wrong, not merely expensive
+
+Of the four VCA criteria, only the slope mask is independent of which streams are supplied. The
+distance mask and cost distance both loosen as seeds are added; the flood model interpolates its
+surface from *every* seed cell; and morphological cleanup couples patches globally. So a subset run
+is not that subset's share of the whole run.
+
+Measured on `inst/testdata/` (Bulkley), grouping by `gnis_name`:
+
+```
+FULL network:              53,635 cells (536.4 ha)
+UNION of per-group runs:   54,123   |  510 cells in a group run but NOT in the full run
+                                    |   22 full-run cells in no group run
+```
+
+Disagreement runs in both directions and is worst on the small tributaries (Robert Hatch Creek,
+2.1%). The consequence is not a rounding error: "the Morice floodplain" would depend on which other
+streams happened to be in the run.
+
+### Overlap is real and large
+
+Per-group areas sum to 2.1-2.45x the whole on this tile. Near a confluence, ground genuinely belongs
+to both floodplains, so the output is overlapping rows rather than a partition. A representation
+that assigns each cell to exactly one watercourse discards a lot of real ground, and discards it
+worst exactly where sampling designs care most.
+
+### Membership definition
+
+```
+member(cell, g) <=> valley(cell)                                  # the delineation, unchanged
+                    AND distance(cell, streams_g) <= max_width/2
+                    AND cost(cell, streams_g)     <  cost_threshold
+```
+
+The flood mask stays global — recomputing it per group is what makes per-group runs unstable.
+
+### Coverage caveat
+
+`fl_valley_confine()` ORs in cleanup, the channel buffer, and waterbody polygons *after* the mask
+intersection, and waterbodies get no spatial filter, so those cells can satisfy no group's criteria
+— 1,643 cells (3.0%) with the bundled waterbodies. `complete = TRUE` assigns them to the nearest
+group; `attr(x, "fl_fallback_cells")` reports how many. An unusually large count is also the signal
+that `max_width` / `cost_threshold` do not match the values the delineation was built with.
+
+### See also
+
+- `fl_valley_attribute()` docs — corridor cropping (`crop_margin`) is an approximation, not a bound
+- flooded#41 — `fl_cost_distance()` seeds every zero-friction cell; matters more per-group
+- flooded#44 — production-scale timing is unmeasured; the k=5 figure does not establish k=340
+- NewGraphEnvironment/floodplains#40 — driver-side half (config surface, key column on the gpkg)
+
 ## Cross-refs
 
 - Issues: flooded#25 (channel-width clarification), fresh#29 (related, network-side perspective)

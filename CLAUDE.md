@@ -6,7 +6,7 @@ Portable floodplain delineation from DEM and stream network using the Valley Con
 
 **Repository:** NewGraphEnvironment/flooded
 **Primary Language:** R (package)
-**Version:** 0.3.1
+**Version:** 0.4.0
 **License:** MIT
 
 ## Ecosystem
@@ -32,6 +32,7 @@ R/
   fl_flood_assemble.R   — combine flood + slope masks
   fl_flood_trim.R       — remove disconnected patches
   fl_flood_depth.R      — flood depth lookup from cost-surface raster
+  fl_valley_attribute.R — attribute a delineation to stream groups (per watercourse)
   fl_valley_poly.R      — raster → sf polygon conversion
   fl_cost_distance.R    — weighted cost-distance from streams
   fl_mask.R             — slope masking helper
@@ -46,7 +47,7 @@ vignettes/
   valley-confinement.Rmd — full walkthrough with bundled test data
   stac-dem.Rmd           — fetch DEM from STAC catalog
   pars-floodplain.Rmd    — Parsnip River WSG using fl_dem_aoi() + cached outputs
-tests/testthat/          — unit tests for each fl_* function (17 test files, ~81 test_that blocks)
+tests/testthat/          — unit tests for each fl_* function (17 test files, ~101 test_that blocks)
 ```
 
 ## Key Patterns
@@ -68,6 +69,26 @@ tests/testthat/          — unit tests for each fl_* function (17 test files, ~
 - **Waterbodies:** optional user-supplied sf. No buffer, no spatial filter — user pre-filters.
 - **Roads / rails / urban:** flooded detects them; `drift` decides what to do.
 - **Default DEM source for `fl_dem_aoi()`:** MRDEM-30 (NRCan, public S3 COG, `/vsicurl/`).
+- **Attribution, not per-group delineation** — "the Morice's floodplain" comes from attributing one
+  whole-network delineation, never from re-running the VCA per watercourse. Per-group runs disagree
+  with the whole-network run in *both* directions (measured; see `inst/notes/methodology.md`), which
+  would make a river's floodplain depend on what else was in the run.
+- **Coverage needs a fallback** — `fl_valley_confine()` adds cells after intersecting its masks
+  (cleanup, channel buffer, and waterbodies, the last with no spatial filter), so criteria-based
+  attribution orphans them. `fl_valley_attribute(complete = TRUE)` assigns those to the nearest
+  group and reports the count.
+
+### Test-data traps
+
+- **`gnis_name` and `blue_line_key` are a bijection in `inst/testdata/streams.gpkg`** (5 groups
+  each). Any test that compares those two groupings passes for *every* implementation, correct or
+  not. Test grouping behaviour with a constructed coarsening — assert a coarse group equals the
+  union of its finer members — not by swapping keys.
+- **The bundled DEM has no exactly-zero slope cells** (min 1.42e-14), which hides #41 entirely.
+  Anything about flat-ground behaviour needs a synthetic grid, not this tile.
+- **Package defaults are not binding on this tile** — `max_width = 2000` / `cost_threshold = 2500`
+  leave the criteria slack, so a coverage test at defaults can pass for the wrong reason. Squeeze
+  `cost_threshold` (300 works) to make cleanup-added cells actually cross a boundary.
 
 ## Reference docs
 
