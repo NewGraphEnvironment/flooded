@@ -197,24 +197,42 @@ Worked bankfull depths:
 
 Ordered by consequence. **Item 1 should be settled before this memo is cited anywhere.**
 
-1. **UNITS IN THE BANKFULL REGRESSION — potentially serious.**
-   `vca_parameter_rationale.md` annotates the equation as *"A = drainage area (km²), P = mean annual
-   precipitation (cm/yr)"*. The code feeds it **hectares** and **millimetres**
-   (`fl_flood_surface.R:79`, via `upstream_area_ha` and `map_upstream`).
+1. **UNITS IN THE BANKFULL REGRESSION — RESOLVED 2026-08-31, and it is a defect in the code.**
 
-   | Bulkley, 110,337 ha / 531 mm | bankfull width | bankfull depth |
+   Settled by BM25 retrieval against `vca_refs.duckdb`. Two independent primary sources state the
+   units explicitly:
+
+   > @hall_etal2007Predictingriver: *"we estimated bankfull channel widths based on drainage area
+   > (km2) and mean annual precipitation (cm/yr)"*
+
+   > @nagel_etal2014LandscapeScale: *"Bankfull depth (hbf, m) is empirically predicted by the VCA as
+   > a function of drainage area (A, km2) and average annual precipitation (cm/yr)... hbf =
+   > 0.054 A^0.170 P^0.215"*
+
+   `R/fl_flood_surface.R:79` feeds **hectares** (`upstream_area_ha`) and **millimetres**
+   (`map_upstream`) into those verbatim Hall coefficients. The documentation was right; the code is
+   wrong.
+
+   **Baked-in error: bankfull depth is overestimated by 3.59x everywhere.** So the shipped `ff04`
+   behaves like a true flood factor of **~14.4** — against Hall's 3 for historical floodplain and
+   Nagel's 5-7 for valley bottom on a 10 m DEM.
+
+   Measured on the bundled tile:
+
+   | | cells | ha |
    |---|---|---|
-   | as coded (ha, mm) | 46.95 m | **1.50 m** |
-   | as documented (km², cm) | 5.71 m | **0.42 m** |
+   | `ff04` as-coded (ha, mm) | 47,681 | 476.8 |
+   | `ff04` corrected (km2, cm) | 23,192 | **231.9** (49%) |
+   | `ff06` as-coded (ha, mm) | 53,635 | 536.4 |
+   | `ff06` corrected (km2, cm) | 28,727 | **287.3** (54%) |
 
-   An 8.2× difference in width, 3.6× in depth. Circumstantially the code looks right — the
-   independent bcfishpass estimate for the same segment is 31.3 m, near the as-coded value and
-   nowhere near 5.71 m; and 0.42 m is implausibly shallow for a 1,100 km² river. The code also
-   reproduces Nagel's published combined form `h_bf = 0.054 × A^0.170 × P^0.215` exactly in *form*,
-   so only the units are in question, not the algebra.
+   **Do not fix the units alone.** The `flood_factor` scenarios were chosen by looking at output, so
+   they have been absorbing this error. Correcting units without revisiting `ff02`/`ff04`/`ff06`
+   halves every floodplain we have produced. Units and calibration have to move together, and
+   `restoration_wedzin_kwa_2024#138` — which recalibrated `ff` — was done on top of the bug.
 
-   **But "the answer looks plausible" is not verification.** Check the units in the Hall 2007 PDF
-   directly. Then fix whichever is wrong — the doc annotation, or every floodplain we have produced.
+   Everything downstream is affected: the Parsnip vignette artifacts, the `floodplains` driver
+   outputs, and any area figure already reported. Tracked in flooded#48.
 
 2. **Bankfull recurrence interval** — commonly cited as 1.5–2 years. Not in our verified set. Needed
    only if a report states it.
