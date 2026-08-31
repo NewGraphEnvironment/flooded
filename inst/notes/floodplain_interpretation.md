@@ -6,9 +6,10 @@ Plain-language memo for reporting and onboarding. Companion to
 citations). This one answers the questions a reviewer asks: *what is this a map of, what does the
 flood factor mean, and can we defend it?*
 
-**Status:** the interpretation and the measured numbers are solid. Several supporting claims are
-flagged **[UNVERIFIED]** and need a lit-search pass before this text goes into a report. One open
-question about units could matter a great deal — see the end.
+**Status (2026-08-31):** lit-search pass run against `vca_refs.duckdb`. The units question is
+**resolved and it is a code defect** (flooded#49) — read section 4 before quoting any area figure
+from this package. Section 6's ecological claims are now sourced. Remaining gaps are listed at the
+end; BibTeX keys for the newly cited papers still need generating.
 
 ---
 
@@ -70,23 +71,29 @@ Two separate jobs are riding on one number:
 So `ff04` on 25 m TRIM and `ff03` on 10 m are aiming at **the same ecological thing**. Comparing
 `ff04` on 30 m against `ff04` on 10 m compares two different things.
 
-## 4. Why "4× bankfull" is not an impossible flood
+## 4. Is "4× bankfull" an impossible flood? Partly, and that is a bug
 
-The obvious objection: at-a-station hydraulic geometry gives depth ∝ Q^0.4 **[UNVERIFIED — Leopold &
-Maddock 1953]**, so 4× bankfull depth would need ~32× bankfull discharge, which never happens. If
-that were what the model claimed, the map would be indefensible.
+The obvious objection: at-a-station hydraulic geometry means depth responds only weakly to
+discharge, so a waterline at 4× bankfull depth would need a discharge far beyond any real flood.
 
-It is not, for three reasons:
+Three reasons that objection does **not** land against the model as designed:
 
 1. **The DEM's "streambed" is not the streambed.** Neither lidar nor MRDEM penetrates water, so the
    stream cell holds roughly the water surface at acquisition, blended with banks at 10–30 m. The
    multiplier stacks onto a surface already above the channel bottom.
-2. **Bankfull depth is itself modelled, with R² = 0.47.** If the true value is larger than predicted,
-   the effective multiplier is smaller than it looks.
-3. **The factor absorbs DEM smoothing** — explicitly, per the table above.
+2. **`flood_factor` is a fitted index, not a stage.** Hall's 3 was chosen because it reproduced 213
+   field-measured floodplain widths, not because it corresponds to a discharge.
+3. **It absorbs DEM smoothing**, explicitly, per the resolution table above.
 
-The multiplier is a coefficient tuned to reproduce mapped floodplain boundaries. That it *sounds*
-like an absurd flood is an artifact of the variable it scales, not evidence the map is wrong.
+**And one reason it does land against the model as currently coded.** The bankfull depth being
+multiplied is **3.59× too large**, because `fl_flood_surface.R` feeds hectares and millimetres into a
+regression that Hall and Nagel both specify as taking km² and cm/yr (flooded#49, confirmed against
+both papers). So the shipped `ff04` is really about **14.4×** true bankfull depth — well past Hall's
+3 and Nagel's 5–7, and past any defensible reading of "flood".
+
+Until #49 is fixed, treat the absolute extents as over-mapped: corrected, the bundled tile gives
+231.9 ha at `ff04` rather than 476.8 ha. The *relative* comparisons between scenarios are unaffected,
+since every scenario carries the same error.
 
 ## 5. What we can and cannot claim
 
@@ -106,18 +113,36 @@ migration-corridor framing.
 
 ## 6. Why intact valley bottom matters even where it rarely floods
 
-The obvious challenge — *if it never floods, it cannot contribute LWD or nutrients, so why protect
-it?* — assumes both are delivered by overbank flow. Largely they are not. **Every claim in this
-section needs a lit-search pass before use.**
+The challenge — *if it never floods, it cannot contribute LWD or nutrients, so why protect it?* —
+assumes both are delivered by overbank flow. Largely they are not. Sources below retrieved from
+`vca_refs.duckdb` on 2026-08-31; BibTeX keys still to be generated.
 
-- **LWD is recruited by bank erosion, not flooding [UNVERIFIED].** Trees enter the channel when the
-  bank beneath them is undercut as the river migrates. The recruitment zone is the *migration
-  corridor* — which is what the valley-bottom map delineates.
-- **Side channels, groundwater-fed and wall-base channels [UNVERIFIED]** sit in valley-bottom
-  alluvium, fed by hyporheic flow and small tributaries rather than mainstem overbank flow. Often
-  the limiting overwintering habitat in BC coho and steelhead systems.
-- **The hyporheic zone and shallow water table [UNVERIFIED]** occupy that alluvium; nutrient exchange
-  runs through the subsurface as well as over the bank.
+- **Large wood is recruited by bank erosion and lateral channel migration**, not by flooding
+  (Rapp & Abbe 2003, channel migration zone framework). Their process tables pair *Bank Erosion*
+  directly with *Wood Recruitment*, and they describe lateral migration as arising from meander-bend
+  development, flow obstruction, or increased bank erodibility — all channel-adjacent processes. The
+  recruitment zone is therefore the **migration corridor**, which is what a valley-bottom map
+  delineates. They also note wood that has already fallen becomes bank structure: *"large trees fall
+  into the river and deflect flow; with time these structures become integrated into a new river
+  bank."*
+
+- **The subsurface is a habitat, not just a substrate.** Hauer et al. 2016 describe the
+  *"hyporheic alluvial aquifer, characterized by river-origin water flowing through the gravel
+  subsurface"* as a defining structure of gravel-bed river floodplains, with spawning
+  *"heavily concentrated in habitats directly associated with groundwater upwelling."* That aquifer
+  occupies valley-bottom alluvium well beyond the annually inundated zone.
+
+- **Side channels are formed by migration and persist without overbank flow.** Rosenfeld et al. 2008:
+  *"Seasonal or permanently wetted side channels consist of old river channels formed by channel
+  avulsion or migration, ponds created by American beavers on floodplain side channels or tributary
+  streams, and slough habitat… natural features of most undisturbed river floodplains."*
+
+- **Where floodplain *is* inundated, the productivity gain is large and measured.** Sommer et al.
+  2001 on the Yolo Bypass found *"evidence of enhanced growth and survival"* for juvenile chinook
+  rearing on floodplain versus the adjacent river channel; Katz et al. 2017 reproduced the effect on
+  deliberately flooded farm fields. This supports the `ff02`–`ff04` extent specifically, not the
+  valley-bottom margin.
+
 - **Confinement is the real signal.** The map's practical value is separating "the river can move
   here" from "the river is locked in place" — which is what predicts habitat complexity.
 
@@ -145,13 +170,18 @@ error; blind to local character. Two streams with identical area and precip get 
 whether one is a boulder cascade and the other a meadow meander. The regression cannot see channel
 slope, bed material, or confinement.
 
-Three specific cautions for BC:
+Three specific cautions:
 
-1. `area × precip` is a **mean-flow proxy predicting peak-driven geometry** — it works where the
-   peak-to-mean ratio is regionally consistent, and strains across snowmelt / rain-on-snow / glacial
-   regimes **[UNVERIFIED]**.
-2. **Lakes and wetlands attenuate peaks and drainage area cannot see them** — a lake-headed basin has
-   a smaller channel than its area implies **[UNVERIFIED]**.
+1. **It predicts a peak-driven geometry from a mean-flow proxy.** Hall's own reasoning chain is
+   width ← discharge ← (area, precipitation): *"Stream width is predominantly a function of stream
+   discharge… and discharge is typically estimated as a function of drainage area (A) and
+   precipitation (P)."* That holds where the peak-to-mean ratio is regionally consistent. Whether it
+   holds across BC's snowmelt / rain-on-snow / glacial regimes is **not addressed by any source in
+   our reference set** — flagged as an open question rather than a claim.
+2. **The equation contains no storage term.** Verifiable by inspection: `A` and `P` are the only
+   inputs, so a basin whose peaks are attenuated by lakes or wetlands is indistinguishable from one
+   of the same area and precipitation that is not. The *direction* of that limitation follows from
+   the equation's form; its *magnitude* in BC is uncited and should not be asserted.
 3. It is a **Columbia-basin regression applied to the BC interior** — standard practice, no BC
    alternative exists, but the bias is undetectable without local data
    (`vca_parameter_rationale.md`).
@@ -195,55 +225,30 @@ Worked bankfull depths:
 
 ## Open verification items
 
-Ordered by consequence. **Item 1 should be settled before this memo is cited anywhere.**
+Lit-search pass run 2026-08-31 against `vca_refs.duckdb` (15 papers), BM25 + semantic via Ollama
+`nomic-embed-text`.
 
-1. **UNITS IN THE BANKFULL REGRESSION — RESOLVED 2026-08-31, and it is a defect in the code.**
+| # | Item | Status |
+|---|---|---|
+| 1 | Units in the bankfull regression | **Resolved — code defect.** flooded#49 |
+| 2 | Ecological mechanisms (section 6) | **Sourced** — Rapp & Abbe 2003, Hauer et al. 2016, Rosenfeld et al. 2008, Sommer et al. 2001, Katz et al. 2017 |
+| 3 | Bankfull recurrence interval | **Partly.** Wheaton et al. 2019 give *"bankfull discharge… often approximates the mean annual flood for perennial streams."* The commonly quoted 1.5–2 yr figure is **not** in our set — use the mean-annual-flood phrasing, or add Leopold/Wolman to the store |
+| 4 | At-a-station hydraulic geometry (depth ∝ Q^0.4) | **Cut.** Leopold & Maddock 1953 is not in the store, and section 4 no longer needs the exponent |
+| 5 | BC-specific hydrology (regime variability, lake attenuation) | **Not in this store.** Rewritten in section 7 as a structural observation plus an explicit open question rather than a claim |
 
-   Settled by BM25 retrieval against `vca_refs.duckdb`. Two independent primary sources state the
-   units explicitly:
+Remaining before this memo is cited in a report:
 
-   > @hall_etal2007Predictingriver: *"we estimated bankfull channel widths based on drainage area
-   > (km2) and mean annual precipitation (cm/yr)"*
+- **Generate BibTeX keys and `references.bib` entries** for the five papers newly cited in section 6.
+  `vignettes/references.bib` currently holds 2 entries against a 15-paper store. Needs `rbbt` against
+  the Zotero group library — the store gives quotes and filenames, not BBT citation keys.
+- **flooded#49 must be resolved before any absolute area figure is published.** Extents are currently
+  over-mapped by roughly 2x. Scenario *comparisons* are unaffected.
+- **Item 3** — decide between the mean-annual-flood phrasing we can source and adding the classic
+  reference.
+- **Item 5** — if BC regime variability matters to a report's argument, it needs its own literature,
+  not this store.
 
-   > @nagel_etal2014LandscapeScale: *"Bankfull depth (hbf, m) is empirically predicted by the VCA as
-   > a function of drainage area (A, km2) and average annual precipitation (cm/yr)... hbf =
-   > 0.054 A^0.170 P^0.215"*
-
-   `R/fl_flood_surface.R:79` feeds **hectares** (`upstream_area_ha`) and **millimetres**
-   (`map_upstream`) into those verbatim Hall coefficients. The documentation was right; the code is
-   wrong.
-
-   **Baked-in error: bankfull depth is overestimated by 3.59x everywhere.** So the shipped `ff04`
-   behaves like a true flood factor of **~14.4** — against Hall's 3 for historical floodplain and
-   Nagel's 5-7 for valley bottom on a 10 m DEM.
-
-   Measured on the bundled tile:
-
-   | | cells | ha |
-   |---|---|---|
-   | `ff04` as-coded (ha, mm) | 47,681 | 476.8 |
-   | `ff04` corrected (km2, cm) | 23,192 | **231.9** (49%) |
-   | `ff06` as-coded (ha, mm) | 53,635 | 536.4 |
-   | `ff06` corrected (km2, cm) | 28,727 | **287.3** (54%) |
-
-   **Do not fix the units alone.** The `flood_factor` scenarios were chosen by looking at output, so
-   they have been absorbing this error. Correcting units without revisiting `ff02`/`ff04`/`ff06`
-   halves every floodplain we have produced. Units and calibration have to move together, and
-   `restoration_wedzin_kwa_2024#138` — which recalibrated `ff` — was done on top of the bug.
-
-   Everything downstream is affected: the Parsnip vignette artifacts, the `floodplains` driver
-   outputs, and any area figure already reported. Tracked in flooded#48.
-
-2. **Bankfull recurrence interval** — commonly cited as 1.5–2 years. Not in our verified set. Needed
-   only if a report states it.
-3. **At-a-station hydraulic geometry** (depth ∝ Q^0.4, Leopold & Maddock 1953) — used in §4 as an
-   order-of-magnitude argument. Verify before printing the exponent.
-4. **The §6 ecological mechanisms** — LWD via bank erosion, hyporheic exchange, wall-base channels.
-   These carry the protection argument and currently have no citation. Highest priority after item 1
-   for reporting use.
-5. **BC-specific caveats** in §7 — peak-to-mean variability by hydrologic regime, lake attenuation.
-
-Suggested next step: build the ragnar store (`rag_build.R`, referenced in
-`vca_parameter_rationale.md`) and run `/lit-search` over items 2–5, then attach citation keys inline
-and delete the `[UNVERIFIED]` markers as each is confirmed. Anything that cannot be supported should
-be cut rather than softened.
+Rebuild or re-query the store with
+`restoration_wedzin_kwa_2024/scripts/rag_build.R`; it is also cached at `s3://fresh-bc/rag/`
+(see NewGraphEnvironment/rtj#194). Ollama must be running for semantic search — `ollama serve` —
+though BM25 works without it and was enough to settle item 1.
