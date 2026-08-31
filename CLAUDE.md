@@ -93,6 +93,7 @@ tests/testthat/          — unit tests for each fl_* function (17 test files, ~
 ## Reference docs
 
 - [`inst/notes/methodology.md`](inst/notes/methodology.md) — channel-width models (bcfishpass vs VCA), flood-factor scenarios (ff02/ff04/ff06), citations, DEM-resolution compensation
+- [`inst/notes/floodplain_interpretation.md`](inst/notes/floodplain_interpretation.md) — what the model actually maps, what flood factor means, what we can and cannot claim in reports
 - [`inst/research/vca_parameter_rationale.md`](inst/research/vca_parameter_rationale.md) — VCA parameter provenance, verified citations
 
 Note: this R package uses `inst/notes/` (not `docs/`) for soul-style durable knowledge because `docs/` is the pkgdown build target and is gitignored. `inst/` content also travels with the installed package via `system.file()`.
