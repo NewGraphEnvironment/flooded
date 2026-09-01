@@ -1,3 +1,49 @@
+# flooded 0.6.0
+
+**Breaking, but no result changes.** `fl_valley_confine()`'s `field` argument is renamed
+`area_field` and is now required. Nothing this package has produced was affected — every caller in
+the repo, both vignettes, every example and the `floodplains` driver passed
+`field = "upstream_area_ha"` explicitly.
+
+- `field` defaulted to `"channel_width"`, and the flood model reads the rasterized values as the
+  **drainage-area term in hectares** of the Hall bankfull regression (`fl_flood_surface()`). Channel
+  width (4.1–31.3 on the bundled tile) and upstream area (1,928.8–110,337.4) are both plain positive
+  numerics, so the wrong one was raised to the 0.280 power without complaint and returned a smaller
+  floodplain with no error and no warning (#47). Same class as #41 and #49.
+- Measured on the bundled 10 m tile at `flood_factor = 6`, current code:
+
+  | `area_field` | precip | cells | ha |
+  |---|---|---|---|
+  | `upstream_area_ha` | `map_upstream` | 28,727 | 287.3 |
+  | `channel_width` | `map_upstream` | 17,206 | **172.1** |
+  | `upstream_area_ha` | none | 19,838 | 198.4 |
+  | `channel_width` | none | 14,789 | **147.9** |
+
+  The old default returned 59.9% of the floodplain with precipitation supplied. Every wrong-column
+  run is a strict subset — 0 cells gained anywhere. The issue's headline figure of 47% was measured
+  before the 0.5.0 units fix and does not describe current code; the defect is the same size, its
+  consequence is not.
+- **The requirement is scoped to the `sf` branch.** Passing an already-rasterized `SpatRaster` as
+  `streams` never reaches `fl_stream_rasterize()`, so `area_field` is not demanded there — that
+  branch cannot inspect the values it is handed, and a raster burned from the wrong column carries
+  the identical defect one call earlier. It can inspect the layer's *name*, since
+  `fl_stream_rasterize()` names its output after the column it burned, so
+  `fl_valley_confine()` now warns when handed a layer named `channel_width` — which is also that
+  function's default, and so the one composition the package's defaults lead you into. Measured
+  with `channel_buffer = FALSE`: 14,149 cells against 19,383. The guard names the column literally
+  rather than reading the rasterizer's default: those coincide today, and keying to the default
+  would invert the guard if it ever moved. **A raster burned from any other wrong column is still
+  undetectable**, so the roxygen states the requirement rather than claiming to enforce it.
+- **One deprecation path is silent.** `fl_valley_confine(dem, streams, "channel_width")` passed
+  *positionally* rebinds to `area_field` with no warning, because the shim can only see the named
+  argument. There are no positional callers in this repo or in `floodplains`.
+- **`field` still works for one release.** Supplying it warns and forwards to `area_field`,
+  reproducing the same delineation exactly. Removal is tracked in #53 — move to `area_field`.
+- `fl_stream_rasterize()` is unchanged, including its `"channel_width"` default: it is deliberately
+  generic and also rasterizes precipitation, stream order and internal seed indices. The hazard was
+  always the *composition*, so both functions now cross-reference each other and state which column
+  the flood model requires.
+
 # flooded 0.5.0
 
 **Results change. Every floodplain produced by 0.4.1 or earlier is over-mapped.**

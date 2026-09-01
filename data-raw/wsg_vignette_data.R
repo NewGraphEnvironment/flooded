@@ -255,7 +255,7 @@ terra::terraOptions(threads = max(1L, parallel::detectCores() - 2L))
 valleys <- fl_valley_confine(
   dem = dem,
   streams = streams,
-  field = "upstream_area_ha",
+  area_field = "upstream_area_ha",
   precip = fl_stream_rasterize(streams, dem, field = "map_upstream"),
   waterbodies = waterbodies,
   flood_factor = 4   # ff04 — functional floodplain (recurrent inundation)

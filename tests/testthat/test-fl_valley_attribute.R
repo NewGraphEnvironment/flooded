@@ -8,7 +8,7 @@ attr_fixture <- local({
       streams <- sf::st_read(testdata_path("streams.gpkg"), quiet = TRUE)
       precip_r <- fl_stream_rasterize(streams, dem, field = "map_upstream")
       valleys <- fl_valley_confine(dem, streams,
-                                   field = "upstream_area_ha", precip = precip_r)
+                                   area_field = "upstream_area_ha", precip = precip_r)
       cache <<- list(dem = dem, streams = streams, valleys = valleys)
     }
     cache
@@ -177,13 +177,13 @@ test_that("corridor cropping does not change the answer", {
 
 test_that("waterbody cells beyond every group's thresholds are still covered", {
   # fl_valley_confine() ORs waterbody polygons into the output with no spatial
-  # filter (fl_valley_confine.R:213-220), so a lake can sit outside every
+  # filter (the waterbodies branch of fl_valley_confine()), so a lake can sit outside every
   # group's distance and cost thresholds. The coverage fallback is what keeps
   # those cells attributed.
   f <- attr_fixture()
   wb <- sf::st_read(testdata_path("waterbodies.gpkg"), quiet = TRUE)
   precip_r <- fl_stream_rasterize(f$streams, f$dem, field = "map_upstream")
-  valleys_wb <- fl_valley_confine(f$dem, f$streams, field = "upstream_area_ha",
+  valleys_wb <- fl_valley_confine(f$dem, f$streams, area_field = "upstream_area_ha",
                                   precip = precip_r, waterbodies = wb)
 
   strict <- fl_valley_attribute(valleys_wb, f$streams, group = "gnis_name",

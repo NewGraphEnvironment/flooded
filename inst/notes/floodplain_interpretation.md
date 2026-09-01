@@ -215,7 +215,7 @@ models giving different answers is the field telling you the uncertainty is real
 
 | | **Hall / VCA** | **bcfishpass `channel_width`** |
 |---|---|---|
-| Where | `fl_flood_surface.R:79-81` | `fl_valley_confine.R:202` |
+| Where | `fl_flood_surface.R:101-103` | the `channel_buffer` branch of `fl_valley_confine()` |
 | Computed in-package? | **yes** | no — a precomputed column |
 | Drives | the flood surface — criterion 4 | a `channel_width/2` buffer OR'd in after cleanup |
 | If removed | model collapses | loses a sub-pixel sliver along the channel |
@@ -223,6 +223,13 @@ models giving different answers is the field telling you the uncertainty is real
 Hall does the science. bcfishpass `channel_width` is a DEM gap-fill: at 10–30 m a 20 m river can miss
 cell centres entirely, and the buffer stamps the channel back in. It never touches the flood
 calculation.
+
+Which is why `fl_valley_confine()` names its drainage-area input `area_field` and requires it
+(0.6.0, #47). It was `field`, defaulting to `"channel_width"` — so the column that is explicitly
+*not* part of the flood calculation was the one being fed to Hall. Both columns are positive
+numerics, so nothing objected: on the bundled tile at `flood_factor = 6` with precipitation, the
+default mapped 172.1 ha against 287.3 ha, a strict subset losing 11,521 cells. Every caller passed
+`field = "upstream_area_ha"` explicitly, so no published figure came from it.
 
 ## 9. Measured on the bundled Bulkley tile (10 m)
 
