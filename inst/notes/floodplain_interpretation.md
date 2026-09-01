@@ -114,11 +114,12 @@ migration-corridor framing.
 ## 6. Why intact valley bottom matters even where it rarely floods
 
 The challenge — *if it never floods, it cannot contribute LWD or nutrients, so why protect it?* —
-assumes both are delivered by overbank flow. Largely they are not. Sources below retrieved from
-`vca_refs.duckdb` on 2026-08-31; BibTeX keys still to be generated.
+assumes both are delivered by overbank flow. Largely they are not. Sources retrieved from `vca_refs.duckdb`
+on 2026-08-31; citation keys confirmed against the Zotero library and added to
+`vignettes/references.bib`.
 
 - **Large wood is recruited by bank erosion and lateral channel migration**, not by flooding
-  (Rapp & Abbe 2003, channel migration zone framework). Their process tables pair *Bank Erosion*
+  [@rapp_abbe2003FrameworkDelineating]. Their process tables pair *Bank Erosion*
   directly with *Wood Recruitment*, and they describe lateral migration as arising from meander-bend
   development, flow obstruction, or increased bank erodibility — all channel-adjacent processes. The
   recruitment zone is therefore the **migration corridor**, which is what a valley-bottom map
@@ -126,20 +127,19 @@ assumes both are delivered by overbank flow. Largely they are not. Sources below
   into the river and deflect flow; with time these structures become integrated into a new river
   bank."*
 
-- **The subsurface is a habitat, not just a substrate.** Hauer et al. 2016 describe the
+- **The subsurface is a habitat, not just a substrate.** @hauer_etal2016Gravelbedriver describe the
   *"hyporheic alluvial aquifer, characterized by river-origin water flowing through the gravel
   subsurface"* as a defining structure of gravel-bed river floodplains, with spawning
   *"heavily concentrated in habitats directly associated with groundwater upwelling."* That aquifer
   occupies valley-bottom alluvium well beyond the annually inundated zone.
 
-- **Side channels are formed by migration and persist without overbank flow.** Rosenfeld et al. 2008:
+- **Side channels are formed by migration and persist without overbank flow.** @rosenfeld_etal2008EffectsSide:
   *"Seasonal or permanently wetted side channels consist of old river channels formed by channel
   avulsion or migration, ponds created by American beavers on floodplain side channels or tributary
   streams, and slough habitat… natural features of most undisturbed river floodplains."*
 
-- **Where floodplain *is* inundated, the productivity gain is large and measured.** Sommer et al.
-  2001 on the Yolo Bypass found *"evidence of enhanced growth and survival"* for juvenile chinook
-  rearing on floodplain versus the adjacent river channel; Katz et al. 2017 reproduced the effect on
+- **Where floodplain *is* inundated, the productivity gain is large and measured.** @sommer_etal2001Floodplainrearing on the Yolo Bypass found *"evidence of enhanced growth and survival"* for juvenile chinook
+  rearing on floodplain versus the adjacent river channel; @katz_etal2017Floodplainfarm reproduced the effect on
   deliberately flooded farm fields. This supports the `ff02`–`ff04` extent specifically, not the
   valley-bottom margin.
 
@@ -232,15 +232,16 @@ Lit-search pass run 2026-08-31 against `vca_refs.duckdb` (15 papers), BM25 + sem
 |---|---|---|
 | 1 | Units in the bankfull regression | **Resolved — code defect.** flooded#49 |
 | 2 | Ecological mechanisms (section 6) | **Sourced** — Rapp & Abbe 2003, Hauer et al. 2016, Rosenfeld et al. 2008, Sommer et al. 2001, Katz et al. 2017 |
-| 3 | Bankfull recurrence interval | **Partly.** Wheaton et al. 2019 give *"bankfull discharge… often approximates the mean annual flood for perennial streams."* The commonly quoted 1.5–2 yr figure is **not** in our set — use the mean-annual-flood phrasing, or add Leopold/Wolman to the store |
+| 3 | Bankfull recurrence interval | **Partly.** @wheaton_etal2019LowTechProcessBased give *"bankfull discharge… often approximates the mean annual flood for perennial streams."* The commonly quoted 1.5–2 yr figure is **not** in our set — use the mean-annual-flood phrasing, or add Leopold/Wolman to the store |
 | 4 | At-a-station hydraulic geometry (depth ∝ Q^0.4) | **Cut.** Leopold & Maddock 1953 is not in the store, and section 4 no longer needs the exponent |
 | 5 | BC-specific hydrology (regime variability, lake attenuation) | **Not in this store.** Rewritten in section 7 as a structural observation plus an explicit open question rather than a claim |
 
 Remaining before this memo is cited in a report:
 
-- **Generate BibTeX keys and `references.bib` entries** for the five papers newly cited in section 6.
-  `vignettes/references.bib` currently holds 2 entries against a 15-paper store. Needs `rbbt` against
-  the Zotero group library — the store gives quotes and filenames, not BBT citation keys.
+- ~~Generate BibTeX keys and `references.bib` entries.~~ **Done 2026-08-31** — `references.bib` now
+  holds 8 entries. Keys were read from BBT's `citationKey` field in `zotero.sqlite` (BBT's HTTP
+  endpoint was not serving); the mapping was validated by the two pre-existing keys resolving
+  exactly.
 - **flooded#49 must be resolved before any absolute area figure is published.** Extents are currently
   over-mapped by roughly 2x. Scenario *comparisons* are unaffected.
 - **Item 3** — decide between the mean-annual-flood phrasing we can source and adding the classic
