@@ -6,7 +6,7 @@ Portable floodplain delineation from DEM and stream network using the Valley Con
 
 **Repository:** NewGraphEnvironment/flooded
 **Primary Language:** R (package)
-**Version:** 0.4.1
+**Version:** 0.5.0
 **License:** MIT
 
 ## Ecosystem
@@ -47,7 +47,7 @@ vignettes/
   valley-confinement.Rmd — full walkthrough with bundled test data
   stac-dem.Rmd           — fetch DEM from STAC catalog
   pars-floodplain.Rmd    — Parsnip River WSG using fl_dem_aoi() + cached outputs
-tests/testthat/          — unit tests for each fl_* function (17 test files, ~101 test_that blocks)
+tests/testthat/          — unit tests for each fl_* function (17 test files, 112 test_that blocks)
 ```
 
 ## Key Patterns
@@ -73,6 +73,19 @@ tests/testthat/          — unit tests for each fl_* function (17 test files, ~
   whole-network delineation, never from re-running the VCA per watercourse. Per-group runs disagree
   with the whole-network run in *both* directions (measured; see `inst/notes/methodology.md`), which
   would make a river's floodplain depend on what else was in the run.
+- **Bankfull regression units are km2 and cm/yr, converted inside `fl_flood_surface()`** — callers
+  still pass `upstream_area_ha` (hectares) and precipitation in **mm**. Through 0.4.1 those went into
+  Hall's coefficients unconverted, making bankfull depth **3.5926x** too large, so `ff04` was really
+  a waterline at 14.37x bankfull depth (#49, fixed in 0.5.0). Two things this leaves behind:
+  `precip` defaults to **`NULL`** (drop the term) because a literal `1` read as mm scales depth by
+  0.6089 rather than 1; and **Nagel's combined form `h_bf = 0.054 A^0.170 P^0.215` cannot be used to
+  test units** — it is an algebraic identity of the two-step form and agrees in any units. The guard
+  in `test-fl_flood_surface.R` pins hard literals instead.
+- **Which claims survive a change in mapped extent** — a ratio is only stable if its denominator is
+  *also* inside the affected region. Land-cover composition within the floodplain held at 27.51% ->
+  27.50% across the 0.5.0 fix; floodplain-as-a-share-of-watershed fell 8.67% -> 7.35%, tracking the
+  hectares, because the watershed does not shrink. Establish which kind before telling anyone their
+  published numbers are or are not affected (#52).
 - **Coverage needs a fallback** — `fl_valley_confine()` adds cells after intersecting its masks
   (cleanup, channel buffer, and waterbodies, the last with no spatial filter), so criteria-based
   attribution orphans them. `fl_valley_attribute(complete = TRUE)` assigns those to the nearest
