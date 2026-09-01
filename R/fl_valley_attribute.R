@@ -99,7 +99,7 @@
 #' )
 #' precip_r <- fl_stream_rasterize(streams, dem, field = "map_upstream")
 #' valleys <- fl_valley_confine(dem, streams,
-#'                              field = "upstream_area_ha", precip = precip_r)
+#'                              area_field = "upstream_area_ha", precip = precip_r)
 #'
 #' # Which part of the floodplain belongs to which watercourse?
 #' by_stream <- fl_valley_attribute(valleys, streams, group = "gnis_name",

@@ -51,9 +51,14 @@ anywhere**.
 `vignettes/stac-dem.Rmd` + `.Rmd.orig` (4 each), `vignettes/pars-floodplain.Rmd:229`,
 `data-raw/wsg_vignette_data.R:255`, `tests/testthat/test-fl_valley_attribute.R:10, :186`.
 
-**Omits `field`, relying on the `"channel_width"` default** — `tests/testthat/test-fl_valley_confine.R`,
-20 calls of which 18 omit it. 13 pass an `sf` streams object (these become the missing-argument
-error set); 2 (`:35`, `:94`) pass a `SpatRaster` and bypass rasterization entirely.
+Outside the repo: `floodplains/scripts/floodplain_lcc/02_floodplain_model.R:148` (verified by grep;
+the issue body cites `:134`, which is stale).
+
+**Omits `field`, relying on the `"channel_width"` default** — `tests/testthat/test-fl_valley_confine.R`.
+Counted directly rather than taken from the sweep, which did not reconcile: **21** calls in the file
+at `9711c4e`, of which **18** pass an `sf` streams object and omit `field` (the missing-argument
+error set), **2** (`:35`, `:94`) pass a `SpatRaster` and bypass rasterization entirely, and **1**
+(`:113`) passes `field = "upstream_area_ha"` explicitly.
 
 **Lockstep hazard:** `test-fl_valley_confine.R:91-101` asserts the `SpatRaster` path equals the `sf`
 path. It works today only because `:91` rasterizes on `"channel_width"` *and* the `sf` call uses the

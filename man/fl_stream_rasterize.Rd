@@ -13,7 +13,8 @@ fl_stream_rasterize(streams, template, field = "channel_width")
 CRS). Typically the DEM.}
 
 \item{field}{Character. Column name in \code{streams} to use as the cell value.
-Must be numeric. Default \code{"channel_width"}.}
+Must be numeric. Default \code{"channel_width"}. \strong{The default is not
+interchangeable with what the flood model needs} — see the note below.}
 }
 \value{
 A \code{SpatRaster} with the same grid as \code{template}. Stream cells carry
@@ -31,6 +32,19 @@ overlap a cell, the maximum value is kept.
 
 The output CRS matches \code{template}. If \code{streams} and \code{template} have
 different CRS, \code{streams} is reprojected to match.
+\subsection{Which column, and why it matters}{
+
+This function is deliberately generic: any numeric column rasterizes, and the
+output layer takes the column's name. The hazard is downstream. When the
+result is destined for the flood model — \code{\link[=fl_flood_surface]{fl_flood_surface()}}, and so
+\code{\link[=fl_flood_model]{fl_flood_model()}} and \code{\link[=fl_valley_confine]{fl_valley_confine()}} — the values are read as
+\strong{upstream contributing area in hectares}, the drainage-area term of the
+bankfull regression. Any other positive numeric column is accepted there
+without complaint and returns a smaller flood surface with no error and no
+warning, so pass \code{field = "upstream_area_ha"} for that path. The
+\code{"channel_width"} default is for generic rasterizing, including the
+\code{channel_buffer} DEM correction, which never touches the regression.
+}
 }
 \examples{
 dem <- terra::rast(system.file("testdata/dem.tif", package = "flooded"))
@@ -41,4 +55,8 @@ streams <- sf::st_read(
 stream_r <- fl_stream_rasterize(streams, dem, field = "upstream_area_ha")
 terra::plot(stream_r, main = "Upstream area (ha)")
 
+}
+\seealso{
+\code{\link[=fl_flood_surface]{fl_flood_surface()}} and \code{\link[=fl_valley_confine]{fl_valley_confine()}}, which read this
+function's output as drainage area in hectares.
 }

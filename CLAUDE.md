@@ -270,7 +270,7 @@ Use [drift](https://github.com/NewGraphEnvironment/drift) and [flooded](https://
 
 ```r
 # 1. Delineate floodplain AOI (flooded)
-valleys <- flooded::fl_valley_confine(dem, streams)
+valleys <- flooded::fl_valley_confine(dem, streams, area_field = "upstream_area_ha")
 
 # 2. Fetch, classify, summarize (drift)
 rasters   <- drift::dft_stac_fetch(aoi, source = "io-lulc", years = c(2017, 2020, 2023))

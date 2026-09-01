@@ -7,7 +7,7 @@
 fl_valley_confine(
   dem,
   streams,
-  field = "channel_width",
+  area_field,
   slope = NULL,
   slope_threshold = 9,
   max_width = 2000,
@@ -17,20 +17,28 @@ fl_valley_confine(
   waterbodies = NULL,
   channel_buffer = NULL,
   size_threshold = 5000,
-  hole_threshold = 2500
+  hole_threshold = 2500,
+  field = NULL
 )
 }
 \arguments{
 \item{dem}{A \code{SpatRaster} of elevation.}
 
 \item{streams}{An \code{sf} linestring object or a \code{SpatRaster} of rasterized
-streams. If \code{sf}, it is rasterized using \code{field}.}
+streams. If \code{sf}, it is rasterized using \code{area_field}. If a \code{SpatRaster},
+its cell values are used as-is and must already be upstream contributing
+area in hectares.}
 
-\item{field}{Character. Column name for \code{\link[=fl_stream_rasterize]{fl_stream_rasterize()}} when
-\code{streams} is \code{sf}. Default \code{"channel_width"}. \strong{The flood model reads the
-rasterized values as upstream contributing area in hectares} — pass
-\code{"upstream_area_ha"} (see \code{\link[=fl_flood_surface]{fl_flood_surface()}}). The default is wrong for
-the flood model and is tracked in flooded#47.}
+\item{area_field}{Character. Column of \code{streams} holding \strong{upstream
+contributing area in hectares}, rasterized onto the DEM grid by
+\code{\link[=fl_stream_rasterize]{fl_stream_rasterize()}}. Required when \code{streams} is \code{sf} — there is no
+default. The rasterized values become the drainage-area term of the
+bankfull regression in \code{\link[=fl_flood_surface]{fl_flood_surface()}}, which accepts any positive
+numeric column without complaint: channel width in place of area returns a
+smaller floodplain with no error and no warning. Not used when \code{streams} is
+already a \code{SpatRaster}. That branch cannot inspect the values it is handed;
+it warns only when the layer's \emph{name} gives it away, so a raster burned from
+any other wrong column carries the same defect one call earlier, undetected.}
 
 \item{slope}{A \code{SpatRaster} of percent slope. If \code{NULL}, derived from \code{dem}.}
 
@@ -65,6 +73,10 @@ stream channel is floodplain but can be sub-pixel at coarse DEM resolution.}
 \item{size_threshold}{Numeric. Minimum valley patch area (m²). Default \code{5000}.}
 
 \item{hole_threshold}{Numeric. Maximum hole area to fill (m²). Default \code{2500}.}
+
+\item{field}{Deprecated. The former name of \code{area_field}, whose
+\code{"channel_width"} default was wrong for the flood model (#47). Supplying it
+warns and forwards to \code{area_field}; removal is tracked in flooded#53.}
 }
 \value{
 A \code{SpatRaster} with binary values: \code{1} = unconfined valley, \code{0} =
@@ -125,7 +137,7 @@ precip_r <- fl_stream_rasterize(streams, dem, field = "map_upstream")
 # Basic VCA (channel buffer auto-detected from streams$channel_width)
 valleys <- fl_valley_confine(
   dem, streams,
-  field = "upstream_area_ha",
+  area_field = "upstream_area_ha",
   precip = precip_r
 )
 terra::plot(valleys, col = c("grey90", "darkgreen"), main = "Unconfined valleys")
@@ -137,7 +149,7 @@ waterbodies <- sf::st_read(
 )
 valleys_wb <- fl_valley_confine(
   dem, streams,
-  field = "upstream_area_ha",
+  area_field = "upstream_area_ha",
   precip = precip_r,
   waterbodies = waterbodies
 )
@@ -145,6 +157,8 @@ terra::plot(valleys_wb, col = c("grey90", "darkgreen"), main = "With waterbodies
 
 }
 \seealso{
-\code{\link[=fl_mask]{fl_mask()}}, \code{\link[=fl_cost_distance]{fl_cost_distance()}}, \code{\link[=fl_flood_model]{fl_flood_model()}},
-\code{\link[=fl_patch_rm]{fl_patch_rm()}}, \code{\link[=fl_valley_poly]{fl_valley_poly()}}
+\code{\link[=fl_stream_rasterize]{fl_stream_rasterize()}} for how \code{area_field} is burned onto the
+grid, and \code{\link[=fl_flood_surface]{fl_flood_surface()}} for the regression that consumes it.
+\code{\link[=fl_mask]{fl_mask()}}, \code{\link[=fl_cost_distance]{fl_cost_distance()}}, \code{\link[=fl_flood_model]{fl_flood_model()}}, \code{\link[=fl_patch_rm]{fl_patch_rm()}},
+\code{\link[=fl_valley_poly]{fl_valley_poly()}}
 }

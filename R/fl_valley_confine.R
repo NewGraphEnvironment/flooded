@@ -6,12 +6,19 @@
 #'
 #' @param dem A `SpatRaster` of elevation.
 #' @param streams An `sf` linestring object or a `SpatRaster` of rasterized
-#'   streams. If `sf`, it is rasterized using `field`.
-#' @param field Character. Column name for [fl_stream_rasterize()] when
-#'   `streams` is `sf`. Default `"channel_width"`. **The flood model reads the
-#'   rasterized values as upstream contributing area in hectares** — pass
-#'   `"upstream_area_ha"` (see [fl_flood_surface()]). The default is wrong for
-#'   the flood model and is tracked in flooded#47.
+#'   streams. If `sf`, it is rasterized using `area_field`. If a `SpatRaster`,
+#'   its cell values are used as-is and must already be upstream contributing
+#'   area in hectares.
+#' @param area_field Character. Column of `streams` holding **upstream
+#'   contributing area in hectares**, rasterized onto the DEM grid by
+#'   [fl_stream_rasterize()]. Required when `streams` is `sf` — there is no
+#'   default. The rasterized values become the drainage-area term of the
+#'   bankfull regression in [fl_flood_surface()], which accepts any positive
+#'   numeric column without complaint: channel width in place of area returns a
+#'   smaller floodplain with no error and no warning. Not used when `streams` is
+#'   already a `SpatRaster`. That branch cannot inspect the values it is handed;
+#'   it warns only when the layer's *name* gives it away, so a raster burned from
+#'   any other wrong column carries the same defect one call earlier, undetected.
 #' @param slope A `SpatRaster` of percent slope. If `NULL`, derived from `dem`.
 #' @param slope_threshold Numeric. Maximum percent slope for valley floor.
 #'   Default `9`.
@@ -36,6 +43,9 @@
 #'   stream channel is floodplain but can be sub-pixel at coarse DEM resolution.
 #' @param size_threshold Numeric. Minimum valley patch area (m²). Default `5000`.
 #' @param hole_threshold Numeric. Maximum hole area to fill (m²). Default `2500`.
+#' @param field Deprecated. The former name of `area_field`, whose
+#'   `"channel_width"` default was wrong for the flood model (#47). Supplying it
+#'   warns and forwards to `area_field`; removal is tracked in flooded#53.
 #'
 #' @return A `SpatRaster` with binary values: `1` = unconfined valley, `0` =
 #'   confined / hillslope, `NA` = outside analysis extent.
@@ -74,8 +84,10 @@
 #' On an Apple M4 Max (16 cores), 12 threads reduced runtime from ~3.5
 #' minutes to ~1 minute for a 27M-cell raster (~2,700 km² at 10 m).
 #'
-#' @seealso [fl_mask()], [fl_cost_distance()], [fl_flood_model()],
-#'   [fl_patch_rm()], [fl_valley_poly()]
+#' @seealso [fl_stream_rasterize()] for how `area_field` is burned onto the
+#'   grid, and [fl_flood_surface()] for the regression that consumes it.
+#'   [fl_mask()], [fl_cost_distance()], [fl_flood_model()], [fl_patch_rm()],
+#'   [fl_valley_poly()]
 #'
 #' @examples
 #' dem <- terra::rast(system.file("testdata/dem.tif", package = "flooded"))
@@ -88,7 +100,7 @@
 #' # Basic VCA (channel buffer auto-detected from streams$channel_width)
 #' valleys <- fl_valley_confine(
 #'   dem, streams,
-#'   field = "upstream_area_ha",
+#'   area_field = "upstream_area_ha",
 #'   precip = precip_r
 #' )
 #' terra::plot(valleys, col = c("grey90", "darkgreen"), main = "Unconfined valleys")
@@ -100,7 +112,7 @@
 #' )
 #' valleys_wb <- fl_valley_confine(
 #'   dem, streams,
-#'   field = "upstream_area_ha",
+#'   area_field = "upstream_area_ha",
 #'   precip = precip_r,
 #'   waterbodies = waterbodies
 #' )
@@ -108,7 +120,7 @@
 #'
 #' @export
 fl_valley_confine <- function(dem, streams,
-                              field = "channel_width",
+                              area_field,
                               slope = NULL,
                               slope_threshold = 9,
                               max_width = 2000,
@@ -118,8 +130,29 @@ fl_valley_confine <- function(dem, streams,
                               waterbodies = NULL,
                               channel_buffer = NULL,
                               size_threshold = 5000,
-                              hole_threshold = 2500) {
+                              hole_threshold = 2500,
+                              field = NULL) {
   stopifnot(inherits(dem, "SpatRaster"))
+
+  # --- Deprecated `field` spelling (#47) ---
+  # `field` defaulted to "channel_width", which the flood model then read as
+  # drainage area. Forward it for one release rather than breaking the callers
+  # that were passing the right column under the wrong name.
+  has_area_field <- !missing(area_field)
+  if (!is.null(field)) {
+    if (has_area_field) {
+      # Both spellings: say which value is being thrown away, or this becomes
+      # the same silent-wrong-column problem one level up.
+      warning("`field` is deprecated and ignored here because `area_field` was ",
+              "also supplied: using `area_field = \"", area_field,
+              "\"`, discarding `field = \"", field, "\"`.", call. = FALSE)
+    } else {
+      warning("`field` is deprecated; use `area_field`, which must name upstream ",
+              "contributing area in hectares.", call. = FALSE)
+      area_field <- field
+      has_area_field <- TRUE
+    }
+  }
 
   # --- Auto-detect channel_buffer ---
   if (is.null(channel_buffer)) {
@@ -129,9 +162,43 @@ fl_valley_confine <- function(dem, streams,
 
   # --- Rasterize streams if needed ---
   if (inherits(streams, "sf")) {
-    stream_r <- fl_stream_rasterize(streams, dem, field = field)
+    if (!has_area_field) {
+      stop("`area_field` is required when `streams` is an sf object: name the ",
+           "column holding upstream contributing area in hectares. It is the ",
+           "drainage-area term of the bankfull regression in ",
+           "`fl_flood_surface()`, not a generic channel-size proxy.",
+           call. = FALSE)
+    }
+    # Validate here rather than leaving it to fl_stream_rasterize(), whose message
+    # names `field` — the argument the caller did not use. Inside this branch
+    # only: on the SpatRaster branch `area_field` is documented as unused, so
+    # refusing a value the function never reads would contradict the roxygen.
+    if (!(is.character(area_field) && length(area_field) == 1L && !is.na(area_field))) {
+      stop("`area_field` must be a single column name (character), naming ",
+           "upstream contributing area in hectares. Got ",
+           class(area_field)[1L], " of length ", length(area_field), ".",
+           call. = FALSE)
+    }
+    stream_r <- fl_stream_rasterize(streams, dem, field = area_field)
   } else if (inherits(streams, "SpatRaster")) {
     stream_r <- streams
+    # A pre-rasterized layer carries #47 one call earlier, and this branch cannot
+    # check its contents. It can check its name: fl_stream_rasterize() names the
+    # output after the column it burned.
+    #
+    # The literal is deliberate. Keying this to `formals(fl_stream_rasterize)$field`
+    # would tie the guard to *whatever the rasterizer defaults to*, when what must
+    # not drift is the guard and *the wrong column*. Those coincide only because
+    # that default happens to be channel width today — the coincidence this issue
+    # exists to remove. Move the default and the derived form inverts: it would
+    # warn on a correct area raster and go silent on the defect. Whether a column
+    # means drainage area is a judgement, not something a formal can answer.
+    # The test pins the coincidence separately.
+    if (identical(names(stream_r)[1L], "channel_width")) {
+      warning("`streams` is a raster of 'channel_width', which is not upstream ",
+              "contributing area. The flood model reads these values as drainage ",
+              "area in hectares; rasterize the area column instead.", call. = FALSE)
+    }
   } else {
     stop("`streams` must be an sf object or SpatRaster.", call. = FALSE)
   }
