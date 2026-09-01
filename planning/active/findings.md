@@ -93,6 +93,22 @@ bcfishpass's independent estimate (5.8 m vs 31.3 m for the Bulkley) — expected
 regression is a fitted index that `flood_factor` scales, not a physical channel-width estimate
 (Hall's R² = 0.47). Worth stating in the docs, not a blocker.
 
+## Phase 1 measured — the tests fail on unmodified code
+
+Run 2026-08-31 against `HEAD` before any `R/` edit:
+
+```
+[ FAIL 4 | WARN 0 | SKIP 0 | PASS 11 ]
+test-fl_flood_surface.R:117  actual 0.98   expected 0.27   (units, scalar precip)
+test-fl_flood_surface.R:130  actual 0.98   expected 0.27   (units, raster precip)
+test-fl_flood_surface.R:141  ERROR: is.numeric(precip) is not TRUE   (precip = NULL)
+test-fl_flood_surface.R:159  actual 5.9    expected 1.6    (ff scaling)
+```
+
+`0.98` is the predicted buggy value `0.9844530049`, and `5.9` is 6x it. The `precip = NULL` case
+errors rather than returning a wrong number, because the current signature validates
+`is.numeric(precip)`.
+
 ## Where the defect lives
 
 Exactly one place: `R/fl_flood_surface.R:72-81`. Roxygen restates the formulas at `:24-26`.

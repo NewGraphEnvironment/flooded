@@ -38,13 +38,13 @@ Both would have produced a green suite over a broken fix:
 
 ## Phase 1: Pin the units with a test that fails on current code
 
-- [ ] Synthetic one-cell raster, area `10000` ha (= 100 km²), precip `500` mm (= 50 cm),
+- [x] Synthetic one-cell raster, area `10000` ha (= 100 km²), precip `500` mm (= 50 cm),
       `flood_factor = 1`. Assert flood depth equals the hard literal `0.2740248754`, tolerance
       `1e-8`. Current code returns `0.9844530049` — 259% apart, so no tolerance choice can mask it.
-- [ ] Second assertion: `precip = NULL` gives the multiplier exactly `1`, i.e. depth equals the
+- [x] Second assertion: `precip = NULL` gives the multiplier exactly `1`, i.e. depth equals the
       literal `0.145 * (0.196 * 100^0.280)^0.607`.
-- [ ] Comment in the test naming why the Nagel combined form is *not* used as the expected value.
-- [ ] Run the new tests against unmodified code and confirm both fail before touching `R/`. Record
+- [x] Comment in the test naming why the Nagel combined form is *not* used as the expected value.
+- [x] Run the new tests against unmodified code and confirm both fail before touching `R/`. Record
       the observed failure values in `findings.md`.
 
 ## Phase 2: Correct the units in `R/fl_flood_surface.R`
