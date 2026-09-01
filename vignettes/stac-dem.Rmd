@@ -14,6 +14,18 @@ vignette: >
 vignette demonstrates fetching 1 m lidar tiles from a STAC catalog and
 comparing the resulting floodplain with the bundled 10 m DEM.
 
+> **The numeric output below predates the 0.5.0 units fix and is over-mapped.**
+> This vignette is pre-baked from `stac-dem.Rmd.orig`, and re-baking needs the
+> STAC endpoint plus a 1 m lidar re-run, so its embedded results still come from
+> the defective bankfull regression (flooded#49 — depth was 3.5926x too large).
+> Re-running its own 10 m baseline configuration today gives **28,727** cells
+> corrected, against **53,635** under the old units — and neither matches the
+> **54,637** printed below, so roughly a thousand cells of that gap predate this
+> release and come from other changes since the vignette was last baked. Treat
+> every cell count and area here as illustrative of the *workflow*, not as
+> current output. The resolution comparison the vignette makes is still
+> directionally valid, since every run shown carries the same error.
+
 We use the same Neexdzii Kwah test area (Bulkley River near Topley, BC) as
 the main vignette, but source the DEM from
 [stac-dem-bc](https://images.a11s.one/) — a STAC collection of BC provincial

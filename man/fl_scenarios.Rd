@@ -37,7 +37,24 @@ different ff values fall relative to field-validated studies:
 }
 
 DEM resolution matters: coarser DEMs need larger ff to compensate for
-smoothed valley floors. At 1m lidar, ff=2-3 may suffice.
+smoothed valley floors.\tabular{ll}{
+   DEM \tab ff for the same real floodplain \cr
+   1 m lidar \tab 2-3 \cr
+   10 m \tab 3 \cr
+   25 m TRIM \tab 4 \cr
+   30 m MRDEM \tab up to 7 \cr
+}
+
+
+So \code{ff04} on 25 m TRIM and \code{ff03} on 10 m aim at the same ecological thing,
+and \code{ff04} on 30 m MRDEM is a \emph{conservative} functional floodplain rather
+than a centred one. Comparing \code{ff04} across resolutions compares two
+different things.
+
+These values are unchanged across the 0.5.0 units fix (flooded#49) because
+they were taken from the literature ladder to begin with. What changed is
+that they now behave as labelled — before the fix, \code{ff02} / \code{ff04} / \code{ff06}
+were really 7.19 / 14.37 / 21.56 times bankfull depth.
 
 The \code{run} column allows consuming projects to document all scenarios but
 only execute selected ones (e.g., \code{dplyr::filter(scenarios, run)}).

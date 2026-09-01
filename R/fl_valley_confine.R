@@ -8,7 +8,10 @@
 #' @param streams An `sf` linestring object or a `SpatRaster` of rasterized
 #'   streams. If `sf`, it is rasterized using `field`.
 #' @param field Character. Column name for [fl_stream_rasterize()] when
-#'   `streams` is `sf`. Default `"channel_width"`.
+#'   `streams` is `sf`. Default `"channel_width"`. **The flood model reads the
+#'   rasterized values as upstream contributing area in hectares** — pass
+#'   `"upstream_area_ha"` (see [fl_flood_surface()]). The default is wrong for
+#'   the flood model and is tracked in flooded#47.
 #' @param slope A `SpatRaster` of percent slope. If `NULL`, derived from `dem`.
 #' @param slope_threshold Numeric. Maximum percent slope for valley floor.
 #'   Default `9`.
@@ -17,7 +20,9 @@
 #' @param cost_threshold Numeric. Maximum accumulated cost distance.
 #'   Default `2500`.
 #' @param flood_factor Numeric. Multiplier on bankfull depth. Default `6`.
-#' @param precip A `SpatRaster` or numeric scalar of precipitation. Default `1`.
+#' @param precip A `SpatRaster` or numeric scalar of mean annual precipitation
+#'   in **millimetres**, converted to cm/yr internally for the bankfull
+#'   regression. Default `NULL`, which drops the precipitation term.
 #' @param waterbodies An `sf` polygon object of lakes and/or wetlands, or
 #'   `NULL` (default). Waterbody polygons are rasterized onto the valley grid
 #'   and added to the output after morphological cleanup. No buffer is applied —
@@ -109,7 +114,7 @@ fl_valley_confine <- function(dem, streams,
                               max_width = 2000,
                               cost_threshold = 2500,
                               flood_factor = 6,
-                              precip = 1,
+                              precip = NULL,
                               waterbodies = NULL,
                               channel_buffer = NULL,
                               size_threshold = 5000,

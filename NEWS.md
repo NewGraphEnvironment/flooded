@@ -1,3 +1,64 @@
+# flooded 0.5.0
+
+**Results change. Every floodplain produced by 0.4.1 or earlier is over-mapped.**
+
+- Fix the bankfull regression being fed the wrong units (#49). `fl_flood_surface()` passed
+  **hectares** (`upstream_area_ha`) and **millimetres** (`map_upstream`) into the verbatim Hall et
+  al. (2007) coefficients, which that paper and Nagel et al. (2014) both specify as taking drainage
+  area in **km2** and mean annual precipitation in **cm/yr**. The conversion now happens inside the
+  function, so callers keep passing the columns they already have.
+- Bankfull **width** was 8.2224x too large and bankfull **depth** 3.5926x too large, everywhere, on
+  every run this package has ever done. The shipped scenarios were therefore not what they claimed:
+
+  | labelled | actual multiple of bankfull depth |
+  |---|---|
+  | `ff02` | 7.19 |
+  | `ff04` | **14.37** |
+  | `ff06` | 21.56 |
+
+  Against Hall's field-validated 3 for historical floodplain and Nagel's 5-7 for valley bottom.
+- **How much area this costs is dataset-dependent, and not a fixed ratio.** The error only reaches
+  the boundary where the flood mask is the binding criterion. Measured on both shipped datasets,
+  and every corrected run is a **strict subset** of the as-coded one - 0 cells gained anywhere:
+
+  | dataset | scenario | as-coded | corrected | retained |
+  |---|---|---|---|---|
+  | bundled 10 m tile | `ff02` | 320.8 ha | 185.4 ha | 57.8% |
+  | bundled 10 m tile | `ff04` | 476.8 ha | 231.9 ha | 48.6% |
+  | bundled 10 m tile | `ff06` | 536.4 ha | 287.3 ha | 53.6% |
+  | Parsnip WSG, MRDEM-30 | `ff04` | 48,603.1 ha | 41,142.9 ha | 84.7% |
+
+  At 10 m the flood mask binds and the fix roughly halves the extent. At 30 m the slope and
+  cost-distance criteria bind first, so most of the inflated flood height was already being clipped
+  and the loss is ~15%.
+- **Scenario values are unchanged at 2 / 4 / 6.** They were taken from the literature ladder
+  (Rosgen 2, Hall 3, Nagel 5-7) in the first place; what changed is that they now behave as
+  labelled. Raising `ff` to recover the old extent is not supported by anything - on MRDEM-30,
+  corrected `ff04` through `ff07` span only 6.4% of area, so even `ff07` lands at 90% of the
+  as-coded `ff04`.
+- `precip` now defaults to `NULL`, which drops the precipitation term (multiplier exactly 1).
+  The former default of `1` cannot express that once the input is read as millimetres: 1 mm is
+  0.1 cm/yr, scaling depth by 0.6089 - *shallower* than omitting the term. `fl_flood_surface()`,
+  `fl_flood_model()` and `fl_valley_confine()` all move together. Passing a precipitation raster or
+  a scalar in mm is unaffected.
+- Shipped vignette artifacts regenerated: `inst/vignette-data/pars_valleys.tif` and the
+  `floodplain` layer of `pars.gpkg`. The as-coded run reproduces the previous artifact exactly
+  (521,028 cells, 0 difference), which is what establishes the corrected one as a like-for-like
+  replacement. This supersedes the 0.4.1 note below saying the shipped artifacts were still
+  current — that was true of the #41 cost-distance fix and is not true of this one.
+- `vignettes/stac-dem.Rmd` could not be regenerated: it is the baked half of the `.Rmd.orig`
+  pattern, and re-baking needs the STAC endpoint plus a 1 m lidar re-run. It carries an explicit
+  caveat instead. Its printed figures do not reproduce even under the old units — 54,637 published
+  against 53,635 as-coded today — so roughly a thousand cells of that gap predate this release.
+- `fl_flood_surface()` gains a units test pinned to hard literals computed from the published
+  equation. No test in this package pinned an absolute value before now, and `_snaps/` was empty,
+  which is why a 3.59x error survived a green suite. Note that Nagel's combined form
+  `h_bf = 0.054 * A^0.170 * P^0.215` cannot serve as the oracle - it is an algebraic identity of the
+  two-step form and so agrees in any units.
+- Documentation corrected throughout: `inst/notes/methodology.md` stated the two channel-width
+  formulas with **no input units at all**, which is the gap that let this survive. Historical
+  measurements in that file taken under the defect are annotated rather than restated.
+
 # flooded 0.4.1
 
 - Fix `fl_cost_distance()` seeding on every zero-friction cell rather than only stream cells (#41).

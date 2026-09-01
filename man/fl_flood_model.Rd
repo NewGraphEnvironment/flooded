@@ -4,20 +4,22 @@
 \alias{fl_flood_model}
 \title{Run the full flood model}
 \usage{
-fl_flood_model(dem, streams, flood_factor = 6, precip = 1, max_width = 2000)
+fl_flood_model(dem, streams, flood_factor = 6, precip = NULL, max_width = 2000)
 }
 \arguments{
 \item{dem}{A \code{SpatRaster} of elevation.}
 
 \item{streams}{A \code{SpatRaster} of rasterized streams (output of
-\code{\link[=fl_stream_rasterize]{fl_stream_rasterize()}}). Cell values are upstream contributing area in
-hectares (or another proxy for channel size).}
+\code{\link[=fl_stream_rasterize]{fl_stream_rasterize()}}). Cell values \strong{must be upstream contributing
+area in hectares} — they are the drainage-area term of the bankfull
+regression, not a generic channel-size proxy. Converted to km2 internally.}
 
 \item{flood_factor}{Numeric. Multiplier on bankfull depth to estimate flood
 depth. Default \code{6} (VCA convention).}
 
-\item{precip}{A \code{SpatRaster} of mean annual precipitation (mm), or a single
-numeric value applied uniformly. Default \code{1} (omits precipitation term).}
+\item{precip}{A \code{SpatRaster} of mean annual precipitation in \strong{millimetres},
+or a single numeric value in mm applied uniformly. Converted to cm/yr
+internally. Default \code{NULL}, which drops the precipitation term.}
 
 \item{max_width}{Numeric. Maximum corridor width in map units (metres)
 within which to interpolate. Default \code{2000} (1000m each side).}

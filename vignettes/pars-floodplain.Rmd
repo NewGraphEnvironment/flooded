@@ -69,6 +69,17 @@ This run uses the **`ff04`** scenario from `flooded::fl_scenarios()` —
 *functional floodplain*, the recurrent-inundation footprint. The active
 parameter values are shown in the table below.
 
+On a 30 m DEM, `ff04` is a *conservative* functional floodplain: Nagel et al.
+put the resolution equivalent nearer `ff07`. In practice the difference is
+small here — corrected `ff04` through `ff07` span only 6.4% of mapped area on
+this watershed, because at 30 m the slope and cost-distance criteria bind
+before the flood mask does.
+
+The cached outputs below were regenerated for `flooded` 0.5.0, which corrected
+a units defect in the bankfull regression (flooded#49). The mapped extent shown
+here is correspondingly smaller than in earlier versions of this vignette —
+48,603.1 ha before the fix, 41,142.9 ha now, a loss of 15.3%.
+
 ```{r citation-helper, include = FALSE}
 # Convert "key1;key2" bare-key strings (the format used in
 # `fl_params()$citation_keys` and `fl_scenarios()$citation_keys`) into

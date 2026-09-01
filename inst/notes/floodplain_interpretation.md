@@ -6,10 +6,11 @@ Plain-language memo for reporting and onboarding. Companion to
 citations). This one answers the questions a reviewer asks: *what is this a map of, what does the
 flood factor mean, and can we defend it?*
 
-**Status (2026-08-31):** lit-search pass run against `vca_refs.duckdb`. The units question is
-**resolved and it is a code defect** (flooded#49) — read section 4 before quoting any area figure
-from this package. Section 6's ecological claims are now sourced. Remaining gaps are listed at the
-end; BibTeX keys for the newly cited papers still need generating.
+**Status (2026-08-31):** lit-search pass run against `vca_refs.duckdb`, and the units defect it
+surfaced is now **fixed in code** (flooded#49, released in 0.5.0). Every absolute area figure in
+this memo has been re-measured against the corrected model; figures produced by 0.4.1 or earlier
+are over-mapped and are flagged as such where they appear. Section 6's ecological claims are
+sourced and `references.bib` carries their keys.
 
 ---
 
@@ -71,7 +72,7 @@ Two separate jobs are riding on one number:
 So `ff04` on 25 m TRIM and `ff03` on 10 m are aiming at **the same ecological thing**. Comparing
 `ff04` on 30 m against `ff04` on 10 m compares two different things.
 
-## 4. Is "4× bankfull" an impossible flood? Partly, and that is a bug
+## 4. Is "4× bankfull" an impossible flood? It was, and that was a bug
 
 The obvious objection: at-a-station hydraulic geometry means depth responds only weakly to
 discharge, so a waterline at 4× bankfull depth would need a discharge far beyond any real flood.
@@ -85,15 +86,35 @@ Three reasons that objection does **not** land against the model as designed:
    field-measured floodplain widths, not because it corresponds to a discharge.
 3. **It absorbs DEM smoothing**, explicitly, per the resolution table above.
 
-**And one reason it does land against the model as currently coded.** The bankfull depth being
-multiplied is **3.59× too large**, because `fl_flood_surface.R` feeds hectares and millimetres into a
-regression that Hall and Nagel both specify as taking km² and cm/yr (flooded#49, confirmed against
-both papers). So the shipped `ff04` is really about **14.4×** true bankfull depth — well past Hall's
-3 and Nagel's 5–7, and past any defensible reading of "flood".
+**And one reason it used to land against the model as coded — now fixed.** Through 0.4.1 the
+bankfull depth being multiplied was **3.5926x too large**, because `fl_flood_surface.R` fed hectares
+and millimetres into a regression that Hall and Nagel both specify as taking km² and cm/yr
+(flooded#49, confirmed against both papers). The shipped scenarios were really:
 
-Until #49 is fixed, treat the absolute extents as over-mapped: corrected, the bundled tile gives
-231.9 ha at `ff04` rather than 476.8 ha. The *relative* comparisons between scenarios are unaffected,
-since every scenario carries the same error.
+| labelled | actual multiple of bankfull depth |
+|---|---|
+| `ff02` | 7.19 |
+| `ff04` | **14.37** |
+| `ff06` | 21.56 |
+
+Well past Hall's 3 and Nagel's 5–7, and past any defensible reading of "flood". Fixed in **0.5.0**:
+the conversion now happens inside `fl_flood_surface()` and callers still pass `upstream_area_ha` and
+precipitation in mm.
+
+**What this means for figures already published.** Anything produced by 0.4.1 or earlier is
+over-mapped, by an amount that depends on the dataset rather than on the defect — the error only
+reaches the boundary where the flood mask is the binding criterion:
+
+- bundled 10 m tile, where flood binds: `ff04` 476.8 -> **231.9 ha**, 49% retained
+- Parsnip WSG on MRDEM-30, where slope and cost bind first: `ff04` 48,603.1 -> **41,142.9 ha**,
+  84.7% retained
+- `restoration_wedzin_kwa_2024` on MRDEM-30: `co_ff04` 17,100.7 -> **14,345.3 ha**, 84% retained
+
+So **absolute hectare claims from 0.4.1 need restating; proportional claims stand.** In the
+`restoration_wedzin_kwa_2024` case, disturbed area fell 16% while disturbed-as-a-share-of-AOI went
+27.51% -> 27.50% — the over-mapped margin carried almost exactly the land-cover mix of the core.
+Scenario-to-scenario comparisons are unaffected on every dataset, since each scenario carried the
+same error.
 
 ## 5. What we can and cannot claim
 
@@ -205,21 +226,30 @@ calculation.
 
 ## 9. Measured on the bundled Bulkley tile (10 m)
 
-| | | |
-|---|---|---|
-| `ff02` | 32,081 cells | **320.8 ha** |
-| `ff04` | 47,681 cells | **476.8 ha** (+49%) |
-| `ff06` | 53,635 cells | **536.4 ha** (+12%) |
+Corrected (0.5.0), against the same run as it stood in 0.4.1 with the units defect:
+
+| | 0.4.1 as-coded | **0.5.0 corrected** | retained |
+|---|---|---|---|
+| `ff02` | 32,081 cells / 320.8 ha | 18,543 cells / **185.4 ha** | 57.8% |
+| `ff04` | 47,681 cells / 476.8 ha | 23,192 cells / **231.9 ha** | 48.6% |
+| `ff06` | 53,635 cells / 536.4 ha | 28,727 cells / **287.3 ha** | 53.6% |
+
+The corrected delineation is a **strict subset** at every scenario — 0 cells gained. The fix can
+only remove ground, never add it.
 
 Diminishing returns are the model working: by `ff06` the water is meeting valley walls and the slope
 and cost criteria clamp it. Flood factor cannot invent floodplain where the terrain says no.
 
-Worked bankfull depths:
+Worked bankfull depths (corrected), each stream on its own `map_upstream`:
 
-| Stream | Upstream area | Bankfull | `ff04` | `ff06` |
-|---|---|---|---|---|
-| Cesford Creek | 1,929 ha | 0.77 m | 3.07 m | 4.60 m |
-| Bulkley River | 110,337 ha | 1.50 m | 6.00 m | 9.00 m |
+| Stream | Upstream area | Precip | Bankfull | `ff04` | `ff06` |
+|---|---|---|---|---|---|
+| Cesford Creek | 1,929 ha | 576 mm | 0.21 m | 0.85 m | 1.28 m |
+| Bulkley River | 110,337 ha | 531 mm | 0.42 m | 1.67 m | 2.50 m |
+
+As-coded these read 0.77 / 1.50 m bankfull and 4.60 / 9.00 m at `ff06`. A 9 m flood stage on the
+Bulkley was the tell — the corrected 2.50 m is a defensible flood height, and the corrected bankfull
+depths are the *index* the regression actually predicts, not a surveyed channel.
 
 ---
 
@@ -230,7 +260,7 @@ Lit-search pass run 2026-08-31 against `vca_refs.duckdb` (15 papers), BM25 + sem
 
 | # | Item | Status |
 |---|---|---|
-| 1 | Units in the bankfull regression | **Resolved — code defect.** flooded#49 |
+| 1 | Units in the bankfull regression | **Resolved and fixed** in 0.5.0 — flooded#49 |
 | 2 | Ecological mechanisms (section 6) | **Sourced** — Rapp & Abbe 2003, Hauer et al. 2016, Rosenfeld et al. 2008, Sommer et al. 2001, Katz et al. 2017 |
 | 3 | Bankfull recurrence interval | **Partly.** @wheaton_etal2019LowTechProcessBased give *"bankfull discharge… often approximates the mean annual flood for perennial streams."* The commonly quoted 1.5–2 yr figure is **not** in our set — use the mean-annual-flood phrasing, or add Leopold/Wolman to the store |
 | 4 | At-a-station hydraulic geometry (depth ∝ Q^0.4) | **Cut.** Leopold & Maddock 1953 is not in the store, and section 4 no longer needs the exponent |
@@ -242,8 +272,10 @@ Remaining before this memo is cited in a report:
   holds 8 entries. Keys were read from BBT's `citationKey` field in `zotero.sqlite` (BBT's HTTP
   endpoint was not serving); the mapping was validated by the two pre-existing keys resolving
   exactly.
-- **flooded#49 must be resolved before any absolute area figure is published.** Extents are currently
-  over-mapped by roughly 2x. Scenario *comparisons* are unaffected.
+- ~~**flooded#49 must be resolved before any absolute area figure is published.**~~ **Fixed in
+  0.5.0.** Area figures produced by 0.5.0 or later are safe to quote. Figures carried over from
+  0.4.1 or earlier are over-mapped by a dataset-dependent amount — see section 4 — and must be
+  re-run rather than scaled, since the error only reaches the boundary where the flood mask binds.
 - **Item 3** — decide between the mean-annual-flood phrasing we can source and adding the classic
   reference.
 - **Item 5** — if BC regime variability matters to a report's argument, it needs its own literature,

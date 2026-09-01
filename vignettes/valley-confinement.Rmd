@@ -80,14 +80,22 @@ The VCA bankfull regression has a precipitation term that strongly controls
 flood depth:
 
 ```
-bankfull_width = (upstream_area ^ 0.280) * 0.196 * (precip ^ 0.355)
+area_km2       = upstream_area_ha / 100
+precip_cm      = precip_mm / 10
+
+bankfull_width = (area_km2 ^ 0.280) * 0.196 * (precip_cm ^ 0.355)
 bankfull_depth = bankfull_width ^ 0.607 * 0.145
 flood_depth    = bankfull_depth * flood_factor
 ```
 
-With `precip = 1` (the default), the precipitation term drops out and flood
-depths are dramatically underestimated. For the Bulkley mainstem
-(`upstream_area_ha ~ 110,000`), the difference is ~2 m vs ~8 m flood depth.
+Hall et al. (2007) and Nagel et al. (2014) both specify drainage area in km^2
+and mean annual precipitation in cm/yr, so the hectares and millimetres carried
+on the stream network are converted before the coefficients are applied.
+
+With `precip = NULL` (the default), the precipitation term drops out and flood
+depths are underestimated. For the Bulkley mainstem
+(`upstream_area_ha ~ 110,000`), at `flood_factor = 6` the difference is ~1.1 m
+vs ~2.5 m flood depth.
 
 The test data includes `map_upstream` — mean annual precipitation (mm) from
 fwapg/ClimateBC, carried as a stream attribute. We rasterize it alongside
@@ -177,7 +185,7 @@ masks), applies morphological cleanup (closing, hole filling, small patch
 removal, majority filter), and returns a binary valley raster
 (Figure \@ref(fig:plot-valleys)).
 
-Note the `precip` argument — without it, flood depths are ~4x too shallow
+Note the `precip` argument — without it, flood depths are ~2.4x too shallow
 and the resulting valley is significantly narrower.
 
 ```{r vca}
@@ -320,14 +328,16 @@ annual precipitation in mm) is available as a stream attribute from fwapg
 precipitation product will work — rasterize it to the DEM grid and pass it
 as the `precip` argument.
 
-Omitting precipitation (`precip = 1`, the default) underestimates flood depth
-by roughly 4x in wet climates (~500 mm MAP). This produces a valley that is
-about half the width of the correct result:
+Omitting precipitation (`precip = NULL`, the default) underestimates flood depth
+by roughly 2.4x in wet climates (~500 mm MAP), producing a noticeably narrower
+valley. Note that `precip = NULL` is the way to drop the term — passing
+`precip = 1` means one *millimetre*, which is a depth multiplier of 0.61 rather
+than 1 and gives a shallower result than omitting precipitation altogether:
 
 ```{r precip-comparison}
 valleys_no_precip <- fl_valley_confine(
   dem, streams, field = "upstream_area_ha",
-  precip = 1
+  precip = NULL
 )
 
 n_no <- sum(values(valleys_no_precip) == 1, na.rm = TRUE)
@@ -514,6 +524,6 @@ Additional arguments to `fl_valley_confine()` not in the parameter legend:
 
 | Parameter | Default | Effect |
 |-----------|---------|--------|
-| `precip` | 1 | MAP in mm — critical for realistic flood depth |
+| `precip` | NULL | MAP in mm, converted to cm/yr internally — critical for realistic flood depth |
 | `waterbodies` | NULL | sf polygons of lakes/wetlands to fill donut holes |
 | `channel_buffer` | auto | Buffer streams by channel_width (DEM correction) |

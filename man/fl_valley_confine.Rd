@@ -13,7 +13,7 @@ fl_valley_confine(
   max_width = 2000,
   cost_threshold = 2500,
   flood_factor = 6,
-  precip = 1,
+  precip = NULL,
   waterbodies = NULL,
   channel_buffer = NULL,
   size_threshold = 5000,
@@ -27,7 +27,10 @@ fl_valley_confine(
 streams. If \code{sf}, it is rasterized using \code{field}.}
 
 \item{field}{Character. Column name for \code{\link[=fl_stream_rasterize]{fl_stream_rasterize()}} when
-\code{streams} is \code{sf}. Default \code{"channel_width"}.}
+\code{streams} is \code{sf}. Default \code{"channel_width"}. \strong{The flood model reads the
+rasterized values as upstream contributing area in hectares} — pass
+\code{"upstream_area_ha"} (see \code{\link[=fl_flood_surface]{fl_flood_surface()}}). The default is wrong for
+the flood model and is tracked in flooded#47.}
 
 \item{slope}{A \code{SpatRaster} of percent slope. If \code{NULL}, derived from \code{dem}.}
 
@@ -42,7 +45,9 @@ Default \code{2500}.}
 
 \item{flood_factor}{Numeric. Multiplier on bankfull depth. Default \code{6}.}
 
-\item{precip}{A \code{SpatRaster} or numeric scalar of precipitation. Default \code{1}.}
+\item{precip}{A \code{SpatRaster} or numeric scalar of mean annual precipitation
+in \strong{millimetres}, converted to cm/yr internally for the bankfull
+regression. Default \code{NULL}, which drops the precipitation term.}
 
 \item{waterbodies}{An \code{sf} polygon object of lakes and/or wetlands, or
 \code{NULL} (default). Waterbody polygons are rasterized onto the valley grid
