@@ -176,3 +176,13 @@ inside the previous fix.
 Also noted on #53 as a comment: testthat 3.1.5 stopped `expect_no_warning()` capturing *deprecation*
 warnings, so moving the shim to `lifecycle::deprecate_warn()` while removing it would silently
 un-guard both negative controls.
+
+### Close
+
+- Round 4 clean, and terminated by enumeration rather than assertion: ten candidate pairs where an
+  invariant could rest on two things agreeing, nine pinned/definitional/constructed, and the one
+  residual stated precisely — `"channel_width"` carries two meanings in the file (the bcfishpass
+  attribute, and "the column that is not drainage area") with no artifact above either from which to
+  derive them, so their independence is the correct design and deduplicating the constant would
+  re-introduce round 3's defect.
+- `DESCRIPTION` and `CLAUDE.md` bumped to 0.6.0 as the final commit.

@@ -91,7 +91,7 @@ as they are, so no blind sed.
 - [x] `inst/notes/floodplain_interpretation.md` - name `area_field` in the
       "Which regression does what" section so the argument and the regression input are
       linked in prose
-- [ ] `DESCRIPTION` -> `0.6.0` as the **final** commit of the branch
+- [x] `DESCRIPTION` -> `0.6.0` as the **final** commit of the branch
 
 ## Phase 5: Downstream doc fix (separate repo)
 
