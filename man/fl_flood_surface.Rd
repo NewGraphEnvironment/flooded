@@ -4,20 +4,22 @@
 \alias{fl_flood_surface}
 \title{Compute flood surface elevation at stream cells}
 \usage{
-fl_flood_surface(dem, streams, flood_factor = 6, precip = 1)
+fl_flood_surface(dem, streams, flood_factor = 6, precip = NULL)
 }
 \arguments{
 \item{dem}{A \code{SpatRaster} of elevation.}
 
 \item{streams}{A \code{SpatRaster} of rasterized streams (output of
-\code{\link[=fl_stream_rasterize]{fl_stream_rasterize()}}). Cell values are upstream contributing area in
-hectares (or another proxy for channel size).}
+\code{\link[=fl_stream_rasterize]{fl_stream_rasterize()}}). Cell values \strong{must be upstream contributing
+area in hectares} — they are the drainage-area term of the bankfull
+regression, not a generic channel-size proxy. Converted to km2 internally.}
 
 \item{flood_factor}{Numeric. Multiplier on bankfull depth to estimate flood
 depth. Default \code{6} (VCA convention).}
 
-\item{precip}{A \code{SpatRaster} of mean annual precipitation (mm), or a single
-numeric value applied uniformly. Default \code{1} (omits precipitation term).}
+\item{precip}{A \code{SpatRaster} of mean annual precipitation in \strong{millimetres},
+or a single numeric value in mm applied uniformly. Converted to cm/yr
+internally. Default \code{NULL}, which drops the precipitation term.}
 }
 \value{
 A \code{SpatRaster} with flood surface elevation at stream cells and
@@ -30,20 +32,33 @@ the water surface elevation that will be interpolated outward by
 \code{\link[=fl_flood_depth]{fl_flood_depth()}}.
 }
 \details{
-Bankfull regressions follow the Valley Confinement Algorithm:
+Bankfull regressions follow the Valley Confinement Algorithm. Hall et al.
+(2007) and Nagel et al. (2014) both specify drainage area in \strong{km2} and
+mean annual precipitation in \strong{cm/yr}, so the hectares and millimetres
+callers carry are converted before the coefficients are applied:
 
-\if{html}{\out{<div class="sourceCode">}}\preformatted{bankfull_width = (upstream_area ^ 0.280) * 0.196 * (precip ^ 0.355)
+\if{html}{\out{<div class="sourceCode">}}\preformatted{area_km2       = upstream_area_ha / 100
+precip_cm      = precip_mm / 10
+
+bankfull_width = (area_km2 ^ 0.280) * 0.196 * (precip_cm ^ 0.355)
 bankfull_depth = bankfull_width ^ 0.607 * 0.145
 flood_depth    = bankfull_depth * flood_factor
 flood_surface  = DEM + flood_depth
 }\if{html}{\out{</div>}}
 
-When \code{precip = 1} (default), the precipitation term drops out and
-flood depth depends only on contributing area.
+When \code{precip = NULL} (default), the precipitation term drops out — the
+multiplier is exactly \code{1} — and flood depth depends only on contributing
+area. Supplying precipitation matters: on the bundled test data it raises
+predicted depth by ~2.4x (2.366 averaged over stream cells).
 
-If your stream raster contains channel width instead of contributing area,
-the regression still produces a relative flood surface — the absolute
-depth will differ but the spatial pattern is preserved.
+The equation predicts a \emph{fitted index}, not a surveyed channel. Hall's
+regression has an R2 of 0.47, and its widths run well below independent
+estimates such as bcfishpass's — 5.7 m against 31.3 m for the Bulkley.
+\code{flood_factor} is what scales the index onto a mapped footprint.
+
+Passing anything other than upstream area in hectares (channel width, for
+instance) silently produces a plausible-looking but wrong flood surface;
+see the units defect recorded in \code{inst/notes/floodplain_interpretation.md}.
 }
 \examples{
 dem <- terra::rast(system.file("testdata/dem.tif", package = "flooded"))

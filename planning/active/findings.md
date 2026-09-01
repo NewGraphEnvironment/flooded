@@ -63,8 +63,9 @@ that is #47's defect, not this one, and is deliberately left alone.
 ## `precip = 1` default breaks under the conversion
 
 Current default is documented as "the precipitation term drops out" (`1^0.355 = 1`). Read as mm and
-converted, `1` becomes 0.1 cm and the multiplier is **0.4416** — so the default would gain a second
-silent behaviour change on top of the units fix.
+converted, `1` becomes 0.1 cm/yr, scaling width by **0.4416** and depth by **0.6089** — so the
+default would gain a second silent behaviour change on top of the units fix, and in the direction
+that makes the result *shallower* than dropping the term.
 
 Resolved: default becomes `NULL`, multiplier exactly 1. Any supplied value is mm.
 
@@ -127,6 +128,24 @@ that must move with it.
 `methodology.md` is the one that reads as wrong once the code is fixed. It also quotes live cell
 counts (53,635 / 521,028) that will move.
 
+## `stac-dem.Rmd` published figures do not reproduce at all
+
+Its 10 m baseline config (explicit `slope.tif`, **no** waterbodies, ff=6) measured today:
+
+| | cells |
+|---|---|
+| published in the baked vignette | 54,637 |
+| as-coded reproduction, today | 53,635 |
+| corrected | **28,727** |
+
+So ~1,002 cells of the gap predate the units fix and come from changes since the vignette was last
+baked. Worth knowing before quoting the vignette's numbers as a units-fix delta — the caveat added
+to it says so explicitly rather than attributing the whole difference to #49.
+
+Also note the config matters: the same tile gives 53,635 with explicit `slope.tif` and no
+waterbodies, but 55,345 with waterbodies. A cell count quoted without its configuration is not a
+reproducible figure.
+
 ## Downstream consumers found
 
 - `floodplains/scripts/floodplain_lcc/02_floodplain_model.R` — the driver; `run_region.R:57` sweeps
@@ -146,3 +165,7 @@ can be regenerated with no network.
 
 | Error | Resolution |
 |-------|------------|
+| `csv.writer` rewrote all 6 rows of `flood_params.csv` when 2 were edited — it re-quotes every field by its own rules, stripping quotes the original carried | Plain-text replacement inside the already-quoted field, so the diff shows only the edited lines |
+| Then the plain-text approach broke `flood_scenarios.csv`: the inserted prose contained a **comma** and `ecological_process` was **unquoted**, so each row gained a field and `read.csv` consumed column 1 as row names. 8 tests failed with `scenario_id` returning `2,4,6` | Use `csv.writer` where every data row is being edited anyway (no churn possible), plain text only when the target field is already quoted **or** the insert has no delimiter |
+| `git checkout <path>` restored the **broken staged** copy, because it reads the index — the "fix" reproduced the same failure and looked like the edit was wrong | `git checkout HEAD -- <path>` |
+| `git stash` + `lint_package()` + `git stash pop` chained on one line to compare lint counts: `lint_package()` took >2 min, the 120 s Bash timeout fired, and **`stash pop` never ran** — the entire branch's work sat in the stash with a clean tree, while a review subagent was concurrently reading those files | Recovered with `git stash pop`. Do not stash to compare against a baseline: `git show HEAD:path` into a temp dir is non-destructive. And never put a destructive setup and its undo in one timeout-able command |

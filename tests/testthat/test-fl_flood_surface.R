@@ -52,7 +52,8 @@ test_that("fl_flood_surface works on synthetic data", {
   streams <- terra::rast(nrows = 5, ncols = 5, vals = stream_vals,
                          xmin = 0, xmax = 50, ymin = 0, ymax = 50, crs = "EPSG:3005")
 
-  surface <- fl_flood_surface(dem, streams, flood_factor = 6, precip = 1)
+  # precip = NULL drops the term. A literal 1 would mean one millimetre.
+  surface <- fl_flood_surface(dem, streams, flood_factor = 6, precip = NULL)
 
   # Only centre cell should have a value
   expect_equal(sum(!is.na(terra::values(surface))), 1L)
@@ -135,7 +136,8 @@ test_that("fl_flood_surface drops the precipitation term when precip is NULL", {
   # With the term omitted the multiplier is exactly 1, so
   #   D = 0.145 * (0.196 * 100^0.280)^0.607 = 0.1179471463 m
   # A default of `precip = 1` cannot express this once the input is read as
-  # millimetres: 1 mm = 0.1 cm gives a multiplier of 0.4416, not 1.
+  # millimetres: 1 mm is 0.1 cm/yr, scaling width by 0.4416 and depth by
+  # 0.6089 — shallower than omitting the term, not equal to it.
   f <- units_fixture(area_ha = 10000)
 
   surface <- fl_flood_surface(f$dem, f$streams, flood_factor = 1,

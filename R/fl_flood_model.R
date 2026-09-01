@@ -29,7 +29,7 @@
 #' terra::plot(flood[["flood_depth"]], main = "Flood depth (m)")
 #'
 #' @export
-fl_flood_model <- function(dem, streams, flood_factor = 6, precip = 1,
+fl_flood_model <- function(dem, streams, flood_factor = 6, precip = NULL,
                            max_width = 2000) {
   surface <- fl_flood_surface(dem, streams,
                               flood_factor = flood_factor, precip = precip)
