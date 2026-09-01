@@ -110,11 +110,52 @@ reaches the boundary where the flood mask is the binding criterion:
   84.7% retained
 - `restoration_wedzin_kwa_2024` on MRDEM-30: `co_ff04` 17,100.7 -> **14,345.3 ha**, 84% retained
 
-So **absolute hectare claims from 0.4.1 need restating; proportional claims stand.** In the
-`restoration_wedzin_kwa_2024` case, disturbed area fell 16% while disturbed-as-a-share-of-AOI went
-27.51% -> 27.50% — the over-mapped margin carried almost exactly the land-cover mix of the core.
-Scenario-to-scenario comparisons are unaffected on every dataset, since each scenario carried the
-same error.
+So **absolute hectare claims from 0.4.1 need restating.** Whether a *proportional* claim survives is
+a separate question, and it turns on whether numerator and denominator moved **together** — which,
+for a floodplain-derived numerator, means asking where the denominator sits:
+
+- **Denominator inside the floodplain — can hold, but check.** Land-cover composition *within* the
+  floodplain, where the floodplain polygon is itself the AOI handed to `drift`. In the
+  `restoration_wedzin_kwa_2024` case disturbed area fell 16% while
+  disturbed-as-a-share-of-floodplain went 27.51% -> 27.50%. That held because the over-mapped margin
+  *happened to* carry almost exactly the land-cover mix of the core — and the margin is not a random
+  sample of the floodplain: it is the ground criterion 4 removes, the highest relative to the
+  modelled waterline. One measured case, not a rule.
+- **Denominator outside the floodplain — an area share moves with the hectares.** Floodplain as a
+  share of the watershed group, published as `fp_pct_aoi` beside the hectares in each 2025
+  fish-passage report appendix that carries a floodplain delineation (peace, skeena, fraser). The
+  peace report publishes **48,116 ha — 8.6%** of the 5,596.6 km² Parsnip group; this package's
+  corrected delineation of the same group, measured the same way, is **40,807.9 ha — 7.3%**. The
+  share falls ~15%, exactly as the area does, because the watershed group does not shrink. A share
+  of this shape has to be **re-run**, not held. Only the floodplain's *own area* over a fixed
+  denominator rescales by the group's retention; a numerator that is a length or a count does not,
+  and neither do the waterbodies, which `fl_valley_confine()` unions in independently of
+  `flood_factor`. Those move only where the shrinking mask trims a waterbody's fringe — on Parsnip,
+  lake and wetland area inside the floodplain fell 0.3% and 0.7% against a floodplain that fell
+  15%. Of the seven floodplain-derived rows the peace appendix publishes, the rule reaches two:
+  floodplain area, and floodplain as a share of the group.
+
+Two cautions on that pair. Both figures are the floodplain **clipped to the watershed group** — the
+appendix does that in its `flood-load` chunk, `sf::st_intersection(floodplain, aoi)`, before
+measuring — and unclipped the same two layers give 8.67% and 7.35%, enough to move the digit the
+report prints. And they come from two different runs: the peace report's committed pre-fix raster is
+668 cells (62.3 ha) smaller than the 48,603.1 ha above, and no corrected run of *its* lineage
+exists. So the pair brackets the restatement rather than being one delineation corrected — good
+enough here, because the fall is ~15% from either pre-fix layer: 15.35% on this package's own, 15.24%
+from the peace raster, both unclipped so the comparison isolates the lineage.
+
+Establish which shape a number is before telling anyone their published figure is or is not
+affected. And note what "each scenario carried the same error" does **not** buy: the *ranking* of
+scenarios survives — `ff06` maps more ground than `ff04`, which maps more than `ff02`, by
+construction, since `flood_factor` only raises the waterline, every other criterion is independent
+of it, and the cleanup steps (closing, hole fill, patch removal, majority filter) and the
+channel/waterbody unions are all order-preserving — but the
+*gaps between* them do not, and not even predictably in direction. On the bundled 10 m tile the
+`ff06`–`ff04` gap widens, 12.5% -> 23.9%, while `ff04`–`ff02` narrows, 48.63% -> 25.07%
+(section 9). On the Parsnip WSG at 30 m the corrected `ff06`–`ff04` gap is 4.6% — 41,142.9 ->
+43,015.6 ha (`methodology.md`) — because there the slope and cost criteria bind before
+the flood mask does. So a restatement factor cannot be *assumed* to transfer: the two 30 m
+watersheds here agree to within 1%, while the 10 m tile sits 35-36 points of retention away.
 
 ## 5. What we can and cannot claim
 
@@ -283,6 +324,10 @@ Remaining before this memo is cited in a report:
   0.5.0.** Area figures produced by 0.5.0 or later are safe to quote. Figures carried over from
   0.4.1 or earlier are over-mapped by a dataset-dependent amount — see section 4 — and must be
   re-run rather than scaled, since the error only reaches the boundary where the flood mask binds.
+  That prohibition is about **absolute areas**. The single exception is the floodplain's own area
+  as a share of a fixed denominator, which falls exactly as the area does (section 4); it does not
+  extend to lengths, counts, or the waterbodies and channel buffer, which move by well under a
+  percent where the area moves by 15%.
 - **Item 3** — decide between the mean-annual-flood phrasing we can source and adding the classic
   reference.
 - **Item 5** — if BC regime variability matters to a report's argument, it needs its own literature,

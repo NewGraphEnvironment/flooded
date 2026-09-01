@@ -81,11 +81,19 @@ tests/testthat/          — unit tests for each fl_* function (17 test files, 1
   0.6089 rather than 1; and **Nagel's combined form `h_bf = 0.054 A^0.170 P^0.215` cannot be used to
   test units** — it is an algebraic identity of the two-step form and agrees in any units. The guard
   in `test-fl_flood_surface.R` pins hard literals instead.
-- **Which claims survive a change in mapped extent** — a ratio is only stable if its denominator is
-  *also* inside the affected region. Land-cover composition within the floodplain held at 27.51% ->
-  27.50% across the 0.5.0 fix; floodplain-as-a-share-of-watershed fell 8.67% -> 7.35%, tracking the
-  hectares, because the watershed does not shrink. Establish which kind before telling anyone their
-  published numbers are or are not affected (#52).
+- **Which claims survive a change in mapped extent** — a ratio survives only if numerator and
+  denominator moved *together*; for a floodplain-derived numerator that means asking where the
+  denominator sits. Land-cover composition within the floodplain held at 27.51% -> 27.50% across the
+  0.5.0 fix, but only because the over-mapped margin happened to carry the core's land-cover mix —
+  one measured case, not a rule. Floodplain-as-a-share-of-watershed fell from a published **8.6%**
+  to a corrected **7.3%** on the same basis, tracking the hectares, because the watershed does not
+  shrink. And **measure the ratio the way its consumer computes it**: the report appendix clips the
+  floodplain to the group before measuring, so the raw layer's 8.67% is not the published number.
+  Scenario *ranking* survives such a fix by construction — `flood_factor` only raises the waterline,
+  and every other criterion and cleanup step is either independent of it or order-preserving; the
+  *gaps between* scenarios do not, and not predictably — on the bundled 10 m tile
+  `ff06`–`ff04` widened 12.5% -> 23.9% while `ff04`–`ff02` narrowed 48.6% -> 25.1%, and on the
+  Parsnip WSG at 30 m the corrected `ff06`–`ff04` gap is only 4.6% (#52).
 - **Coverage needs a fallback** — `fl_valley_confine()` adds cells after intersecting its masks
   (cleanup, channel buffer, and waterbodies, the last with no spatial filter), so criteria-based
   attribution orphans them. `fl_valley_attribute(complete = TRUE)` assigns those to the nearest
