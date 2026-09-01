@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">flooded</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -296,7 +296,7 @@ parallelises the heavy raster ops.</p>
 <code class="sourceCode R"><span><span class="va">valleys</span> <span class="op">&lt;-</span> <span class="fu">flooded</span><span class="fu">::</span><span class="fu"><a href="../reference/fl_valley_confine.html">fl_valley_confine</a></span><span class="op">(</span></span>
 <span>  dem <span class="op">=</span> <span class="va">dem</span>,</span>
 <span>  streams <span class="op">=</span> <span class="va">streams</span>,</span>
-<span>  field <span class="op">=</span> <span class="st">"upstream_area_ha"</span>,</span>
+<span>  area_field <span class="op">=</span> <span class="st">"upstream_area_ha"</span>,</span>
 <span>  precip <span class="op">=</span> <span class="fu">flooded</span><span class="fu">::</span><span class="fu"><a href="../reference/fl_stream_rasterize.html">fl_stream_rasterize</a></span><span class="op">(</span><span class="va">streams</span>, <span class="va">dem</span>, field <span class="op">=</span> <span class="st">"map_upstream"</span><span class="op">)</span>,</span>
 <span>  waterbodies <span class="op">=</span> <span class="va">waterbodies</span>,</span>
 <span>  flood_factor <span class="op">=</span> <span class="fl">4</span>   <span class="co"># ff04 — functional floodplain</span></span>

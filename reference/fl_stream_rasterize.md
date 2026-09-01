@@ -24,7 +24,9 @@ fl_stream_rasterize(streams, template, field = "channel_width")
 - field:
 
   Character. Column name in `streams` to use as the cell value. Must be
-  numeric. Default `"channel_width"`.
+  numeric. Default `"channel_width"`. **The default is not
+  interchangeable with what the flood model needs** — see the note
+  below.
 
 ## Value
 
@@ -41,6 +43,31 @@ kept.
 
 The output CRS matches `template`. If `streams` and `template` have
 different CRS, `streams` is reprojected to match.
+
+### Which column, and why it matters
+
+This function is deliberately generic: any numeric column rasterizes,
+and the output layer takes the column's name. The hazard is downstream.
+When the result is destined for the flood model —
+[`fl_flood_surface()`](https://newgraphenvironment.github.io/flooded/reference/fl_flood_surface.md),
+and so
+[`fl_flood_model()`](https://newgraphenvironment.github.io/flooded/reference/fl_flood_model.md)
+and
+[`fl_valley_confine()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_confine.md)
+— the values are read as **upstream contributing area in hectares**, the
+drainage-area term of the bankfull regression. Any other positive
+numeric column is accepted there without complaint and returns a smaller
+flood surface with no error and no warning, so pass
+`field = "upstream_area_ha"` for that path. The `"channel_width"`
+default is for generic rasterizing, including the `channel_buffer` DEM
+correction, which never touches the regression.
+
+## See also
+
+[`fl_flood_surface()`](https://newgraphenvironment.github.io/flooded/reference/fl_flood_surface.md)
+and
+[`fl_valley_confine()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_confine.md),
+which read this function's output as drainage area in hectares.
 
 ## Examples
 

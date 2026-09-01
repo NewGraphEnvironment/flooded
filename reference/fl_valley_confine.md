@@ -10,7 +10,7 @@ unconfined valley bottoms.
 fl_valley_confine(
   dem,
   streams,
-  field = "channel_width",
+  area_field,
   slope = NULL,
   slope_threshold = 9,
   max_width = 2000,
@@ -20,7 +20,8 @@ fl_valley_confine(
   waterbodies = NULL,
   channel_buffer = NULL,
   size_threshold = 5000,
-  hole_threshold = 2500
+  hole_threshold = 2500,
+  field = NULL
 )
 ```
 
@@ -33,17 +34,24 @@ fl_valley_confine(
 - streams:
 
   An `sf` linestring object or a `SpatRaster` of rasterized streams. If
-  `sf`, it is rasterized using `field`.
+  `sf`, it is rasterized using `area_field`. If a `SpatRaster`, its cell
+  values are used as-is and must already be upstream contributing area
+  in hectares.
 
-- field:
+- area_field:
 
-  Character. Column name for
-  [`fl_stream_rasterize()`](https://newgraphenvironment.github.io/flooded/reference/fl_stream_rasterize.md)
-  when `streams` is `sf`. Default `"channel_width"`. **The flood model
-  reads the rasterized values as upstream contributing area in
-  hectares** — pass `"upstream_area_ha"` (see
-  [`fl_flood_surface()`](https://newgraphenvironment.github.io/flooded/reference/fl_flood_surface.md)).
-  The default is wrong for the flood model and is tracked in flooded#47.
+  Character. Column of `streams` holding **upstream contributing area in
+  hectares**, rasterized onto the DEM grid by
+  [`fl_stream_rasterize()`](https://newgraphenvironment.github.io/flooded/reference/fl_stream_rasterize.md).
+  Required when `streams` is `sf` — there is no default. The rasterized
+  values become the drainage-area term of the bankfull regression in
+  [`fl_flood_surface()`](https://newgraphenvironment.github.io/flooded/reference/fl_flood_surface.md),
+  which accepts any positive numeric column without complaint: channel
+  width in place of area returns a smaller floodplain with no error and
+  no warning. Not used when `streams` is already a `SpatRaster`. That
+  branch cannot inspect the values it is handed; it warns only when the
+  layer's *name* gives it away, so a raster burned from any other wrong
+  column carries the same defect one call earlier, undetected.
 
 - slope:
 
@@ -95,6 +103,12 @@ fl_valley_confine(
 - hole_threshold:
 
   Numeric. Maximum hole area to fill (m²). Default `2500`.
+
+- field:
+
+  Deprecated. The former name of `area_field`, whose `"channel_width"`
+  default was wrong for the flood model (#47). Supplying it warns and
+  forwards to `area_field`; removal is tracked in flooded#53.
 
 ## Value
 
@@ -150,6 +164,10 @@ minutes to ~1 minute for a 27M-cell raster (~2,700 km² at 10 m).
 
 ## See also
 
+[`fl_stream_rasterize()`](https://newgraphenvironment.github.io/flooded/reference/fl_stream_rasterize.md)
+for how `area_field` is burned onto the grid, and
+[`fl_flood_surface()`](https://newgraphenvironment.github.io/flooded/reference/fl_flood_surface.md)
+for the regression that consumes it.
 [`fl_mask()`](https://newgraphenvironment.github.io/flooded/reference/fl_mask.md),
 [`fl_cost_distance()`](https://newgraphenvironment.github.io/flooded/reference/fl_cost_distance.md),
 [`fl_flood_model()`](https://newgraphenvironment.github.io/flooded/reference/fl_flood_model.md),
@@ -169,7 +187,7 @@ precip_r <- fl_stream_rasterize(streams, dem, field = "map_upstream")
 # Basic VCA (channel buffer auto-detected from streams$channel_width)
 valleys <- fl_valley_confine(
   dem, streams,
-  field = "upstream_area_ha",
+  area_field = "upstream_area_ha",
   precip = precip_r
 )
 terra::plot(valleys, col = c("grey90", "darkgreen"), main = "Unconfined valleys")
@@ -182,7 +200,7 @@ waterbodies <- sf::st_read(
 )
 valleys_wb <- fl_valley_confine(
   dem, streams,
-  field = "upstream_area_ha",
+  area_field = "upstream_area_ha",
   precip = precip_r,
   waterbodies = waterbodies
 )

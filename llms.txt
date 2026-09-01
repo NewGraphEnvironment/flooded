@@ -27,7 +27,7 @@ streams <- sf::st_read("streams.gpkg")
 # delineate valleys — one call
 valleys <- fl_valley_confine(
   dem, streams,
-  field = "upstream_area_ha",
+  area_field = "upstream_area_ha",
   precip = precip_r  # mean annual precipitation (mm) — critical for depth
 )
 

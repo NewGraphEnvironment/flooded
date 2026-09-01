@@ -76,7 +76,7 @@ precip_r <- fl_stream_rasterize(streams, dem_10m, field = "map_upstream")
 
 valleys_10m <- fl_valley_confine(
   dem_10m, streams,
-  field = "upstream_area_ha",
+  area_field = "upstream_area_ha",
   slope = slope_10m,
   slope_threshold = 9,
   max_width = 2000,
@@ -180,7 +180,7 @@ precip_stac <- fl_stream_rasterize(streams, dem_stac, field = "map_upstream")
 
 valleys_stac <- fl_valley_confine(
   dem_stac, streams,
-  field = "upstream_area_ha",
+  area_field = "upstream_area_ha",
   slope = slope_stac,
   slope_threshold = 9,
   max_width = 2000,
@@ -307,7 +307,7 @@ precip_1m <- fl_stream_rasterize(streams_site, dem_1m, field = "map_upstream")
 
 valleys_1m <- fl_valley_confine(
   dem_1m, streams_site,
-  field = "upstream_area_ha",
+  area_field = "upstream_area_ha",
   slope = slope_1m,
   slope_threshold = 9,
   max_width = 2000,
@@ -333,7 +333,7 @@ precip_site_10m <- fl_stream_rasterize(streams_site, dem_site_10m, field = "map_
 
 valleys_site_10m <- fl_valley_confine(
   dem_site_10m, streams_site,
-  field = "upstream_area_ha",
+  area_field = "upstream_area_ha",
   slope = slope_site_10m,
   slope_threshold = 9,
   max_width = 2000,

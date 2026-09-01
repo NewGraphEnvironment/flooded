@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">flooded</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -145,7 +145,7 @@ baseline.</p>
 <span></span>
 <span><span class="va">valleys_10m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fl_valley_confine.html">fl_valley_confine</a></span><span class="op">(</span></span>
 <span>  <span class="va">dem_10m</span>, <span class="va">streams</span>,</span>
-<span>  field <span class="op">=</span> <span class="st">"upstream_area_ha"</span>,</span>
+<span>  area_field <span class="op">=</span> <span class="st">"upstream_area_ha"</span>,</span>
 <span>  slope <span class="op">=</span> <span class="va">slope_10m</span>,</span>
 <span>  slope_threshold <span class="op">=</span> <span class="fl">9</span>,</span>
 <span>  max_width <span class="op">=</span> <span class="fl">2000</span>,</span>
@@ -243,7 +243,7 @@ fast enough to build in a vignette. For production work, set
 <span></span>
 <span><span class="va">valleys_stac</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fl_valley_confine.html">fl_valley_confine</a></span><span class="op">(</span></span>
 <span>  <span class="va">dem_stac</span>, <span class="va">streams</span>,</span>
-<span>  field <span class="op">=</span> <span class="st">"upstream_area_ha"</span>,</span>
+<span>  area_field <span class="op">=</span> <span class="st">"upstream_area_ha"</span>,</span>
 <span>  slope <span class="op">=</span> <span class="va">slope_stac</span>,</span>
 <span>  slope_threshold <span class="op">=</span> <span class="fl">9</span>,</span>
 <span>  max_width <span class="op">=</span> <span class="fl">2000</span>,</span>
@@ -357,7 +357,7 @@ at full 1 m resolution.</p>
 <span></span>
 <span><span class="va">valleys_1m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fl_valley_confine.html">fl_valley_confine</a></span><span class="op">(</span></span>
 <span>  <span class="va">dem_1m</span>, <span class="va">streams_site</span>,</span>
-<span>  field <span class="op">=</span> <span class="st">"upstream_area_ha"</span>,</span>
+<span>  area_field <span class="op">=</span> <span class="st">"upstream_area_ha"</span>,</span>
 <span>  slope <span class="op">=</span> <span class="va">slope_1m</span>,</span>
 <span>  slope_threshold <span class="op">=</span> <span class="fl">9</span>,</span>
 <span>  max_width <span class="op">=</span> <span class="fl">2000</span>,</span>
@@ -380,7 +380,7 @@ at full 1 m resolution.</p>
 <span></span>
 <span><span class="va">valleys_site_10m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fl_valley_confine.html">fl_valley_confine</a></span><span class="op">(</span></span>
 <span>  <span class="va">dem_site_10m</span>, <span class="va">streams_site</span>,</span>
-<span>  field <span class="op">=</span> <span class="st">"upstream_area_ha"</span>,</span>
+<span>  area_field <span class="op">=</span> <span class="st">"upstream_area_ha"</span>,</span>
 <span>  slope <span class="op">=</span> <span class="va">slope_site_10m</span>,</span>
 <span>  slope_threshold <span class="op">=</span> <span class="fl">9</span>,</span>
 <span>  max_width <span class="op">=</span> <span class="fl">2000</span>,</span>

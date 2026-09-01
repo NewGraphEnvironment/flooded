@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">flooded</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,6 +37,39 @@
       <small>Source: <a href="https://github.com/NewGraphEnvironment/flooded/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.6.0" id="flooded-060">flooded 0.6.0<a class="anchor" aria-label="anchor" href="#flooded-060"></a></h2>
+<p><strong>Breaking, but no result changes.</strong> <code><a href="../reference/fl_valley_confine.html">fl_valley_confine()</a></code>’s <code>field</code> argument is renamed <code>area_field</code> and is now required. Nothing this package has produced was affected — every caller in the repo, both vignettes, every example and the <code>floodplains</code> driver passed <code>field = "upstream_area_ha"</code> explicitly.</p>
+<ul><li><p><code>field</code> defaulted to <code>"channel_width"</code>, and the flood model reads the rasterized values as the <strong>drainage-area term in hectares</strong> of the Hall bankfull regression (<code><a href="../reference/fl_flood_surface.html">fl_flood_surface()</a></code>). Channel width (4.1–31.3 on the bundled tile) and upstream area (1,928.8–110,337.4) are both plain positive numerics, so the wrong one was raised to the 0.280 power without complaint and returned a smaller floodplain with no error and no warning (<a href="https://github.com/NewGraphEnvironment/flooded/issues/47" class="external-link">#47</a>). Same class as <a href="https://github.com/NewGraphEnvironment/flooded/issues/41" class="external-link">#41</a> and <a href="https://github.com/NewGraphEnvironment/flooded/issues/49" class="external-link">#49</a>.</p></li>
+<li>
+<p>Measured on the bundled 10 m tile at <code>flood_factor = 6</code>, current code:</p>
+<table class="table"><thead><tr><th><code>area_field</code></th>
+<th>precip</th>
+<th>cells</th>
+<th>ha</th>
+</tr></thead><tbody><tr><td><code>upstream_area_ha</code></td>
+<td><code>map_upstream</code></td>
+<td>28,727</td>
+<td>287.3</td>
+</tr><tr><td><code>channel_width</code></td>
+<td><code>map_upstream</code></td>
+<td>17,206</td>
+<td><strong>172.1</strong></td>
+</tr><tr><td><code>upstream_area_ha</code></td>
+<td>none</td>
+<td>19,838</td>
+<td>198.4</td>
+</tr><tr><td><code>channel_width</code></td>
+<td>none</td>
+<td>14,789</td>
+<td><strong>147.9</strong></td>
+</tr></tbody></table><p>The old default returned 59.9% of the floodplain with precipitation supplied. Every wrong-column run is a strict subset — 0 cells gained anywhere. The issue’s headline figure of 47% was measured before the 0.5.0 units fix and does not describe current code; the defect is the same size, its consequence is not.</p>
+</li>
+<li><p><strong>The requirement is scoped to the <code>sf</code> branch.</strong> Passing an already-rasterized <code>SpatRaster</code> as <code>streams</code> never reaches <code><a href="../reference/fl_stream_rasterize.html">fl_stream_rasterize()</a></code>, so <code>area_field</code> is not demanded there — that branch cannot inspect the values it is handed, and a raster burned from the wrong column carries the identical defect one call earlier. It can inspect the layer’s <em>name</em>, since <code><a href="../reference/fl_stream_rasterize.html">fl_stream_rasterize()</a></code> names its output after the column it burned, so <code><a href="../reference/fl_valley_confine.html">fl_valley_confine()</a></code> now warns when handed a layer named <code>channel_width</code> — which is also that function’s default, and so the one composition the package’s defaults lead you into. Measured with <code>channel_buffer = FALSE</code>: 14,149 cells against 19,383. The guard names the column literally rather than reading the rasterizer’s default: those coincide today, and keying to the default would invert the guard if it ever moved. <strong>A raster burned from any other wrong column is still undetectable</strong>, so the roxygen states the requirement rather than claiming to enforce it.</p></li>
+<li><p><strong>One deprecation path is silent.</strong> <code>fl_valley_confine(dem, streams, "channel_width")</code> passed <em>positionally</em> rebinds to <code>area_field</code> with no warning, because the shim can only see the named argument. There are no positional callers in this repo or in <code>floodplains</code>.</p></li>
+<li><p><strong><code>field</code> still works for one release.</strong> Supplying it warns and forwards to <code>area_field</code>, reproducing the same delineation exactly. Removal is tracked in <a href="https://github.com/NewGraphEnvironment/flooded/issues/53" class="external-link">#53</a> — move to <code>area_field</code>.</p></li>
+<li><p><code><a href="../reference/fl_stream_rasterize.html">fl_stream_rasterize()</a></code> is unchanged, including its <code>"channel_width"</code> default: it is deliberately generic and also rasterizes precipitation, stream order and internal seed indices. The hazard was always the <em>composition</em>, so both functions now cross-reference each other and state which column the flood model requires.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.5.0" id="flooded-050">flooded 0.5.0<a class="anchor" aria-label="anchor" href="#flooded-050"></a></h2>
 <p><strong>Results change. Every floodplain produced by 0.4.1 or earlier is over-mapped.</strong></p>

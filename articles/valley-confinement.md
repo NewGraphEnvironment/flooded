@@ -233,7 +233,7 @@ shallow and the resulting valley is significantly narrower.
 
 valleys <- fl_valley_confine(
   dem, streams,
-  field = "upstream_area_ha",
+  area_field = "upstream_area_ha",
   slope = slope,            # pre-computed; derived from DEM if NULL
   slope_threshold = 9,      # percent slope — cells steeper are excluded
   max_width = 2000,         # metres — safety cap on valley width
@@ -362,7 +362,7 @@ cat("Types:", paste(names(table(waterbodies$waterbody_type)),
 
 valleys_wb <- fl_valley_confine(
   dem, streams,
-  field = "upstream_area_ha",
+  area_field = "upstream_area_ha",
   slope = slope,
   precip = precip_r,
   waterbodies = waterbodies
@@ -426,7 +426,7 @@ omitting precipitation altogether:
 ``` r
 
 valleys_no_precip <- fl_valley_confine(
-  dem, streams, field = "upstream_area_ha",
+  dem, streams, area_field = "upstream_area_ha",
   precip = NULL
 )
 
@@ -492,7 +492,7 @@ for (i in seq_len(nrow(scenarios))) {
   s <- scenarios[i, ]
   results[[s$scenario_id]] <- fl_valley_confine(
     dem, streams,
-    field = "upstream_area_ha",
+    area_field = "upstream_area_ha",
     slope = slope,
     precip = precip_r,
     flood_factor = s$flood_factor,

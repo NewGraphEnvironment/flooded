@@ -13,7 +13,7 @@ changes relabel the output without moving a boundary."><meta property="og:image"
 
     <a class="navbar-brand me-2" href="../index.html">flooded</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -200,7 +200,7 @@ avoids re-deriving it from <code>dem</code>.</p>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">precip_r</span> <span class="op">&lt;-</span> <span class="fu"><a href="fl_stream_rasterize.html">fl_stream_rasterize</a></span><span class="op">(</span><span class="va">streams</span>, <span class="va">dem</span>, field <span class="op">=</span> <span class="st">"map_upstream"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">valleys</span> <span class="op">&lt;-</span> <span class="fu"><a href="fl_valley_confine.html">fl_valley_confine</a></span><span class="op">(</span><span class="va">dem</span>, <span class="va">streams</span>,</span></span>
-<span class="r-in"><span>                             field <span class="op">=</span> <span class="st">"upstream_area_ha"</span>, precip <span class="op">=</span> <span class="va">precip_r</span><span class="op">)</span></span></span>
+<span class="r-in"><span>                             area_field <span class="op">=</span> <span class="st">"upstream_area_ha"</span>, precip <span class="op">=</span> <span class="va">precip_r</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Which part of the floodplain belongs to which watercourse?</span></span></span>
 <span class="r-in"><span><span class="va">by_stream</span> <span class="op">&lt;-</span> <span class="fu">fl_valley_attribute</span><span class="op">(</span><span class="va">valleys</span>, <span class="va">streams</span>, group <span class="op">=</span> <span class="st">"gnis_name"</span>,</span></span>

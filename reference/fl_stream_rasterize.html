@@ -11,7 +11,7 @@ contributing area or channel width); non-stream cells are NA."><meta property="o
 
     <a class="navbar-brand me-2" href="../index.html">flooded</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -68,7 +68,8 @@ CRS). Typically the DEM.</p></dd>
 
 <dt id="arg-field">field<a class="anchor" aria-label="anchor" href="#arg-field"></a></dt>
 <dd><p>Character. Column name in <code>streams</code> to use as the cell value.
-Must be numeric. Default <code>"channel_width"</code>.</p></dd>
+Must be numeric. Default <code>"channel_width"</code>. <strong>The default is not
+interchangeable with what the flood model needs</strong> — see the note below.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -82,7 +83,27 @@ the value of <code>field</code>; all other cells are <code>NA</code>.</p>
 whose centre falls on a stream line are burned). When multiple features
 overlap a cell, the maximum value is kept.</p>
 <p>The output CRS matches <code>template</code>. If <code>streams</code> and <code>template</code> have
-different CRS, <code>streams</code> is reprojected to match.</p>
+different CRS, <code>streams</code> is reprojected to match.</p><div class="section">
+<h3 id="which-column-and-why-it-matters">Which column, and why it matters<a class="anchor" aria-label="anchor" href="#which-column-and-why-it-matters"></a></h3>
+
+
+<p>This function is deliberately generic: any numeric column rasterizes, and the
+output layer takes the column's name. The hazard is downstream. When the
+result is destined for the flood model — <code><a href="fl_flood_surface.html">fl_flood_surface()</a></code>, and so
+<code><a href="fl_flood_model.html">fl_flood_model()</a></code> and <code><a href="fl_valley_confine.html">fl_valley_confine()</a></code> — the values are read as
+<strong>upstream contributing area in hectares</strong>, the drainage-area term of the
+bankfull regression. Any other positive numeric column is accepted there
+without complaint and returns a smaller flood surface with no error and no
+warning, so pass <code>field = "upstream_area_ha"</code> for that path. The
+<code>"channel_width"</code> default is for generic rasterizing, including the
+<code>channel_buffer</code> DEM correction, which never touches the regression.</p>
+</div>
+
+    </div>
+    <div class="section level2">
+    <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
+    <div class="dont-index"><p><code><a href="fl_flood_surface.html">fl_flood_surface()</a></code> and <code><a href="fl_valley_confine.html">fl_valley_confine()</a></code>, which read this
+function's output as drainage area in hectares.</p></div>
     </div>
 
     <div class="section level2">
