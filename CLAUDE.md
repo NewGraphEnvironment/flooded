@@ -47,7 +47,7 @@ vignettes/
   valley-confinement.Rmd — full walkthrough with bundled test data
   stac-dem.Rmd           — fetch DEM from STAC catalog
   pars-floodplain.Rmd    — Parsnip River WSG using fl_dem_aoi() + cached outputs
-tests/testthat/          — unit tests for each fl_* function (17 test files, 112 test_that blocks)
+tests/testthat/          — unit tests for each fl_* function (17 test files, 121 test_that blocks)
 ```
 
 ## Key Patterns
