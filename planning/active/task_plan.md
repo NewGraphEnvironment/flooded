@@ -16,36 +16,36 @@ NewGraphEnvironment/fish_passage_fraser_2025_reporting#37.
 
 ## Phase 1: Amend section 4 of `inst/notes/floodplain_interpretation.md`
 
-- [ ] Rewrite the "absolute hectare claims… proportional claims stand" sentence so it states the
+- [x] Rewrite the "absolute hectare claims… proportional claims stand" sentence so it states the
       test rather than the conclusion: a ratio is stable only if its **denominator is also inside
       the affected region**.
-- [ ] Keep the `restoration_wedzin_kwa_2024` composition figure (27.51% -> 27.50%) as the *stable*
+- [x] Keep the `restoration_wedzin_kwa_2024` composition figure (27.51% -> 27.50%) as the *stable*
       example, explaining why it holds — the over-mapped margin carried almost the same land-cover
       mix as the core.
-- [ ] Add the counter-case with sources named so the arithmetic reconciles against section 4's own
+- [x] Add the counter-case with sources named so the arithmetic reconciles against section 4's own
       Parsnip bullet (which cites flooded's 48,603.1 ha run, 62 ha above the peace report's
       committed layer): peace report as committed 48,540.8 ha = **8.67%**; corrected 41,142.9 ha =
       **7.35%**; same 5,596.6 km2 group.
-- [ ] Name `fp_pct_aoi` literally, so someone grepping a report appendix lands on it.
-- [ ] Keep the existing scenario-to-scenario sentence (unaffected — every scenario carried the same
+- [x] Name `fp_pct_aoi` literally, so someone grepping a report appendix lands on it.
+- [x] Keep the existing scenario-to-scenario sentence (unaffected — every scenario carried the same
       error).
 
 ## Phase 2: Consistency sweep
 
-- [ ] Check `inst/notes/methodology.md` and `vignettes/pars-floodplain.Rmd` for the same
+- [x] Check `inst/notes/methodology.md` and `vignettes/pars-floodplain.Rmd` for the same
       over-generalization.
-- [ ] Confirm `CLAUDE.md`'s design-decision entry still matches the memo's wording after the edit.
-- [ ] `/code-check` on the staged diff.
+- [x] Confirm `CLAUDE.md`'s design-decision entry still matches the memo's wording after the edit.
+- [x] `/code-check` on the staged diff.
 
 ## Phase 3: Close out
 
-- [ ] Commit with the `task_plan.md` checkbox flips (atomic).
-- [ ] No version bump, no NEWS entry — docs-only; flag as such in the PR body.
-- [ ] `/planning-archive`, then `/gh-pr-push`.
+- [x] Commit with the `task_plan.md` checkbox flips (atomic).
+- [x] No version bump, no NEWS entry — docs-only; flag as such in the PR body.
+- [x] `/planning-archive`, then `/gh-pr-push`.
 
 ## Validation
 
-- [ ] Tests pass
-- [ ] `/code-check` clean on each commit
-- [ ] PWF checkboxes match landed work
-- [ ] `/planning-archive` on completion
+- [x] Tests pass
+- [x] `/code-check` clean on each commit
+- [x] PWF checkboxes match landed work
+- [x] `/planning-archive` on completion
