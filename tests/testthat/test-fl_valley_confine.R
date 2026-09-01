@@ -194,3 +194,94 @@ test_that("output is still binary with features added", {
   expect_true(all(vals %in% c(0L, 1L)))
   expect_equal(names(valleys), "valley")
 })
+
+# --- area_field contract (#47) ---
+#
+# `area_field` is the drainage-area term of the Hall bankfull regression, in
+# hectares. It has no default: channel width and upstream area are both plain
+# positive numerics, so a wrong column produces a smaller floodplain with no
+# error. `field` is the deprecated spelling, kept for one release.
+
+# fl_valley_confine() is ~1.4 s on the bundled tile — build the reference
+# delineation once and compare the alias paths against it.
+af_fixture <- local({
+  cache <- NULL
+  function() {
+    if (is.null(cache)) {
+      dem <- terra::rast(testdata_path("dem.tif"))
+      streams <- sf::st_read(testdata_path("streams.gpkg"), quiet = TRUE)
+      ref <- fl_valley_confine(dem, streams, area_field = "upstream_area_ha")
+      cache <<- list(dem = dem, streams = streams, ref = ref)
+    }
+    cache
+  }
+})
+
+test_that("area_field is required when streams is sf", {
+  f <- af_fixture()
+
+  expect_error(fl_valley_confine(f$dem, f$streams), "area_field")
+  # The message must name the quantity and its units, not just the argument —
+  # the whole defect is that a plausible number is accepted for the wrong one.
+  err <- tryCatch(fl_valley_confine(f$dem, f$streams), error = function(e) conditionMessage(e))
+  expect_match(err, "hectare")
+})
+
+test_that("area_field is not required when streams is already rasterized", {
+  f <- af_fixture()
+
+  # The SpatRaster branch never reaches fl_stream_rasterize(), so area_field is
+  # irrelevant there and must not be demanded.
+  stream_r <- fl_stream_rasterize(f$streams, f$dem, field = "upstream_area_ha")
+  valleys <- fl_valley_confine(f$dem, stream_r)
+
+  expect_s4_class(valleys, "SpatRaster")
+  expect_true(sum(terra::values(valleys) == 1L, na.rm = TRUE) > 0)
+})
+
+test_that("deprecated field= warns and forwards to area_field", {
+  f <- af_fixture()
+
+  expect_warning(
+    v_dep <- fl_valley_confine(f$dem, f$streams, field = "upstream_area_ha"),
+    "area_field"
+  )
+  # Forwarding must be exact, not merely similar in extent.
+  expect_equal(terra::values(v_dep), terra::values(f$ref))
+})
+
+test_that("area_field wins when both spellings are supplied", {
+  f <- af_fixture()
+
+  expect_warning(
+    v_both <- fl_valley_confine(f$dem, f$streams,
+                                area_field = "upstream_area_ha",
+                                field = "channel_width"),
+    "area_field"
+  )
+  expect_equal(terra::values(v_both), terra::values(f$ref))
+})
+
+test_that("area_field is the third positional argument", {
+  f <- af_fixture()
+
+  v_pos <- fl_valley_confine(f$dem, f$streams, "upstream_area_ha")
+
+  expect_equal(terra::values(v_pos), terra::values(f$ref))
+})
+
+test_that("channel width and upstream area are not interchangeable", {
+  f <- af_fixture()
+
+  # Why area_field can have no default: both columns are positive numerics, and
+  # the smaller one silently returns a smaller floodplain. channel_width is
+  # 4.1-31.3 against upstream_area_ha 1,928.8-110,337.4, and the regression is
+  # monotonic in area, so the wrong column strictly under-maps.
+  v_cw <- fl_valley_confine(f$dem, f$streams, area_field = "channel_width")
+
+  n_cw <- sum(terra::values(v_cw) == 1L, na.rm = TRUE)
+  n_area <- sum(terra::values(f$ref) == 1L, na.rm = TRUE)
+
+  expect_gt(n_cw, 0)
+  expect_lt(n_cw, n_area)
+})

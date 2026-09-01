@@ -38,15 +38,15 @@ on the small streams where NA handling is already awkward.
 
 ## Phase 1: Tests first
 
-- [ ] `area_field` omitted with `sf` streams errors, and the message names the column and
+- [x] `area_field` omitted with `sf` streams errors, and the message names the column and
       its units (hectares)
-- [ ] `area_field` omitted with a pre-rasterized `SpatRaster` still runs - the requirement
+- [x] `area_field` omitted with a pre-rasterized `SpatRaster` still runs - the requirement
       is scoped to the `sf` branch
-- [ ] `field = "upstream_area_ha"` warns (message names `area_field`) and returns a raster
+- [x] `field = "upstream_area_ha"` warns (message names `area_field`) and returns a raster
       identical to `area_field = "upstream_area_ha"`
-- [ ] Both supplied: warns, `area_field` wins
-- [ ] Positional third argument still lands on `area_field`
-- [ ] Guard that the two columns are not interchangeable - `"channel_width"` and
+- [x] Both supplied: warns, `area_field` wins
+- [x] Positional third argument still lands on `area_field`
+- [x] Guard that the two columns are not interchangeable - `"channel_width"` and
       `"upstream_area_ha"` give materially different cell counts on the bundled tile
       (channel width strictly fewer), which is the property that makes any default
       indefensible
