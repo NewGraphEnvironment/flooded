@@ -47,13 +47,18 @@ individual components.
 The flood model uses the VCA bankfull regression to estimate flood depth
 at stream cells:
 
-    bankfull_width = (upstream_area ^ 0.280) * 0.196 * (precip ^ 0.355)
+    area_km2       = upstream_area_ha / 100
+    precip_cm      = precip_mm / 10
+
+    bankfull_width = (area_km2 ^ 0.280) * 0.196 * (precip_cm ^ 0.355)
     bankfull_depth = bankfull_width ^ 0.607 * 0.145
     flood_depth    = bankfull_depth * flood_factor
 
-Both `upstream_area` (hectares) and `precip` (mean annual precipitation,
-mm) are important — omitting precipitation underestimates flood depth by
-~4x.
+`upstream_area` (hectares) is required. `precip` (mean annual
+precipitation, mm) is optional and defaults to `NULL`, which drops the
+precipitation term — but supplying it matters: omitting it
+underestimates flood depth by ~2.4x. Both are converted internally to
+the km2 and cm/yr the published coefficients expect.
 
 ## Resolution and restoration
 

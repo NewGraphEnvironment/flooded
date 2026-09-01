@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">flooded</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -146,13 +146,21 @@ Rasterized streams coloured by upstream area (ha).
 </h2>
 <p>The VCA bankfull regression has a precipitation term that strongly
 controls flood depth:</p>
-<pre><code><span><span class="va">bankfull_width</span> <span class="op">=</span> <span class="op">(</span><span class="va">upstream_area</span> <span class="op">^</span> <span class="fl">0.280</span><span class="op">)</span> <span class="op">*</span> <span class="fl">0.196</span> <span class="op">*</span> <span class="op">(</span><span class="va">precip</span> <span class="op">^</span> <span class="fl">0.355</span><span class="op">)</span></span>
+<pre><code><span><span class="va">area_km2</span>       <span class="op">=</span> <span class="va">upstream_area_ha</span> <span class="op">/</span> <span class="fl">100</span></span>
+<span><span class="va">precip_cm</span>      <span class="op">=</span> <span class="va">precip_mm</span> <span class="op">/</span> <span class="fl">10</span></span>
+<span></span>
+<span><span class="va">bankfull_width</span> <span class="op">=</span> <span class="op">(</span><span class="va">area_km2</span> <span class="op">^</span> <span class="fl">0.280</span><span class="op">)</span> <span class="op">*</span> <span class="fl">0.196</span> <span class="op">*</span> <span class="op">(</span><span class="va">precip_cm</span> <span class="op">^</span> <span class="fl">0.355</span><span class="op">)</span></span>
 <span><span class="va">bankfull_depth</span> <span class="op">=</span> <span class="va">bankfull_width</span> <span class="op">^</span> <span class="fl">0.607</span> <span class="op">*</span> <span class="fl">0.145</span></span>
 <span><span class="va">flood_depth</span>    <span class="op">=</span> <span class="va">bankfull_depth</span> <span class="op">*</span> <span class="va">flood_factor</span></span></code></pre>
-<p>With <code>precip = 1</code> (the default), the precipitation term
-drops out and flood depths are dramatically underestimated. For the
-Bulkley mainstem (<code>upstream_area_ha ~ 110,000</code>), the
-difference is ~2 m vs ~8 m flood depth.</p>
+<p>Hall et al. (2007) and Nagel et al. (2014) both specify drainage area
+in km^2 and mean annual precipitation in cm/yr, so the hectares and
+millimetres carried on the stream network are converted before the
+coefficients are applied.</p>
+<p>With <code>precip = NULL</code> (the default), the precipitation term
+drops out and flood depths are underestimated. For the Bulkley mainstem
+(<code>upstream_area_ha ~ 110,000</code>), at
+<code>flood_factor = 6</code> the difference is ~1.1 m vs ~2.5 m flood
+depth.</p>
 <p>The test data includes <code>map_upstream</code> — mean annual
 precipitation (mm) from fwapg/ClimateBC, carried as a stream attribute.
 We rasterize it alongside the streams to create a spatially varying
@@ -234,7 +242,7 @@ outward from streams, and identifies cells below the flood surface
 <code class="sourceCode R"><span><span class="va">flood</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fl_flood_model.html">fl_flood_model</a></span><span class="op">(</span><span class="va">dem</span>, <span class="va">stream_r</span>, flood_factor <span class="op">=</span> <span class="fl">6</span>, precip <span class="op">=</span> <span class="va">precip_r</span>,</span>
 <span>                        max_width <span class="op">=</span> <span class="fl">2000</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Flooded cells:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/values.html" class="external-link">values</a></span><span class="op">(</span><span class="va">flood</span><span class="op">[[</span><span class="st">"flooded"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span> <span class="op">==</span> <span class="fl">1</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Flooded cells: 61845</span></span></code></pre></div>
+<span><span class="co">#&gt; Flooded cells: 30571</span></span></code></pre></div>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">depth</span> <span class="op">&lt;-</span> <span class="va">flood</span><span class="op">[[</span><span class="st">"flood_depth"</span><span class="op">]</span><span class="op">]</span></span>
 <span><span class="va">depth</span><span class="op">[</span><span class="va">depth</span> <span class="op">==</span> <span class="fl">0</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span>
@@ -255,7 +263,8 @@ distance + cost + flood masks), applies morphological cleanup (closing,
 hole filling, small patch removal, majority filter), and returns a
 binary valley raster (Figure @ref(fig:plot-valleys)).</p>
 <p>Note the <code>precip</code> argument — without it, flood depths are
-~4x too shallow and the resulting valley is significantly narrower.</p>
+~2.4x too shallow and the resulting valley is significantly
+narrower.</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">valleys</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fl_valley_confine.html">fl_valley_confine</a></span><span class="op">(</span></span>
 <span>  <span class="va">dem</span>, <span class="va">streams</span>,</span>
@@ -271,7 +280,7 @@ binary valley raster (Figure @ref(fig:plot-valleys)).</p>
 <span><span class="va">n_valley</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/values.html" class="external-link">values</a></span><span class="op">(</span><span class="va">valleys</span><span class="op">)</span> <span class="op">==</span> <span class="fl">1</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Valley cells:"</span>, <span class="va">n_valley</span>, <span class="st">"/"</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">ncell</a></span><span class="op">(</span><span class="va">valleys</span><span class="op">)</span>,</span>
 <span>    <span class="st">"("</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="fl">100</span> <span class="op">*</span> <span class="va">n_valley</span> <span class="op">/</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">ncell</a></span><span class="op">(</span><span class="va">valleys</span><span class="op">)</span>, <span class="fl">1</span><span class="op">)</span>, <span class="st">"%)\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Valley cells: 53635 / 518400 ( 10.3 %)</span></span></code></pre></div>
+<span><span class="co">#&gt; Valley cells: 28727 / 518400 ( 5.5 %)</span></span></code></pre></div>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">valleys</span>, col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"grey90"</span>, <span class="st">"darkgreen"</span><span class="op">)</span>,</span>
 <span>     main <span class="op">=</span> <span class="st">"Unconfined valleys"</span>, legend <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
@@ -295,7 +304,7 @@ flat areas disconnected from the network (Figure
 <code class="sourceCode R"><span><span class="va">connected</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fl_patch_conn.html">fl_patch_conn</a></span><span class="op">(</span><span class="va">valleys</span>, <span class="va">stream_r</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Connected valley cells:"</span>,</span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/values.html" class="external-link">values</a></span><span class="op">(</span><span class="va">connected</span><span class="op">)</span> <span class="op">==</span> <span class="fl">1</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Connected valley cells: 53585</span></span></code></pre></div>
+<span><span class="co">#&gt; Connected valley cells: 28488</span></span></code></pre></div>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">connected</span>, col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"grey90"</span>, <span class="st">"darkgreen"</span><span class="op">)</span>,</span>
 <span>     main <span class="op">=</span> <span class="st">"Connected valleys"</span>, legend <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
@@ -318,7 +327,7 @@ stricter threshold).</p>
 <span><span class="va">trimmed</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fl_flood_trim.html">fl_flood_trim</a></span><span class="op">(</span><span class="va">connected</span>, <span class="va">steep_mask</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"After trimming steep cells:"</span>,</span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/values.html" class="external-link">values</a></span><span class="op">(</span><span class="va">trimmed</span><span class="op">)</span> <span class="op">==</span> <span class="fl">1</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; After trimming steep cells: 36601</span></span></code></pre></div>
+<span><span class="co">#&gt; After trimming steep cells: 19468</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="assemble-multiple-layers">Assemble multiple layers<a class="anchor" aria-label="anchor" href="#assemble-multiple-layers"></a>
@@ -332,7 +341,7 @@ sources.</p>
 <span><span class="va">flooded_mask</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/ifelse.html" class="external-link">ifel</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">flooded_mask</span><span class="op">)</span>, <span class="fl">0L</span>, <span class="va">flooded_mask</span><span class="op">)</span></span>
 <span><span class="va">assembled</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fl_flood_assemble.html">fl_flood_assemble</a></span><span class="op">(</span><span class="va">connected</span>, <span class="va">flooded_mask</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Assembled cells:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/values.html" class="external-link">values</a></span><span class="op">(</span><span class="va">assembled</span><span class="op">)</span> <span class="op">==</span> <span class="fl">1</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Assembled cells: 63285</span></span></code></pre></div>
+<span><span class="co">#&gt; Assembled cells: 32670</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -384,11 +393,11 @@ headwater waterbodies are not wanted.</li>
 <span><span class="va">n_wb</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/values.html" class="external-link">values</a></span><span class="op">(</span><span class="va">valleys_wb</span><span class="op">)</span> <span class="op">==</span> <span class="fl">1</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="va">cell_area</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/prod.html" class="external-link">prod</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">res</a></span><span class="op">(</span><span class="va">dem</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"VCA only:          "</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="va">n_valley</span> <span class="op">*</span> <span class="va">cell_area</span> <span class="op">/</span> <span class="fl">1e4</span>, <span class="fl">1</span><span class="op">)</span>, <span class="st">"ha\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; VCA only:           536.4 ha</span></span>
+<span><span class="co">#&gt; VCA only:           287.3 ha</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"VCA + features:    "</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="va">n_wb</span> <span class="op">*</span> <span class="va">cell_area</span> <span class="op">/</span> <span class="fl">1e4</span>, <span class="fl">1</span><span class="op">)</span>, <span class="st">"ha\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; VCA + features:     553.5 ha</span></span>
+<span><span class="co">#&gt; VCA + features:     304.8 ha</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Features added:    "</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="op">(</span><span class="va">n_wb</span> <span class="op">-</span> <span class="va">n_valley</span><span class="op">)</span> <span class="op">*</span> <span class="va">cell_area</span> <span class="op">/</span> <span class="fl">1e4</span>, <span class="fl">1</span><span class="op">)</span>, <span class="st">"ha\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Features added:     17.1 ha</span></span></code></pre></div>
+<span><span class="co">#&gt; Features added:     17.5 ha</span></span></code></pre></div>
 <div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">1</span><span class="op">)</span>, mar <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">4</span>, <span class="fl">2</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">valleys</span>, col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"grey90"</span>, <span class="st">"darkgreen"</span><span class="op">)</span>,</span>
@@ -422,23 +431,26 @@ mm) is available as a stream attribute from fwapg (the Freshwater Atlas
 Postgres layer). For other jurisdictions, any gridded precipitation
 product will work — rasterize it to the DEM grid and pass it as the
 <code>precip</code> argument.</p>
-<p>Omitting precipitation (<code>precip = 1</code>, the default)
-underestimates flood depth by roughly 4x in wet climates (~500 mm MAP).
-This produces a valley that is about half the width of the correct
-result:</p>
+<p>Omitting precipitation (<code>precip = NULL</code>, the default)
+underestimates flood depth by roughly 2.4x in wet climates (~500 mm
+MAP), producing a noticeably narrower valley. Note that
+<code>precip = NULL</code> is the way to drop the term — passing
+<code>precip = 1</code> means one <em>millimetre</em>, which is a depth
+multiplier of 0.61 rather than 1 and gives a shallower result than
+omitting precipitation altogether:</p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">valleys_no_precip</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fl_valley_confine.html">fl_valley_confine</a></span><span class="op">(</span></span>
 <span>  <span class="va">dem</span>, <span class="va">streams</span>, field <span class="op">=</span> <span class="st">"upstream_area_ha"</span>,</span>
-<span>  precip <span class="op">=</span> <span class="fl">1</span></span>
+<span>  precip <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">n_no</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/values.html" class="external-link">values</a></span><span class="op">(</span><span class="va">valleys_no_precip</span><span class="op">)</span> <span class="op">==</span> <span class="fl">1</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Without precip:"</span>, <span class="va">n_no</span>, <span class="st">"cells ("</span>,</span>
 <span>    <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="fl">100</span> <span class="op">*</span> <span class="va">n_no</span> <span class="op">/</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">ncell</a></span><span class="op">(</span><span class="va">dem</span><span class="op">)</span>, <span class="fl">1</span><span class="op">)</span>, <span class="st">"%)\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Without precip: 27211 cells ( 5.2 %)</span></span>
+<span><span class="co">#&gt; Without precip: 19838 cells ( 3.8 %)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"With precip:   "</span>, <span class="va">n_valley</span>, <span class="st">"cells ("</span>,</span>
 <span>    <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="fl">100</span> <span class="op">*</span> <span class="va">n_valley</span> <span class="op">/</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">ncell</a></span><span class="op">(</span><span class="va">dem</span><span class="op">)</span>, <span class="fl">1</span><span class="op">)</span>, <span class="st">"%)\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; With precip:    53635 cells ( 10.3 %)</span></span></code></pre></div>
+<span><span class="co">#&gt; With precip:    28727 cells ( 5.5 %)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="flood-factor-scenarios">Flood factor scenarios<a class="anchor" aria-label="anchor" href="#flood-factor-scenarios"></a>
@@ -502,9 +514,9 @@ controls the mapped extent:</p>
 <span>              <span class="va">scenarios</span><span class="op">$</span><span class="va">flood_factor</span><span class="op">[</span><span class="va">scenarios</span><span class="op">$</span><span class="va">scenario_id</span> <span class="op">==</span> <span class="va">id</span><span class="op">]</span>,</span>
 <span>              <span class="va">n</span> <span class="op">*</span> <span class="va">cell_area</span> <span class="op">/</span> <span class="fl">1e4</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
-<span><span class="co">#&gt; ff02   (ff=2): 338.2 ha</span></span>
-<span><span class="co">#&gt; ff04   (ff=4): 493.9 ha</span></span>
-<span><span class="co">#&gt; ff06   (ff=6): 553.5 ha</span></span></code></pre></div>
+<span><span class="co">#&gt; ff02   (ff=2): 203.8 ha</span></span>
+<span><span class="co">#&gt; ff04   (ff=4): 249.8 ha</span></span>
+<span><span class="co">#&gt; ff06   (ff=6): 304.8 ha</span></span></code></pre></div>
 <div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">1</span><span class="op">)</span>, mar <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">4</span>, <span class="fl">2</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">titles</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
@@ -551,16 +563,16 @@ which watercourse.</p>
 <span></span>
 <span><span class="va">by_stream</span><span class="op">[</span>, <span class="st">"gnis_name"</span><span class="op">]</span></span>
 <span><span class="co">#&gt; Simple feature collection with 5 features and 1 field</span></span>
-<span><span class="co">#&gt; Geometry type: GEOMETRY</span></span>
+<span><span class="co">#&gt; Geometry type: MULTIPOLYGON</span></span>
 <span><span class="co">#&gt; Dimension:     XY</span></span>
-<span><span class="co">#&gt; Bounding box:  xmin: 976027.5 ymin: 1054668 xmax: 983727.5 ymax: 1060008</span></span>
+<span><span class="co">#&gt; Bounding box:  xmin: 976087.5 ymin: 1054668 xmax: 983727.5 ymax: 1060008</span></span>
 <span><span class="co">#&gt; Projected CRS: NAD83 / BC Albers</span></span>
 <span><span class="co">#&gt;            gnis_name                       geometry</span></span>
 <span><span class="co">#&gt; 1      Bulkley River MULTIPOLYGON (((978377.5 10...</span></span>
-<span><span class="co">#&gt; 2      Cesford Creek MULTIPOLYGON (((979057.5 10...</span></span>
+<span><span class="co">#&gt; 2      Cesford Creek MULTIPOLYGON (((978937.5 10...</span></span>
 <span><span class="co">#&gt; 3    Richfield Creek MULTIPOLYGON (((978307.5 10...</span></span>
-<span><span class="co">#&gt; 4 Robert Hatch Creek MULTIPOLYGON (((977437.5 10...</span></span>
-<span><span class="co">#&gt; 5               &lt;NA&gt; POLYGON ((978457.5 1057198,...</span></span></code></pre></div>
+<span><span class="co">#&gt; 4 Robert Hatch Creek MULTIPOLYGON (((977057.5 10...</span></span>
+<span><span class="co">#&gt; 5               &lt;NA&gt; MULTIPOLYGON (((980647.5 10...</span></span></code></pre></div>
 <p>A cell is attributed to a watercourse when it is a valley cell
 <em>and</em> it sits within <code>max_width / 2</code> of that
 watercourse <em>and</em> its cost-distance from it is under
@@ -591,23 +603,23 @@ rows mean these do not sum to the total delineated area.</caption>
 <tbody>
 <tr class="odd">
 <td align="left">Bulkley River</td>
-<td align="right">500.8</td>
+<td align="right">265.2</td>
 </tr>
 <tr class="even">
 <td align="left">Richfield Creek</td>
-<td align="right">251.9</td>
+<td align="right">130.3</td>
 </tr>
 <tr class="odd">
-<td align="left">unnamed</td>
-<td align="right">233.7</td>
+<td align="left">Cesford Creek</td>
+<td align="right">122.4</td>
 </tr>
 <tr class="even">
-<td align="left">Cesford Creek</td>
-<td align="right">211.3</td>
+<td align="left">unnamed</td>
+<td align="right">99.6</td>
 </tr>
 <tr class="odd">
 <td align="left">Robert Hatch Creek</td>
-<td align="right">132.2</td>
+<td align="right">55.9</td>
 </tr>
 </tbody>
 </table>
@@ -741,8 +753,9 @@ parameter legend:</p>
 <tbody>
 <tr class="odd">
 <td><code>precip</code></td>
-<td>1</td>
-<td>MAP in mm — critical for realistic flood depth</td>
+<td>NULL</td>
+<td>MAP in mm, converted to cm/yr internally — critical for realistic
+flood depth</td>
 </tr>
 <tr class="even">
 <td><code>waterbodies</code></td>

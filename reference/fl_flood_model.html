@@ -11,7 +11,7 @@ elevation, flood depth, and a binary flooded mask."><meta property="og:image" co
 
     <a class="navbar-brand me-2" href="../index.html">flooded</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -50,7 +50,7 @@ elevation, flood depth, and a binary flooded mask.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">fl_flood_model</span><span class="op">(</span><span class="va">dem</span>, <span class="va">streams</span>, flood_factor <span class="op">=</span> <span class="fl">6</span>, precip <span class="op">=</span> <span class="fl">1</span>, max_width <span class="op">=</span> <span class="fl">2000</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">fl_flood_model</span><span class="op">(</span><span class="va">dem</span>, <span class="va">streams</span>, flood_factor <span class="op">=</span> <span class="fl">6</span>, precip <span class="op">=</span> <span class="cn">NULL</span>, max_width <span class="op">=</span> <span class="fl">2000</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -63,8 +63,9 @@ elevation, flood depth, and a binary flooded mask.</p>
 
 <dt id="arg-streams">streams<a class="anchor" aria-label="anchor" href="#arg-streams"></a></dt>
 <dd><p>A <code>SpatRaster</code> of rasterized streams (output of
-<code><a href="fl_stream_rasterize.html">fl_stream_rasterize()</a></code>). Cell values are upstream contributing area in
-hectares (or another proxy for channel size).</p></dd>
+<code><a href="fl_stream_rasterize.html">fl_stream_rasterize()</a></code>). Cell values <strong>must be upstream contributing
+area in hectares</strong> — they are the drainage-area term of the bankfull
+regression, not a generic channel-size proxy. Converted to km2 internally.</p></dd>
 
 
 <dt id="arg-flood-factor">flood_factor<a class="anchor" aria-label="anchor" href="#arg-flood-factor"></a></dt>
@@ -73,8 +74,9 @@ depth. Default <code>6</code> (VCA convention).</p></dd>
 
 
 <dt id="arg-precip">precip<a class="anchor" aria-label="anchor" href="#arg-precip"></a></dt>
-<dd><p>A <code>SpatRaster</code> of mean annual precipitation (mm), or a single
-numeric value applied uniformly. Default <code>1</code> (omits precipitation term).</p></dd>
+<dd><p>A <code>SpatRaster</code> of mean annual precipitation in <strong>millimetres</strong>,
+or a single numeric value in mm applied uniformly. Converted to cm/yr
+internally. Default <code>NULL</code>, which drops the precipitation term.</p></dd>
 
 
 <dt id="arg-max-width">max_width<a class="anchor" aria-label="anchor" href="#arg-max-width"></a></dt>

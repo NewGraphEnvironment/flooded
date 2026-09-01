@@ -46,6 +46,18 @@ This run uses the **`ff04`** scenario from
 — *functional floodplain*, the recurrent-inundation footprint. The
 active parameter values are shown in the table below.
 
+On a 30 m DEM, `ff04` is a *conservative* functional floodplain: Nagel
+et al. put the resolution equivalent nearer `ff07`. In practice the
+difference is small here — corrected `ff04` through `ff07` span only
+6.4% of mapped area on this watershed, because at 30 m the slope and
+cost-distance criteria bind before the flood mask does.
+
+The cached outputs below were regenerated for `flooded` 0.5.0, which
+corrected a units defect in the bankfull regression (flooded#49). The
+mapped extent shown here is correspondingly smaller than in earlier
+versions of this vignette — 48,603.1 ha before the fix, 41,142.9 ha now,
+a loss of 15.3%.
+
 | parameter | value | unit | effect | source |
 |:---|---:|:---|:---|:---|
 | flood_factor | 4 | dimensionless | Higher = deeper flood; more floodplain | (Nagel et al. 2014; Hall et al. 2007) |
@@ -64,9 +76,9 @@ differences isolate the ecological signal.
 
 | scenario_id | flood_factor | description | ecological_process | source |
 |:---|---:|:---|:---|:---|
-| ff02 | 2 | Flood-prone width / active channel margin | Rosgen flood-prone width approximating 50-yr flood stage. Captures the zone of frequent inundation and active channel migration. | (Nagel et al. 2014) |
-| ff04 | 4 | Functional floodplain | Historical floodplain extent where nutrient exchange and LWD recruitment occur. Hall et al. found ff=3 best fit on 10m DEM; ff=4 compensates for 25m TRIM vertical smoothing. | (Hall et al. 2007; Nagel et al. 2014) |
-| ff06 | 6 | Valley bottom extent | Full depositional zone including terraces. Nagel et al. recommended ff=5-7 for valley bottom mapping. Wider than functional floodplain — includes areas not regularly influenced by high flows. | (Nagel et al. 2014) |
+| ff02 | 2 | Flood-prone width / active channel margin | Rosgen flood-prone width approximating 50-yr flood stage. Captures the zone of frequent inundation and active channel migration. Sits below Hall’s field-validated ff=3, so it is the conservative end of the ladder on a 10m DEM. | (Nagel et al. 2014) |
+| ff04 | 4 | Functional floodplain | Historical floodplain extent where nutrient exchange and LWD recruitment occur. Hall et al. found ff=3 best fit on 10m DEM; ff=4 compensates for 25m TRIM vertical smoothing. On 30m MRDEM Nagel’s resolution equivalent is nearer ff=7, so ff04 is a conservative functional floodplain there rather than a centred one. | (Hall et al. 2007; Nagel et al. 2014) |
+| ff06 | 6 | Valley bottom extent | Full depositional zone including terraces. Nagel et al. recommended ff=5-7 for valley bottom mapping. Wider than functional floodplain — includes areas not regularly influenced by high flows. On 30m MRDEM this is also close to the resolution-equivalent functional floodplain, so read it against the DEM resolution rather than as a fixed ecological class. | (Nagel et al. 2014) |
 
 Pre-baked flood-factor scenarios shipped with the package. Switch by
 passing `flood_factor =` to

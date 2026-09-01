@@ -13,7 +13,7 @@ fl_flood_depth()."><meta property="og:image" content="https://newgraphenvironmen
 
     <a class="navbar-brand me-2" href="../index.html">flooded</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -53,7 +53,7 @@ the water surface elevation that will be interpolated outward by
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">fl_flood_surface</span><span class="op">(</span><span class="va">dem</span>, <span class="va">streams</span>, flood_factor <span class="op">=</span> <span class="fl">6</span>, precip <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">fl_flood_surface</span><span class="op">(</span><span class="va">dem</span>, <span class="va">streams</span>, flood_factor <span class="op">=</span> <span class="fl">6</span>, precip <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -66,8 +66,9 @@ the water surface elevation that will be interpolated outward by
 
 <dt id="arg-streams">streams<a class="anchor" aria-label="anchor" href="#arg-streams"></a></dt>
 <dd><p>A <code>SpatRaster</code> of rasterized streams (output of
-<code><a href="fl_stream_rasterize.html">fl_stream_rasterize()</a></code>). Cell values are upstream contributing area in
-hectares (or another proxy for channel size).</p></dd>
+<code><a href="fl_stream_rasterize.html">fl_stream_rasterize()</a></code>). Cell values <strong>must be upstream contributing
+area in hectares</strong> — they are the drainage-area term of the bankfull
+regression, not a generic channel-size proxy. Converted to km2 internally.</p></dd>
 
 
 <dt id="arg-flood-factor">flood_factor<a class="anchor" aria-label="anchor" href="#arg-flood-factor"></a></dt>
@@ -76,8 +77,9 @@ depth. Default <code>6</code> (VCA convention).</p></dd>
 
 
 <dt id="arg-precip">precip<a class="anchor" aria-label="anchor" href="#arg-precip"></a></dt>
-<dd><p>A <code>SpatRaster</code> of mean annual precipitation (mm), or a single
-numeric value applied uniformly. Default <code>1</code> (omits precipitation term).</p></dd>
+<dd><p>A <code>SpatRaster</code> of mean annual precipitation in <strong>millimetres</strong>,
+or a single numeric value in mm applied uniformly. Converted to cm/yr
+internally. Default <code>NULL</code>, which drops the precipitation term.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -87,16 +89,28 @@ numeric value applied uniformly. Default <code>1</code> (omits precipitation ter
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>Bankfull regressions follow the Valley Confinement Algorithm:</p>
-<p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>bankfull_width <span class="ot">=</span> (upstream_area <span class="sc">^</span> <span class="fl">0.280</span>) <span class="sc">*</span> <span class="fl">0.196</span> <span class="sc">*</span> (precip <span class="sc">^</span> <span class="fl">0.355</span>)</span>
-<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>bankfull_depth <span class="ot">=</span> bankfull_width <span class="sc">^</span> <span class="fl">0.607</span> <span class="sc">*</span> <span class="fl">0.145</span></span>
-<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>flood_depth    <span class="ot">=</span> bankfull_depth <span class="sc">*</span> flood_factor</span>
-<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>flood_surface  <span class="ot">=</span> DEM <span class="sc">+</span> flood_depth</span></code></pre><p></p></div>
-<p>When <code>precip = 1</code> (default), the precipitation term drops out and
-flood depth depends only on contributing area.</p>
-<p>If your stream raster contains channel width instead of contributing area,
-the regression still produces a relative flood surface — the absolute
-depth will differ but the spatial pattern is preserved.</p>
+    <p>Bankfull regressions follow the Valley Confinement Algorithm. Hall et al.
+(2007) and Nagel et al. (2014) both specify drainage area in <strong>km2</strong> and
+mean annual precipitation in <strong>cm/yr</strong>, so the hectares and millimetres
+callers carry are converted before the coefficients are applied:</p>
+<p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>area_km2       <span class="ot">=</span> upstream_area_ha <span class="sc">/</span> <span class="dv">100</span></span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>precip_cm      <span class="ot">=</span> precip_mm <span class="sc">/</span> <span class="dv">10</span></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>bankfull_width <span class="ot">=</span> (area_km2 <span class="sc">^</span> <span class="fl">0.280</span>) <span class="sc">*</span> <span class="fl">0.196</span> <span class="sc">*</span> (precip_cm <span class="sc">^</span> <span class="fl">0.355</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>bankfull_depth <span class="ot">=</span> bankfull_width <span class="sc">^</span> <span class="fl">0.607</span> <span class="sc">*</span> <span class="fl">0.145</span></span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>flood_depth    <span class="ot">=</span> bankfull_depth <span class="sc">*</span> flood_factor</span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>flood_surface  <span class="ot">=</span> DEM <span class="sc">+</span> flood_depth</span></code></pre><p></p></div>
+<p>When <code>precip = NULL</code> (default), the precipitation term drops out — the
+multiplier is exactly <code>1</code> — and flood depth depends only on contributing
+area. Supplying precipitation matters: on the bundled test data it raises
+predicted depth by ~2.4x (2.366 averaged over stream cells).</p>
+<p>The equation predicts a <em>fitted index</em>, not a surveyed channel. Hall's
+regression has an R2 of 0.47, and its widths run well below independent
+estimates such as bcfishpass's — 5.7 m against 31.3 m for the Bulkley.
+<code>flood_factor</code> is what scales the index onto a mapped footprint.</p>
+<p>Passing anything other than upstream area in hectares (channel width, for
+instance) silently produces a plausible-looking but wrong flood surface;
+see the units defect recorded in <code>inst/notes/floodplain_interpretation.md</code>.</p>
     </div>
 
     <div class="section level2">

@@ -11,7 +11,7 @@ unconfined valley bottoms."><meta property="og:image" content="https://newgraphe
 
     <a class="navbar-brand me-2" href="../index.html">flooded</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -59,7 +59,7 @@ unconfined valley bottoms.</p>
 <span>  max_width <span class="op">=</span> <span class="fl">2000</span>,</span>
 <span>  cost_threshold <span class="op">=</span> <span class="fl">2500</span>,</span>
 <span>  flood_factor <span class="op">=</span> <span class="fl">6</span>,</span>
-<span>  precip <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  precip <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  waterbodies <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  channel_buffer <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  size_threshold <span class="op">=</span> <span class="fl">5000</span>,</span>
@@ -82,7 +82,10 @@ streams. If <code>sf</code>, it is rasterized using <code>field</code>.</p></dd>
 
 <dt id="arg-field">field<a class="anchor" aria-label="anchor" href="#arg-field"></a></dt>
 <dd><p>Character. Column name for <code><a href="fl_stream_rasterize.html">fl_stream_rasterize()</a></code> when
-<code>streams</code> is <code>sf</code>. Default <code>"channel_width"</code>.</p></dd>
+<code>streams</code> is <code>sf</code>. Default <code>"channel_width"</code>. <strong>The flood model reads the
+rasterized values as upstream contributing area in hectares</strong> — pass
+<code>"upstream_area_ha"</code> (see <code><a href="fl_flood_surface.html">fl_flood_surface()</a></code>). The default is wrong for
+the flood model and is tracked in flooded#47.</p></dd>
 
 
 <dt id="arg-slope">slope<a class="anchor" aria-label="anchor" href="#arg-slope"></a></dt>
@@ -109,7 +112,9 @@ Default <code>2500</code>.</p></dd>
 
 
 <dt id="arg-precip">precip<a class="anchor" aria-label="anchor" href="#arg-precip"></a></dt>
-<dd><p>A <code>SpatRaster</code> or numeric scalar of precipitation. Default <code>1</code>.</p></dd>
+<dd><p>A <code>SpatRaster</code> or numeric scalar of mean annual precipitation
+in <strong>millimetres</strong>, converted to cm/yr internally for the bankfull
+regression. Default <code>NULL</code>, which drops the precipitation term.</p></dd>
 
 
 <dt id="arg-waterbodies">waterbodies<a class="anchor" aria-label="anchor" href="#arg-waterbodies"></a></dt>

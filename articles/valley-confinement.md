@@ -85,14 +85,22 @@ Rasterized streams coloured by upstream area (ha).
 The VCA bankfull regression has a precipitation term that strongly
 controls flood depth:
 
-    bankfull_width = (upstream_area ^ 0.280) * 0.196 * (precip ^ 0.355)
+    area_km2       = upstream_area_ha / 100
+    precip_cm      = precip_mm / 10
+
+    bankfull_width = (area_km2 ^ 0.280) * 0.196 * (precip_cm ^ 0.355)
     bankfull_depth = bankfull_width ^ 0.607 * 0.145
     flood_depth    = bankfull_depth * flood_factor
 
-With `precip = 1` (the default), the precipitation term drops out and
-flood depths are dramatically underestimated. For the Bulkley mainstem
-(`upstream_area_ha ~ 110,000`), the difference is ~2 m vs ~8 m flood
-depth.
+Hall et al. (2007) and Nagel et al. (2014) both specify drainage area in
+km^2 and mean annual precipitation in cm/yr, so the hectares and
+millimetres carried on the stream network are converted before the
+coefficients are applied.
+
+With `precip = NULL` (the default), the precipitation term drops out and
+flood depths are underestimated. For the Bulkley mainstem
+(`upstream_area_ha ~ 110,000`), at `flood_factor = 6` the difference is
+~1.1 m vs ~2.5 m flood depth.
 
 The test data includes `map_upstream` — mean annual precipitation (mm)
 from fwapg/ClimateBC, carried as a stream attribute. We rasterize it
@@ -194,7 +202,7 @@ streams, and identifies cells below the flood surface (Figure
 flood <- fl_flood_model(dem, stream_r, flood_factor = 6, precip = precip_r,
                         max_width = 2000)
 cat("Flooded cells:", sum(values(flood[["flooded"]]) == 1, na.rm = TRUE), "\n")
-#> Flooded cells: 61845
+#> Flooded cells: 30571
 ```
 
 ``` r
@@ -218,7 +226,7 @@ morphological cleanup (closing, hole filling, small patch removal,
 majority filter), and returns a binary valley raster (Figure
 @ref(fig:plot-valleys)).
 
-Note the `precip` argument — without it, flood depths are ~4x too
+Note the `precip` argument — without it, flood depths are ~2.4x too
 shallow and the resulting valley is significantly narrower.
 
 ``` r
@@ -237,7 +245,7 @@ valleys <- fl_valley_confine(
 n_valley <- sum(values(valleys) == 1, na.rm = TRUE)
 cat("Valley cells:", n_valley, "/", ncell(valleys),
     "(", round(100 * n_valley / ncell(valleys), 1), "%)\n")
-#> Valley cells: 53635 / 518400 ( 10.3 %)
+#> Valley cells: 28727 / 518400 ( 5.5 %)
 ```
 
 ``` r
@@ -265,7 +273,7 @@ flat areas disconnected from the network (Figure
 connected <- fl_patch_conn(valleys, stream_r)
 cat("Connected valley cells:",
     sum(values(connected) == 1, na.rm = TRUE), "\n")
-#> Connected valley cells: 53585
+#> Connected valley cells: 28488
 ```
 
 ``` r
@@ -293,7 +301,7 @@ steep_mask <- fl_mask(slope, threshold = 5, operator = ">")
 trimmed <- fl_flood_trim(connected, steep_mask)
 cat("After trimming steep cells:",
     sum(values(trimmed) == 1, na.rm = TRUE), "\n")
-#> After trimming steep cells: 36601
+#> After trimming steep cells: 19468
 ```
 
 ### Assemble multiple layers
@@ -309,7 +317,7 @@ flooded_mask <- flood[["flooded"]]
 flooded_mask <- ifel(is.na(flooded_mask), 0L, flooded_mask)
 assembled <- fl_flood_assemble(connected, flooded_mask)
 cat("Assembled cells:", sum(values(assembled) == 1, na.rm = TRUE), "\n")
-#> Assembled cells: 63285
+#> Assembled cells: 32670
 ```
 
 ## Adding waterbodies and channel buffer
@@ -363,11 +371,11 @@ valleys_wb <- fl_valley_confine(
 n_wb <- sum(values(valleys_wb) == 1, na.rm = TRUE)
 cell_area <- prod(res(dem))
 cat("VCA only:          ", round(n_valley * cell_area / 1e4, 1), "ha\n")
-#> VCA only:           536.4 ha
+#> VCA only:           287.3 ha
 cat("VCA + features:    ", round(n_wb * cell_area / 1e4, 1), "ha\n")
-#> VCA + features:     553.5 ha
+#> VCA + features:     304.8 ha
 cat("Features added:    ", round((n_wb - n_valley) * cell_area / 1e4, 1), "ha\n")
-#> Features added:     17.1 ha
+#> Features added:     17.5 ha
 ```
 
 ``` r
@@ -408,24 +416,27 @@ stream attribute from fwapg (the Freshwater Atlas Postgres layer). For
 other jurisdictions, any gridded precipitation product will work —
 rasterize it to the DEM grid and pass it as the `precip` argument.
 
-Omitting precipitation (`precip = 1`, the default) underestimates flood
-depth by roughly 4x in wet climates (~500 mm MAP). This produces a
-valley that is about half the width of the correct result:
+Omitting precipitation (`precip = NULL`, the default) underestimates
+flood depth by roughly 2.4x in wet climates (~500 mm MAP), producing a
+noticeably narrower valley. Note that `precip = NULL` is the way to drop
+the term — passing `precip = 1` means one *millimetre*, which is a depth
+multiplier of 0.61 rather than 1 and gives a shallower result than
+omitting precipitation altogether:
 
 ``` r
 
 valleys_no_precip <- fl_valley_confine(
   dem, streams, field = "upstream_area_ha",
-  precip = 1
+  precip = NULL
 )
 
 n_no <- sum(values(valleys_no_precip) == 1, na.rm = TRUE)
 cat("Without precip:", n_no, "cells (",
     round(100 * n_no / ncell(dem), 1), "%)\n")
-#> Without precip: 27211 cells ( 5.2 %)
+#> Without precip: 19838 cells ( 3.8 %)
 cat("With precip:   ", n_valley, "cells (",
     round(100 * n_valley / ncell(dem), 1), "%)\n")
-#> With precip:    53635 cells ( 10.3 %)
+#> With precip:    28727 cells ( 5.5 %)
 ```
 
 ## Flood factor scenarios
@@ -501,9 +512,9 @@ for (id in names(results)) {
               scenarios$flood_factor[scenarios$scenario_id == id],
               n * cell_area / 1e4))
 }
-#> ff02   (ff=2): 338.2 ha
-#> ff04   (ff=4): 493.9 ha
-#> ff06   (ff=6): 553.5 ha
+#> ff02   (ff=2): 203.8 ha
+#> ff04   (ff=4): 249.8 ha
+#> ff06   (ff=6): 304.8 ha
 ```
 
 ``` r
@@ -559,16 +570,16 @@ by_stream <- fl_valley_attribute(
 
 by_stream[, "gnis_name"]
 #> Simple feature collection with 5 features and 1 field
-#> Geometry type: GEOMETRY
+#> Geometry type: MULTIPOLYGON
 #> Dimension:     XY
-#> Bounding box:  xmin: 976027.5 ymin: 1054668 xmax: 983727.5 ymax: 1060008
+#> Bounding box:  xmin: 976087.5 ymin: 1054668 xmax: 983727.5 ymax: 1060008
 #> Projected CRS: NAD83 / BC Albers
 #>            gnis_name                       geometry
 #> 1      Bulkley River MULTIPOLYGON (((978377.5 10...
-#> 2      Cesford Creek MULTIPOLYGON (((979057.5 10...
+#> 2      Cesford Creek MULTIPOLYGON (((978937.5 10...
 #> 3    Richfield Creek MULTIPOLYGON (((978307.5 10...
-#> 4 Robert Hatch Creek MULTIPOLYGON (((977437.5 10...
-#> 5               <NA> POLYGON ((978457.5 1057198,...
+#> 4 Robert Hatch Creek MULTIPOLYGON (((977057.5 10...
+#> 5               <NA> MULTIPOLYGON (((980647.5 10...
 ```
 
 A cell is attributed to a watercourse when it is a valley cell *and* it
@@ -598,11 +609,11 @@ knitr::kable(
 
 | Watercourse        | Area (ha) |
 |:-------------------|----------:|
-| Bulkley River      |     500.8 |
-| Richfield Creek    |     251.9 |
-| unnamed            |     233.7 |
-| Cesford Creek      |     211.3 |
-| Robert Hatch Creek |     132.2 |
+| Bulkley River      |     265.2 |
+| Richfield Creek    |     130.3 |
+| Cesford Creek      |     122.4 |
+| unnamed            |      99.6 |
+| Robert Hatch Creek |      55.9 |
 
 Floodplain area attributable to each watercourse. Overlapping rows mean
 these do not sum to the total delineated area. {.table}
@@ -702,8 +713,8 @@ Additional arguments to
 [`fl_valley_confine()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_confine.md)
 not in the parameter legend:
 
-| Parameter        | Default | Effect                                            |
-|------------------|---------|---------------------------------------------------|
-| `precip`         | 1       | MAP in mm — critical for realistic flood depth    |
-| `waterbodies`    | NULL    | sf polygons of lakes/wetlands to fill donut holes |
-| `channel_buffer` | auto    | Buffer streams by channel_width (DEM correction)  |
+| Parameter | Default | Effect |
+|----|----|----|
+| `precip` | NULL | MAP in mm, converted to cm/yr internally — critical for realistic flood depth |
+| `waterbodies` | NULL | sf polygons of lakes/wetlands to fill donut holes |
+| `channel_buffer` | auto | Buffer streams by channel_width (DEM correction) |

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">flooded</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,6 +37,58 @@
       <small>Source: <a href="https://github.com/NewGraphEnvironment/flooded/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.5.0" id="flooded-050">flooded 0.5.0<a class="anchor" aria-label="anchor" href="#flooded-050"></a></h2>
+<p><strong>Results change. Every floodplain produced by 0.4.1 or earlier is over-mapped.</strong></p>
+<ul><li><p>Fix the bankfull regression being fed the wrong units (<a href="https://github.com/NewGraphEnvironment/flooded/issues/49" class="external-link">#49</a>). <code><a href="../reference/fl_flood_surface.html">fl_flood_surface()</a></code> passed <strong>hectares</strong> (<code>upstream_area_ha</code>) and <strong>millimetres</strong> (<code>map_upstream</code>) into the verbatim Hall et al. (2007) coefficients, which that paper and Nagel et al. (2014) both specify as taking drainage area in <strong>km2</strong> and mean annual precipitation in <strong>cm/yr</strong>. The conversion now happens inside the function, so callers keep passing the columns they already have.</p></li>
+<li>
+<p>Bankfull <strong>width</strong> was 8.2224x too large and bankfull <strong>depth</strong> 3.5926x too large, everywhere, on every run this package has ever done. The shipped scenarios were therefore not what they claimed:</p>
+<table class="table"><thead><tr><th>labelled</th>
+<th>actual multiple of bankfull depth</th>
+</tr></thead><tbody><tr><td><code>ff02</code></td>
+<td>7.19</td>
+</tr><tr><td><code>ff04</code></td>
+<td><strong>14.37</strong></td>
+</tr><tr><td><code>ff06</code></td>
+<td>21.56</td>
+</tr></tbody></table><p>Against Hall’s field-validated 3 for historical floodplain and Nagel’s 5-7 for valley bottom.</p>
+</li>
+<li>
+<p><strong>How much area this costs is dataset-dependent, and not a fixed ratio.</strong> The error only reaches the boundary where the flood mask is the binding criterion. Measured on both shipped datasets, and every corrected run is a <strong>strict subset</strong> of the as-coded one - 0 cells gained anywhere:</p>
+<table class="table"><thead><tr><th>dataset</th>
+<th>scenario</th>
+<th>as-coded</th>
+<th>corrected</th>
+<th>retained</th>
+</tr></thead><tbody><tr><td>bundled 10 m tile</td>
+<td><code>ff02</code></td>
+<td>320.8 ha</td>
+<td>185.4 ha</td>
+<td>57.8%</td>
+</tr><tr><td>bundled 10 m tile</td>
+<td><code>ff04</code></td>
+<td>476.8 ha</td>
+<td>231.9 ha</td>
+<td>48.6%</td>
+</tr><tr><td>bundled 10 m tile</td>
+<td><code>ff06</code></td>
+<td>536.4 ha</td>
+<td>287.3 ha</td>
+<td>53.6%</td>
+</tr><tr><td>Parsnip WSG, MRDEM-30</td>
+<td><code>ff04</code></td>
+<td>48,603.1 ha</td>
+<td>41,142.9 ha</td>
+<td>84.7%</td>
+</tr></tbody></table><p>At 10 m the flood mask binds and the fix roughly halves the extent. At 30 m the slope and cost-distance criteria bind first, so most of the inflated flood height was already being clipped and the loss is ~15%.</p>
+</li>
+<li><p><strong>Scenario values are unchanged at 2 / 4 / 6.</strong> They were taken from the literature ladder (Rosgen 2, Hall 3, Nagel 5-7) in the first place; what changed is that they now behave as labelled. Raising <code>ff</code> to recover the old extent is not supported by anything - on MRDEM-30, corrected <code>ff04</code> through <code>ff07</code> span only 6.4% of area, so even <code>ff07</code> lands at 90% of the as-coded <code>ff04</code>.</p></li>
+<li><p><code>precip</code> now defaults to <code>NULL</code>, which drops the precipitation term (multiplier exactly 1). The former default of <code>1</code> cannot express that once the input is read as millimetres: 1 mm is 0.1 cm/yr, scaling depth by 0.6089 - <em>shallower</em> than omitting the term. <code><a href="../reference/fl_flood_surface.html">fl_flood_surface()</a></code>, <code><a href="../reference/fl_flood_model.html">fl_flood_model()</a></code> and <code><a href="../reference/fl_valley_confine.html">fl_valley_confine()</a></code> all move together. Passing a precipitation raster or a scalar in mm is unaffected.</p></li>
+<li><p>Shipped vignette artifacts regenerated: <code>inst/vignette-data/pars_valleys.tif</code> and the <code>floodplain</code> layer of <code>pars.gpkg</code>. The as-coded run reproduces the previous artifact exactly (521,028 cells, 0 difference), which is what establishes the corrected one as a like-for-like replacement. This supersedes the 0.4.1 note below saying the shipped artifacts were still current — that was true of the <a href="https://github.com/NewGraphEnvironment/flooded/issues/41" class="external-link">#41</a> cost-distance fix and is not true of this one.</p></li>
+<li><p><code>vignettes/stac-dem.Rmd</code> could not be regenerated: it is the baked half of the <code>.Rmd.orig</code> pattern, and re-baking needs the STAC endpoint plus a 1 m lidar re-run. It carries an explicit caveat instead. Its printed figures do not reproduce even under the old units — 54,637 published against 53,635 as-coded today — so roughly a thousand cells of that gap predate this release.</p></li>
+<li><p><code><a href="../reference/fl_flood_surface.html">fl_flood_surface()</a></code> gains a units test pinned to hard literals computed from the published equation. No test in this package pinned an absolute value before now, and <code>_snaps/</code> was empty, which is why a 3.59x error survived a green suite. Note that Nagel’s combined form <code>h_bf = 0.054 * A^0.170 * P^0.215</code> cannot serve as the oracle - it is an algebraic identity of the two-step form and so agrees in any units.</p></li>
+<li><p>Documentation corrected throughout: <code>inst/notes/methodology.md</code> stated the two channel-width formulas with <strong>no input units at all</strong>, which is the gap that let this survive. Historical measurements in that file taken under the defect are annotated rather than restated.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.4.1" id="flooded-041">flooded 0.4.1<a class="anchor" aria-label="anchor" href="#flooded-041"></a></h2>
 <ul><li><p>Fix <code><a href="../reference/fl_cost_distance.html">fl_cost_distance()</a></code> seeding on every zero-friction cell rather than only stream cells (<a href="https://github.com/NewGraphEnvironment/flooded/issues/41" class="external-link">#41</a>). Seeds are encoded by setting stream cells to <code>0</code> and calling <code>terra::costDist(target = 0)</code>, which matches <em>every</em> zero cell — so any cell whose friction was already exactly zero acted as a free cost source. Friction exactly equal to <code>0</code> is now floored to <code>1e-6</code> before seeding. Flat ground stays cheap to cross (0.1 accumulated over a 100 km path at 10 m, against a default <code>cost_threshold</code> of 2500); it simply stops being a source. Negative friction is deliberately not floored, so <code><a href="https://rspatial.github.io/terra/reference/costDist.html" class="external-link">terra::costDist()</a></code>’s own rejection of a negative cost surface is left intact.</p></li>

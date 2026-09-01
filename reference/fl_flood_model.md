@@ -10,7 +10,7 @@ elevation, flood depth, and a binary flooded mask.
 ## Usage
 
 ``` r
-fl_flood_model(dem, streams, flood_factor = 6, precip = 1, max_width = 2000)
+fl_flood_model(dem, streams, flood_factor = 6, precip = NULL, max_width = 2000)
 ```
 
 ## Arguments
@@ -23,8 +23,9 @@ fl_flood_model(dem, streams, flood_factor = 6, precip = 1, max_width = 2000)
 
   A `SpatRaster` of rasterized streams (output of
   [`fl_stream_rasterize()`](https://newgraphenvironment.github.io/flooded/reference/fl_stream_rasterize.md)).
-  Cell values are upstream contributing area in hectares (or another
-  proxy for channel size).
+  Cell values **must be upstream contributing area in hectares** — they
+  are the drainage-area term of the bankfull regression, not a generic
+  channel-size proxy. Converted to km2 internally.
 
 - flood_factor:
 
@@ -33,8 +34,9 @@ fl_flood_model(dem, streams, flood_factor = 6, precip = 1, max_width = 2000)
 
 - precip:
 
-  A `SpatRaster` of mean annual precipitation (mm), or a single numeric
-  value applied uniformly. Default `1` (omits precipitation term).
+  A `SpatRaster` of mean annual precipitation in **millimetres**, or a
+  single numeric value in mm applied uniformly. Converted to cm/yr
+  internally. Default `NULL`, which drops the precipitation term.
 
 - max_width:
 

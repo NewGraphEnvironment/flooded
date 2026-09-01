@@ -16,7 +16,7 @@ fl_valley_confine(
   max_width = 2000,
   cost_threshold = 2500,
   flood_factor = 6,
-  precip = 1,
+  precip = NULL,
   waterbodies = NULL,
   channel_buffer = NULL,
   size_threshold = 5000,
@@ -39,7 +39,11 @@ fl_valley_confine(
 
   Character. Column name for
   [`fl_stream_rasterize()`](https://newgraphenvironment.github.io/flooded/reference/fl_stream_rasterize.md)
-  when `streams` is `sf`. Default `"channel_width"`.
+  when `streams` is `sf`. Default `"channel_width"`. **The flood model
+  reads the rasterized values as upstream contributing area in
+  hectares** — pass `"upstream_area_ha"` (see
+  [`fl_flood_surface()`](https://newgraphenvironment.github.io/flooded/reference/fl_flood_surface.md)).
+  The default is wrong for the flood model and is tracked in flooded#47.
 
 - slope:
 
@@ -63,7 +67,9 @@ fl_valley_confine(
 
 - precip:
 
-  A `SpatRaster` or numeric scalar of precipitation. Default `1`.
+  A `SpatRaster` or numeric scalar of mean annual precipitation in
+  **millimetres**, converted to cm/yr internally for the bankfull
+  regression. Default `NULL`, which drops the precipitation term.
 
 - waterbodies:
 

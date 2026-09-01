@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="index.html">flooded</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -100,10 +100,13 @@
 <h2 id="bankfull-regression">Bankfull regression<a class="anchor" aria-label="anchor" href="#bankfull-regression"></a>
 </h2>
 <p>The flood model uses the VCA bankfull regression to estimate flood depth at stream cells:</p>
-<pre><code><span><span class="va">bankfull_width</span> <span class="op">=</span> <span class="op">(</span><span class="va">upstream_area</span> <span class="op">^</span> <span class="fl">0.280</span><span class="op">)</span> <span class="op">*</span> <span class="fl">0.196</span> <span class="op">*</span> <span class="op">(</span><span class="va">precip</span> <span class="op">^</span> <span class="fl">0.355</span><span class="op">)</span></span>
+<pre><code><span><span class="va">area_km2</span>       <span class="op">=</span> <span class="va">upstream_area_ha</span> <span class="op">/</span> <span class="fl">100</span></span>
+<span><span class="va">precip_cm</span>      <span class="op">=</span> <span class="va">precip_mm</span> <span class="op">/</span> <span class="fl">10</span></span>
+<span></span>
+<span><span class="va">bankfull_width</span> <span class="op">=</span> <span class="op">(</span><span class="va">area_km2</span> <span class="op">^</span> <span class="fl">0.280</span><span class="op">)</span> <span class="op">*</span> <span class="fl">0.196</span> <span class="op">*</span> <span class="op">(</span><span class="va">precip_cm</span> <span class="op">^</span> <span class="fl">0.355</span><span class="op">)</span></span>
 <span><span class="va">bankfull_depth</span> <span class="op">=</span> <span class="va">bankfull_width</span> <span class="op">^</span> <span class="fl">0.607</span> <span class="op">*</span> <span class="fl">0.145</span></span>
 <span><span class="va">flood_depth</span>    <span class="op">=</span> <span class="va">bankfull_depth</span> <span class="op">*</span> <span class="va">flood_factor</span></span></code></pre>
-<p>Both <code>upstream_area</code> (hectares) and <code>precip</code> (mean annual precipitation, mm) are important — omitting precipitation underestimates flood depth by ~4x.</p>
+<p><code>upstream_area</code> (hectares) is required. <code>precip</code> (mean annual precipitation, mm) is optional and defaults to <code>NULL</code>, which drops the precipitation term — but supplying it matters: omitting it underestimates flood depth by ~2.4x. Both are converted internally to the km2 and cm/yr the published coefficients expect.</p>
 </div>
 <div class="section level2">
 <h2 id="resolution-and-restoration">Resolution and restoration<a class="anchor" aria-label="anchor" href="#resolution-and-restoration"></a>

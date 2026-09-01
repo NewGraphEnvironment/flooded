@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">flooded</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -113,6 +113,17 @@ ecological effect) lives in <code><a href="../reference/fl_params.html">flooded:
 <code><a href="../reference/fl_scenarios.html">flooded::fl_scenarios()</a></code> — <em>functional floodplain</em>,
 the recurrent-inundation footprint. The active parameter values are
 shown in the table below.</p>
+<p>On a 30 m DEM, <code>ff04</code> is a <em>conservative</em>
+functional floodplain: Nagel et al. put the resolution equivalent nearer
+<code>ff07</code>. In practice the difference is small here — corrected
+<code>ff04</code> through <code>ff07</code> span only 6.4% of mapped
+area on this watershed, because at 30 m the slope and cost-distance
+criteria bind before the flood mask does.</p>
+<p>The cached outputs below were regenerated for <code>flooded</code>
+0.5.0, which corrected a units defect in the bankfull regression
+(flooded#49). The mapped extent shown here is correspondingly smaller
+than in earlier versions of this vignette — 48,603.1 ha before the fix,
+41,142.9 ha now, a loss of 15.3%.</p>
 <table class="table">
 <caption>Active parameter values for the Parsnip River Watershed Group
 run. <code>flood_factor = 4</code> (<code>ff04</code>); other values are
@@ -170,11 +181,11 @@ constant so output differences isolate the ecological signal.</p>
 Switch by passing <code>flood_factor =</code> to
 <code><a href="../reference/fl_valley_confine.html">flooded::fl_valley_confine()</a></code>.</caption>
 <colgroup>
-<col width="4%">
-<col width="4%">
-<col width="14%">
-<col width="64%">
-<col width="12%">
+<col width="2%">
+<col width="2%">
+<col width="9%">
+<col width="77%">
+<col width="8%">
 </colgroup>
 <thead><tr class="header">
 <th align="left">scenario_id</th>
@@ -190,7 +201,8 @@ Switch by passing <code>flood_factor =</code> to
 <td align="left">Flood-prone width / active channel margin</td>
 <td align="left">Rosgen flood-prone width approximating 50-yr flood
 stage. Captures the zone of frequent inundation and active channel
-migration.</td>
+migration. Sits below Hall’s field-validated ff=3, so it is the
+conservative end of the ladder on a 10m DEM.</td>
 <td align="left">(Nagel et al. 2014)</td>
 </tr>
 <tr class="even">
@@ -199,7 +211,9 @@ migration.</td>
 <td align="left">Functional floodplain</td>
 <td align="left">Historical floodplain extent where nutrient exchange
 and LWD recruitment occur. Hall et al. found ff=3 best fit on 10m DEM;
-ff=4 compensates for 25m TRIM vertical smoothing.</td>
+ff=4 compensates for 25m TRIM vertical smoothing. On 30m MRDEM Nagel’s
+resolution equivalent is nearer ff=7, so ff04 is a conservative
+functional floodplain there rather than a centred one.</td>
 <td align="left">(Hall et al. 2007; Nagel et al. 2014)</td>
 </tr>
 <tr class="odd">
@@ -208,7 +222,10 @@ ff=4 compensates for 25m TRIM vertical smoothing.</td>
 <td align="left">Valley bottom extent</td>
 <td align="left">Full depositional zone including terraces. Nagel et
 al. recommended ff=5-7 for valley bottom mapping. Wider than functional
-floodplain — includes areas not regularly influenced by high flows.</td>
+floodplain — includes areas not regularly influenced by high flows. On
+30m MRDEM this is also close to the resolution-equivalent functional
+floodplain, so read it against the DEM resolution rather than as a fixed
+ecological class.</td>
 <td align="left">(Nagel et al. 2014)</td>
 </tr>
 </tbody>
