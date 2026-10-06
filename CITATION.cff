@@ -8,7 +8,7 @@ message: 'To cite package "flooded" in publications use:'
 type: software
 license: MIT
 title: 'flooded: Portable Floodplain Delineation from DEM and Stream Network'
-version: 0.6.0
+version: 0.6.1
 abstract: Delineate floodplains from digital elevation models and stream networks
   using the Valley Confinement Algorithm (VCA). Combines slope thresholding, cost-distance
   analysis, and flood surface modelling to identify unconfined valleys. Ported from
@@ -21,7 +21,7 @@ authors:
   orcid: https://orcid.org/0000-0002-3495-2128
 repository-code: https://github.com/NewGraphEnvironment/flooded
 url: https://newgraphenvironment.github.io/flooded/
-date-released: '2026-09-01'
+date-released: '2026-10-06'
 contact:
 - family-names: Irvine
   given-names: Allan
