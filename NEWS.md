@@ -1,3 +1,11 @@
+# flooded 0.6.1
+
+* `gdalcubes` (Suggests, for the `stac-dem` vignette) is pinned to `appelmar/gdalcubes` via
+  `Remotes:` while it is archived on CRAN, which had broken the docs build. Drop the pin once it
+  returns (#61).
+* `inst/notes/floodplain_interpretation.md` now distinguishes the two shapes of proportional claim
+  and which of them survive a change in mapped extent (#52).
+
 # flooded 0.6.0
 
 **Breaking, but no result changes.** `fl_valley_confine()`'s `field` argument is renamed
