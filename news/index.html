@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">flooded</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,6 +37,13 @@
       <small>Source: <a href="https://github.com/NewGraphEnvironment/flooded/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.6.1" id="flooded-061">flooded 0.6.1<a class="anchor" aria-label="anchor" href="#flooded-061"></a></h2>
+<ul><li>
+<code>gdalcubes</code> (Suggests, for the <code>stac-dem</code> vignette) is pinned to <code>appelmar/gdalcubes</code> via <code>Remotes:</code> while it is archived on CRAN, which had broken the docs build. Drop the pin once it returns (<a href="https://github.com/NewGraphEnvironment/flooded/issues/61" class="external-link">#61</a>).</li>
+<li>
+<code>inst/notes/floodplain_interpretation.md</code> now distinguishes the two shapes of proportional claim and which of them survive a change in mapped extent (<a href="https://github.com/NewGraphEnvironment/flooded/issues/52" class="external-link">#52</a>).</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.6.0" id="flooded-060">flooded 0.6.0<a class="anchor" aria-label="anchor" href="#flooded-060"></a></h2>
 <p><strong>Breaking, but no result changes.</strong> <code><a href="../reference/fl_valley_confine.html">fl_valley_confine()</a></code>’s <code>field</code> argument is renamed <code>area_field</code> and is now required. Nothing this package has produced was affected — every caller in the repo, both vignettes, every example and the <code>floodplains</code> driver passed <code>field = "upstream_area_ha"</code> explicitly.</p>
