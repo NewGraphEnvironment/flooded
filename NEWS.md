@@ -2,7 +2,7 @@
 
 * `gdalcubes` (Suggests, for the `stac-dem` vignette) is pinned to `appelmar/gdalcubes` via
   `Remotes:` while it is archived on CRAN, which had broken the docs build. Drop the pin once it
-  returns (#61).
+  returns (#60).
 * `inst/notes/floodplain_interpretation.md` now distinguishes the two shapes of proportional claim
   and which of them survive a change in mapped extent (#52).
 
