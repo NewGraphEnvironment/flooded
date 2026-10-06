@@ -47,6 +47,7 @@ Suggests:
     whitebox,
     xciter
 Remotes:
+    appelmar/gdalcubes,
     NewGraphEnvironment/fresh,
     NewGraphEnvironment/xciter
 Config/testthat/edition: 3
