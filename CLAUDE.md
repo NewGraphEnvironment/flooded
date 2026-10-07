@@ -45,7 +45,7 @@ R/
   fl_scenarios.R        — load flood factor scenario CSV
 vignettes/
   valley-confinement.Rmd — full walkthrough with bundled test data
-  stac-dem.Rmd           — fetch DEM from STAC catalog
+  stac-dem.Rmd           — STAC lidar vs bundled 10 m; 10 m runs live, lidar results cached
   pars-floodplain.Rmd    — Parsnip River WSG using fl_dem_aoi() + cached outputs
 tests/testthat/          — unit tests for each fl_* function (17 test files, 121 test_that blocks)
 ```
@@ -60,7 +60,16 @@ tests/testthat/          — unit tests for each fl_* function (17 test files, 1
 
 ### Design decisions
 
-- **Pre-built vignette artifacts:** `.Rmd.orig` is source, baked `.Rmd` for pkgdown (stac-dem pattern). `pars-floodplain` skips this — uses cached `.rds` / `.tif` / `.gpkg` outputs instead, because the `.Rmd.orig` pattern breaks bookdown figure cross-references.
+- **No pre-baked vignettes.** Anything needing a network or a long run goes in a `data-raw/` script
+  that caches outputs to `inst/vignette-data/`; the vignette reads the cache and runs everything
+  else live. `stac-dem.Rmd` was the last `.Rmd.orig` pre-knit and was converted in #51: its baked
+  copy had drifted silently for several releases, its figure PNGs were never committed (404 on the
+  site), and the pre-knit broke bookdown cross-references. The `stac-dem` cache carries the 10 m
+  cell counts it was built against, and `test-vignette_data.R` fails when the live
+  `fl_valley_confine()` no longer reproduces them — that is the signal to re-run
+  `data-raw/stac_dem_vignette_data.R`.
+- **The STAC catalog is `stac-elevation-bc`, asset `dem`** (formerly `stac-dem-bc`, asset `image`;
+  renamed upstream in rtj#229). The old collection returns zero items, not an error.
 - **25 m TRIM resampled to 10 m** is not real 10 m detail — note this when comparing TRIM-derived outputs to true 10 m or 1 m lidar.
 - **1 m lidar reveals anthropogenic barriers** ("pop-ups") — diagnostic value beyond floodplain area itself.
 - **Channel-width buffer auto-detect** from streams sf. DEM correction only — the buffer is a coarse-DEM gap-filler, not an ecological feature.

@@ -52,9 +52,9 @@ published coefficients expect.
 
 ## Resolution and restoration
 
-`flooded` is DEM-agnostic — any source works. But resolution changes what you can see. At 25 m (e.g. the provincial TRIM DEM), the floodplain appears as one continuous surface. At 1 m lidar, anthropogenic features emerge: roads, railway grades, dykes, and agricultural fill that sit above the flood surface and block lateral connectivity.
+`flooded` is DEM-agnostic — any source works. But resolution changes what you can see. At 25 m (e.g. the provincial TRIM DEM), raised features are smeared into the ground around them, and the floodplain's shape is coarse. At 1 m lidar, anthropogenic features emerge as narrow lines and patches: roads, railway grades, dykes, and agricultural fill, whose steep sides a 25 m DEM smooths away and which can block lateral connectivity.
 
-The gap between coarse and fine results is a diagnostic: it shows **what is preventing floodplain from functioning** and **where to act** — removing fill, breaching dykes, or installing crossings to reconnect floodplain. See the [STAC DEM vignette](https://newgraphenvironment.github.io/flooded/articles/stac-dem.html) for a worked example comparing 25 m TRIM with 1 m lidar on the Neexdzii Kwah (Bulkley River).
+The gap between coarse and fine results runs both ways — lidar mostly finds floodplain the coarse DEM misses — but the floodplain the coarse result maps and the fine one excludes is a diagnostic: it shows **where to look** for what may be preventing floodplain from functioning, and **where to act** — removing fill, breaching dykes, or installing crossings to reconnect floodplain. See the [STAC DEM vignette](https://newgraphenvironment.github.io/flooded/articles/stac-dem.html) for a worked example comparing 25 m TRIM with 1 m lidar on the Neexdzii Kwah (Bulkley River).
 
 ## Performance
 
