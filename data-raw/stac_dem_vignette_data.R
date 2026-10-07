@@ -28,7 +28,8 @@
 #
 # Prerequisites:
 #   - Outbound HTTPS to https://images.a11s.one/ (stac-elevation-bc) and its COGs
-#   - rstac, gdalcubes (Suggests)
+#   - rstac, gdalcubes (Suggests), curl
+#   - ~1.3 GB of disk for the two lidar tiles (see STAC_DEM_TILE_DIR)
 #   - Run from package root so devtools::load_all() finds the source tree
 
 # ---- params -------------------------------------------------------------
@@ -90,8 +91,30 @@ slope_pct <- function(dem) {
 
 n_valley <- function(r) sum(terra::values(r) == 1, na.rm = TRUE)
 
+# Local copies of the lidar tiles. They are strip-organised GeoTIFFs (one row
+# per block, no overviews), so reading them over /vsicurl/ is one range
+# request per strip - slow, and gdalcubes reports failed reads only on stderr,
+# leaving a partial mosaic that looks complete. Downloading first removes that.
+# Set STAC_DEM_TILE_DIR to reuse downloads across runs (~630 MB per tile).
+tile_dir <- Sys.getenv("STAC_DEM_TILE_DIR", file.path(tempdir(), "lidar"))
+dir.create(tile_dir, recursive = TRUE, showWarnings = FALSE)
+
+tile_local <- function(href) {
+  dest <- file.path(tile_dir, basename(href))
+  hdr <- curl::curl_fetch_memory(href, handle = curl::new_handle(nobody = TRUE))
+  if (hdr$status_code != 200) stop("HTTP ", hdr$status_code, ": ", href, call. = FALSE)
+  size <- as.numeric(curl::parse_headers_list(hdr$headers)[["content-length"]])
+  if (!file.exists(dest) || file.size(dest) != size) {
+    message("  downloading ", basename(href))
+    curl::curl_download(href, dest)
+  }
+  if (file.size(dest) != size) stop("Incomplete download: ", href, call. = FALSE)
+  dest
+}
+
 # Query stac-elevation-bc for 2019 1 m lidar tiles over an EPSG:3005 extent and
-# mosaic them onto a cube at `res` m. Returns the SpatRaster and item ids.
+# mosaic them onto a cube at `res` m. Returns the SpatRaster, item ids, and
+# the share of the extent with no lidar.
 stac_dem <- function(e, res) {
   e_wgs <- terra::ext(terra::project(terra::rast(e, crs = "EPSG:3005"), "EPSG:4326"))
   items <- stac(stac_url) |>
@@ -106,7 +129,12 @@ stac_dem <- function(e, res) {
   if (length(items$features) == 0L) {
     stop("No STAC items over this extent - check the collection name.", call. = FALSE)
   }
-  col <- stac_image_collection(items$features, asset_names = "dem")
+  hrefs <- vapply(items$features, function(f) f$assets$dem$href, character(1))
+  local <- stats::setNames(vapply(hrefs, tile_local, character(1)), hrefs)
+  col <- stac_image_collection(
+    items$features, asset_names = "dem",
+    url_fun = function(u) local[[u]]
+  )
   v <- cube_view(
     srs = "EPSG:3005",
     extent = list(
@@ -120,13 +148,10 @@ stac_dem <- function(e, res) {
   d <- tempfile()
   write_tif(raster_cube(col, v), d)
   dem <- terra::rast(list.files(d, "\\.tif$", full.names = TRUE)[1])
-  # gdalcubes reports failed chunk reads only on stderr, so a partial mosaic
-  # looks complete. Both extents sit wholly inside lidar coverage, so any NA
-  # beyond a sliver means tiles failed to read.
+  # Not every cell has lidar: the 2019 flight footprint leaves ~22% of the
+  # bundled DEM extent and ~8% of the site uncovered (measured from the local
+  # tiles, 2026-10-07). Recorded, not tested - the VCA treats NA as outside.
   na_frac <- terra::global(is.na(dem), "mean")[[1]]
-  if (na_frac > 0.001) {
-    stop(sprintf("Lidar mosaic is %.2f%% NA - partial read?", 100 * na_frac), call. = FALSE)
-  }
   list(
     dem = dem,
     ids = vapply(items$features, function(f) f$id, character(1)),
