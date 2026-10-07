@@ -75,43 +75,37 @@
 specific source. This vignette demonstrates fetching 1 m lidar tiles
 from a STAC catalog and comparing the resulting floodplain with the
 bundled 10 m DEM.</p>
-<blockquote>
-<p><strong>The numeric output below predates the 0.5.0 units fix and is
-over-mapped.</strong> This vignette is pre-baked from
-<code>stac-dem.Rmd.orig</code>, and re-baking needs the STAC endpoint
-plus a 1 m lidar re-run, so its embedded results still come from the
-defective bankfull regression (flooded#49 — depth was 3.5926x too
-large). Re-running its own 10 m baseline configuration today gives
-<strong>28,727</strong> cells corrected, against <strong>53,635</strong>
-under the old units — and neither matches the <strong>54,637</strong>
-printed below, so roughly a thousand cells of that gap predate this
-release and come from other changes since the vignette was last baked.
-Treat every cell count and area here as illustrative of the
-<em>workflow</em>, not as current output. The resolution comparison the
-vignette makes is still directionally valid, since every run shown
-carries the same error.</p>
-</blockquote>
 <p>We use the same Neexdzii Kwah test area (Bulkley River near Topley,
-BC) as the main vignette, but source the DEM from <a href="https://images.a11s.one/" class="external-link">stac-dem-bc</a> — a STAC collection of
-BC provincial lidar DEMs.</p>
+BC) as the main vignette, but source the DEM from <a href="https://images.a11s.one/" class="external-link">stac-elevation-bc</a> — a STAC
+collection of BC provincial lidar DEMs.</p>
+<p>The 10 m runs below execute live when this page is built. The lidar
+steps need the STAC endpoint and about 20 minutes of processing, so
+their code is shown as you would run it, and their results come from
+<code>data-raw/stac_dem_vignette_data.R</code>, last run from
+<code>flooded</code> 0.6.1 source (c0c0e46) on 2026-10-07. When this
+page is built, the two 10 m runs are checked against the 10 m counts
+that script recorded, and a note appears beside the comparison if they
+differ. That check catches changes to the 10 m pipeline; it cannot see a
+change that only shows at 1–5 m, or a change in the lidar itself.</p>
 <div class="section level2">
 <h2 id="setup">Setup<a class="anchor" aria-label="anchor" href="#setup"></a>
 </h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/NewGraphEnvironment/flooded" class="external-link">flooded</a></span><span class="op">)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;  <span style="font-style: italic;">'Whatever you think is a permanent, lasting, eternal feature of human life — all of it will be affected by climate change.'</span> <span style="color: #555555;">- David Wallace-Wells</span></span></span>
+<span><span class="co">#&gt;   <span style="color: #0000BB;">source</span></span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rspatial.org/" class="external-link">terra</a></span><span class="op">)</span></span>
-<span><span class="co">#&gt; terra 1.8.93</span></span>
+<span><span class="co">#&gt; terra 1.9.50</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-spatial.github.io/sf/" class="external-link">sf</a></span><span class="op">)</span></span>
-<span><span class="co">#&gt; Linking to GEOS 3.13.0, GDAL 3.8.5, PROJ 9.5.1; sf_use_s2() is TRUE</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://brazil-data-cube.github.io/rstac/" class="external-link">rstac</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/appelmar/gdalcubes" class="external-link">gdalcubes</a></span><span class="op">)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Attaching package: 'gdalcubes'</span></span>
-<span><span class="co">#&gt; The following objects are masked from 'package:terra':</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;     animate, crop, size</span></span>
+<span><span class="co">#&gt; Linking to GEOS 3.12.1, GDAL 3.8.4, PROJ 9.4.0; sf_use_s2() is TRUE</span></span>
 <span></span>
 <span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/terraOptions.html" class="external-link">terraOptions</a></span><span class="op">(</span>threads <span class="op">=</span> <span class="fl">12</span><span class="op">)</span></span></code></pre></div>
+<p>The lidar steps also need <code>rstac</code> and
+<code>gdalcubes</code>:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://brazil-data-cube.github.io/rstac/" class="external-link">rstac</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/appelmar/gdalcubes" class="external-link">gdalcubes</a></span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="what-does-resampled-to-10-m-mean">What does “resampled to 10 m” mean?<a class="anchor" aria-label="anchor" href="#what-does-resampled-to-10-m-mean"></a>
@@ -133,7 +127,7 @@ cannot see, no matter how finely you resample it.</p>
 </h2>
 <p>First, load the bundled test data and run the VCA to establish a
 baseline.</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dem_10m</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"testdata/dem.tif"</span>, package <span class="op">=</span> <span class="st">"flooded"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">slope_10m</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"testdata/slope.tif"</span>, package <span class="op">=</span> <span class="st">"flooded"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">streams</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span></span>
@@ -157,14 +151,15 @@ baseline.</p>
 <span><span class="va">n_10m</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/values.html" class="external-link">values</a></span><span class="op">(</span><span class="va">valleys_10m</span><span class="op">)</span> <span class="op">==</span> <span class="fl">1</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"10 m DEM valley cells:"</span>, <span class="va">n_10m</span>, <span class="st">"/"</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">ncell</a></span><span class="op">(</span><span class="va">valleys_10m</span><span class="op">)</span>,</span>
 <span>    <span class="st">"("</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="fl">100</span> <span class="op">*</span> <span class="va">n_10m</span> <span class="op">/</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">ncell</a></span><span class="op">(</span><span class="va">valleys_10m</span><span class="op">)</span>, <span class="fl">1</span><span class="op">)</span>, <span class="st">"%)\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; 10 m DEM valley cells: 54637 / 518400 ( 10.5 %)</span></span></code></pre></div>
+<span><span class="co">#&gt; 10 m DEM valley cells: 28727 / 518400 ( 5.5 %)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="fetch-1-m-lidar-dem-from-stac">Fetch 1 m lidar DEM from STAC<a class="anchor" aria-label="anchor" href="#fetch-1-m-lidar-dem-from-stac"></a>
 </h2>
-<p>Query the <code>stac-dem-bc</code> collection for tiles intersecting
-our test area. We filter to 2019 tiles only (1 m lidar).</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<p>Query the <code>stac-elevation-bc</code> collection for tiles
+intersecting our test area. We filter to 2019 tiles only (1 m
+lidar).</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Test area bounding box in WGS84</span></span>
 <span><span class="co"># terra ext() gives xmin,xmax,ymin,ymax — STAC needs xmin,ymin,xmax,ymax</span></span>
 <span><span class="va">dem_wgs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/project.html" class="external-link">project</a></span><span class="op">(</span><span class="va">dem_10m</span>, <span class="st">"EPSG:4326"</span><span class="op">)</span></span>
@@ -174,7 +169,7 @@ our test area. We filter to 2019 tiles only (1 m lidar).</p>
 <span><span class="co"># Query STAC</span></span>
 <span><span class="va">items</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://brazil-data-cube.github.io/rstac/reference/stac.html" class="external-link">stac</a></span><span class="op">(</span><span class="st">"https://images.a11s.one/"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://brazil-data-cube.github.io/rstac/reference/stac_search.html" class="external-link">stac_search</a></span><span class="op">(</span></span>
-<span>    collections <span class="op">=</span> <span class="st">"stac-dem-bc"</span>,</span>
+<span>    collections <span class="op">=</span> <span class="st">"stac-elevation-bc"</span>,</span>
 <span>    bbox <span class="op">=</span> <span class="va">bbox</span>,</span>
 <span>    datetime <span class="op">=</span> <span class="st">"2019-01-01T00:00:00Z/2019-12-31T23:59:59Z"</span></span>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -182,10 +177,10 @@ our test area. We filter to 2019 tiles only (1 m lidar).</p>
 <span>  <span class="fu"><a href="https://brazil-data-cube.github.io/rstac/reference/items_functions.html" class="external-link">items_fetch</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"STAC items found:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">items</span><span class="op">$</span><span class="va">features</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; STAC items found: 2</span></span>
-<span><span class="kw">for</span> <span class="op">(</span><span class="va">f</span> <span class="kw">in</span> <span class="va">items</span><span class="op">$</span><span class="va">features</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">" "</span>, <span class="va">f</span><span class="op">$</span><span class="va">id</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="kw">for</span> <span class="op">(</span><span class="va">f</span> <span class="kw">in</span> <span class="va">items</span><span class="op">$</span><span class="va">features</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">" "</span>, <span class="va">f</span><span class="op">$</span><span class="va">id</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">#&gt; STAC items found: 2</span></span>
 <span><span class="co">#&gt;   093-093l-2019-dem-bc_093l059_xli1m_utm09_2019 </span></span>
-<span><span class="co">#&gt;   093-093l-2019-dem-bc_093l049_xli1m_utm09_2019</span></span></code></pre></div>
+<span><span class="co">#&gt;   093-093l-2019-dem-bc_093l049_xli1m_utm09_2019</span></span></code></pre>
 </div>
 <div class="section level2">
 <h2 id="mosaic-and-crop-with-gdalcubes">Mosaic and crop with gdalcubes<a class="anchor" aria-label="anchor" href="#mosaic-and-crop-with-gdalcubes"></a>
@@ -193,15 +188,28 @@ our test area. We filter to 2019 tiles only (1 m lidar).</p>
 <p>Use <code>gdalcubes</code> to mosaic the STAC tiles and reproject to
 BC Albers (EPSG:3005), matching the test area extent. We use 5 m
 resolution as a practical compromise — finer than the bundled 10 m, but
-fast enough to build in a vignette. For production work, set
+fast enough for a watershed-scale run. For production work, set
 <code>dx = 1, dy = 1</code> for full 1 m resolution.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Build gdalcubes image collection from STAC items</span></span>
-<span><span class="va">col</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/gdalcubes/man/stac_image_collection.html" class="external-link">stac_image_collection</a></span><span class="op">(</span><span class="va">items</span><span class="op">$</span><span class="va">features</span>, asset_names <span class="op">=</span> <span class="st">"image"</span><span class="op">)</span></span>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># The tiles are strip-organised GeoTIFFs (~630 MB each, no overviews).</span></span>
+<span><span class="co"># Reading them over /vsicurl/ is slow and can leave gdalcubes with a partial</span></span>
+<span><span class="co"># mosaic and no error, so download them first and point the collection at</span></span>
+<span><span class="co"># the local copies.</span></span>
+<span><span class="va">hrefs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">vapply</a></span><span class="op">(</span><span class="va">items</span><span class="op">$</span><span class="va">features</span>, <span class="kw">function</span><span class="op">(</span><span class="va">f</span><span class="op">)</span> <span class="va">f</span><span class="op">$</span><span class="va">assets</span><span class="op">$</span><span class="va">dem</span><span class="op">$</span><span class="va">href</span>, <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">character</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">tiles</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/basename.html" class="external-link">basename</a></span><span class="op">(</span><span class="va">hrefs</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="kw">for</span> <span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_along</a></span><span class="op">(</span><span class="va">hrefs</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.exists</a></span><span class="op">(</span><span class="va">tiles</span><span class="op">[</span><span class="va">i</span><span class="op">]</span><span class="op">)</span><span class="op">)</span> <span class="fu">curl</span><span class="fu">::</span><span class="fu"><a href="https://jeroen.r-universe.dev/curl/reference/curl_download.html" class="external-link">curl_download</a></span><span class="op">(</span><span class="va">hrefs</span><span class="op">[</span><span class="va">i</span><span class="op">]</span>, <span class="va">tiles</span><span class="op">[</span><span class="va">i</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span></span>
+<span><span class="co"># Build gdalcubes image collection from STAC items</span></span>
+<span><span class="va">col</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/gdalcubes/man/stac_image_collection.html" class="external-link">stac_image_collection</a></span><span class="op">(</span></span>
+<span>  <span class="va">items</span><span class="op">$</span><span class="va">features</span>, asset_names <span class="op">=</span> <span class="st">"dem"</span>,</span>
+<span>  url_fun <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">u</span><span class="op">)</span> <span class="va">tiles</span><span class="op">[</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/match.html" class="external-link">match</a></span><span class="op">(</span><span class="va">u</span>, <span class="va">hrefs</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Define target cube — same extent as bundled DEM, 5 m resolution</span></span>
 <span><span class="va">e</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/ext.html" class="external-link">ext</a></span><span class="op">(</span><span class="va">dem_10m</span><span class="op">)</span></span>
-<span><span class="va">stac_res</span> <span class="op">&lt;-</span> <span class="fl">5</span>  <span class="co"># use 1 for full resolution (100x more cells, ~25 min fetch)</span></span>
+<span><span class="va">stac_res</span> <span class="op">&lt;-</span> <span class="fl">5</span>  <span class="co"># use 1 for full resolution (25x more cells)</span></span>
 <span><span class="va">v</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/gdalcubes/man/cube_view.html" class="external-link">cube_view</a></span><span class="op">(</span></span>
 <span>  srs <span class="op">=</span> <span class="st">"EPSG:3005"</span>,</span>
 <span>  extent <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
@@ -222,14 +230,14 @@ fast enough to build in a vignette. For production work, set
 <span><span class="va">dem_stac</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="va">dem_stac_path</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="va">stac_res</span>, <span class="st">"m DEM:"</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">dem_stac</span><span class="op">)</span>, <span class="st">"x"</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">dem_stac</span><span class="op">)</span>, <span class="st">"pixels\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; 5 m DEM: 1600 x 1296 pixels</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Resolution:"</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">res</a></span><span class="op">(</span><span class="va">dem_stac</span><span class="op">)</span>, <span class="st">"m\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Resolution: 5 5 m</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Resolution:"</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">res</a></span><span class="op">(</span><span class="va">dem_stac</span><span class="op">)</span>, <span class="st">"m\n"</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">#&gt; 5 m DEM: 1600 x 1296 pixels</span></span>
+<span><span class="co">#&gt; Resolution: 5 5 m</span></span></code></pre>
 </div>
 <div class="section level2">
 <h2 id="derive-slope">Derive slope<a class="anchor" aria-label="anchor" href="#derive-slope"></a>
 </h2>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">slope_stac</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/terrain.html" class="external-link">terrain</a></span><span class="op">(</span><span class="va">dem_stac</span>, v <span class="op">=</span> <span class="st">"slope"</span>, unit <span class="op">=</span> <span class="st">"degrees"</span><span class="op">)</span></span>
 <span><span class="co"># Convert to percent slope to match flooded convention</span></span>
 <span><span class="va">slope_stac</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Trig.html" class="external-link">tan</a></span><span class="op">(</span><span class="va">slope_stac</span> <span class="op">*</span> <span class="va">pi</span> <span class="op">/</span> <span class="fl">180</span><span class="op">)</span> <span class="op">*</span> <span class="fl">100</span></span></code></pre></div>
@@ -237,7 +245,7 @@ fast enough to build in a vignette. For production work, set
 <div class="section level2">
 <h2 id="run-vca-on-stac-dem">Run VCA on STAC DEM<a class="anchor" aria-label="anchor" href="#run-vca-on-stac-dem"></a>
 </h2>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Rasterize streams onto the STAC DEM grid</span></span>
 <span><span class="va">precip_stac</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fl_stream_rasterize.html">fl_stream_rasterize</a></span><span class="op">(</span><span class="va">streams</span>, <span class="va">dem_stac</span>, field <span class="op">=</span> <span class="st">"map_upstream"</span><span class="op">)</span></span>
 <span></span>
@@ -254,26 +262,32 @@ fast enough to build in a vignette. For production work, set
 <span></span>
 <span><span class="va">n_stac</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/values.html" class="external-link">values</a></span><span class="op">(</span><span class="va">valleys_stac</span><span class="op">)</span> <span class="op">==</span> <span class="fl">1</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="va">stac_res</span>, <span class="st">"m DEM valley cells:"</span>, <span class="va">n_stac</span>, <span class="st">"/"</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">ncell</a></span><span class="op">(</span><span class="va">valleys_stac</span><span class="op">)</span>,</span>
-<span>    <span class="st">"("</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="fl">100</span> <span class="op">*</span> <span class="va">n_stac</span> <span class="op">/</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">ncell</a></span><span class="op">(</span><span class="va">valleys_stac</span><span class="op">)</span>, <span class="fl">1</span><span class="op">)</span>, <span class="st">"%)\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; 5 m DEM valley cells: 250564 / 2073600 ( 12.1 %)</span></span></code></pre></div>
+<span>    <span class="st">"("</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="fl">100</span> <span class="op">*</span> <span class="va">n_stac</span> <span class="op">/</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">ncell</a></span><span class="op">(</span><span class="va">valleys_stac</span><span class="op">)</span>, <span class="fl">1</span><span class="op">)</span>, <span class="st">"%)\n"</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">#&gt; 5 m DEM valley cells: 186675 / 2073600 ( 9 %)</span></span></code></pre>
 </div>
 <div class="section level2">
 <h2 id="compare">Compare<a class="anchor" aria-label="anchor" href="#compare"></a>
 </h2>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Resample STAC result to 10 m grid for visual comparison</span></span>
-<span><span class="va">valleys_stac_10</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/resample.html" class="external-link">resample</a></span><span class="op">(</span><span class="va">valleys_stac</span>, <span class="va">dem_10m</span>, method <span class="op">=</span> <span class="st">"near"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Area comparison</span></span>
+<span><span class="va">valleys_stac_10</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/resample.html" class="external-link">resample</a></span><span class="op">(</span><span class="va">valleys_stac</span>, <span class="va">dem_10m</span>, method <span class="op">=</span> <span class="st">"near"</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Area comparison</span></span>
 <span><span class="va">area_10m</span> <span class="op">&lt;-</span> <span class="va">n_10m</span> <span class="op">*</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">res</a></span><span class="op">(</span><span class="va">dem_10m</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span> <span class="op">*</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">res</a></span><span class="op">(</span><span class="va">dem_10m</span><span class="op">)</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span> <span class="op">/</span> <span class="fl">1e6</span></span>
 <span><span class="va">area_stac</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/values.html" class="external-link">values</a></span><span class="op">(</span><span class="va">valleys_stac_10</span><span class="op">)</span> <span class="op">==</span> <span class="fl">1</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">*</span></span>
 <span>  <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">res</a></span><span class="op">(</span><span class="va">dem_10m</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span> <span class="op">*</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">res</a></span><span class="op">(</span><span class="va">dem_10m</span><span class="op">)</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span> <span class="op">/</span> <span class="fl">1e6</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Valley area (bundled 10 m DEM):"</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="va">area_10m</span>, <span class="fl">2</span><span class="op">)</span>, <span class="st">"km²\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Valley area (bundled 10 m DEM): 5.46 km²</span></span>
+<span><span class="co">#&gt; Valley area (bundled 10 m DEM): 2.87 km²</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Valley area (STAC"</span>, <span class="va">stac_res</span>, <span class="st">"m DEM):"</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="va">area_stac</span>, <span class="fl">2</span><span class="op">)</span>, <span class="st">"km²\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Valley area (STAC 5 m DEM): 6.26 km²</span></span></code></pre></div>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<span><span class="co">#&gt; Valley area (STAC 5 m DEM): 4.67 km²</span></span></code></pre></div>
+<p>The lidar maps more valley bottom than the resampled TRIM DEM. The
+two mostly agree where the 10 m run finds floodplain, and the lidar adds
+to it along both the tributaries and the main stem. The 2019 lidar
+flight covers about 78% of the test area. The rest is upland: only 32 of
+the 28,727 10 m floodplain cells fall outside the lidar, so the missing
+coverage has almost no effect on this comparison.</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">1</span><span class="op">)</span>, mar <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">4</span>, <span class="fl">2</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">valleys_10m</span>, col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"grey90"</span>, <span class="st">"darkgreen"</span><span class="op">)</span>,</span>
 <span>     main <span class="op">=</span> <span class="st">"Bundled 10 m DEM (25 m TRIM resampled)"</span>, legend <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
@@ -283,7 +297,7 @@ fast enough to build in a vignette. For production work, set
 <span>     main <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"STAC lidar "</span>, <span class="va">stac_res</span>, <span class="st">" m DEM"</span><span class="op">)</span>, legend <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">streams</span><span class="op">)</span>, add <span class="op">=</span> <span class="cn">TRUE</span>, col <span class="op">=</span> <span class="st">"blue"</span>, lwd <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
-<img src="figure/plot-compare-1.png" alt="Valley delineation from bundled 10 m DEM (top) vs STAC lidar DEM (bottom)." width="100%"><p class="caption">
+<img src="stac-dem_files/figure-html/plot-compare-1.png" class="r-plt" alt="Valley delineation from bundled 10 m DEM (top) vs STAC lidar DEM (bottom)." width="100%"><p class="caption">
 Valley delineation from bundled 10 m DEM (top) vs STAC lidar DEM
 (bottom).
 </p>
@@ -295,14 +309,20 @@ Valley delineation from bundled 10 m DEM (top) vs STAC lidar DEM
 <p>At watershed scale, 5–10 m resolution is practical. But for
 site-level restoration prescriptions — identifying where to excavate
 historic fill, reconnect side channels, or plug drainage trenches — 1 m
-lidar is essential. Those features are invisible at 25 m.</p>
+lidar is essential. Those features are smeared or lost at 25 m.</p>
 <p>Here we crop to a ~3.5 × 4 km site around Robert Hatch Creek and
 Richfield Creek where they enter the Bulkley River floodplain, and run
 at full 1 m resolution.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Site extent — Robert Hatch / Richfield confluence with Bulkley</span></span>
-<span><span class="va">site_ext</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/ext.html" class="external-link">ext</a></span><span class="op">(</span><span class="fl">976560</span>, <span class="fl">980060</span>, <span class="fl">1055808</span>, <span class="fl">1059808</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<span><span class="va">site_ext</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/ext.html" class="external-link">ext</a></span><span class="op">(</span><span class="fl">976560</span>, <span class="fl">980060</span>, <span class="fl">1055808</span>, <span class="fl">1059808</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Crop streams to site</span></span>
+<span><span class="co"># (suppressWarnings: st_crop notes that attributes are carried over unchanged)</span></span>
+<span><span class="va">streams_site</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/warning.html" class="external-link">suppressWarnings</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_crop.html" class="external-link">st_crop</a></span><span class="op">(</span><span class="va">streams</span>, <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_as_sfc.html" class="external-link">st_as_sfc</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_bbox.html" class="external-link">st_bbox</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>  xmin <span class="op">=</span> <span class="fl">976560</span>, ymin <span class="op">=</span> <span class="fl">1055808</span>, xmax <span class="op">=</span> <span class="fl">980060</span>, ymax <span class="op">=</span> <span class="fl">1059808</span></span>
+<span><span class="op">)</span>, crs <span class="op">=</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_crs.html" class="external-link">st_crs</a></span><span class="op">(</span><span class="va">streams</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Fetch 1 m lidar for the site extent</span></span>
 <span><span class="va">site_wgs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/project.html" class="external-link">project</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="va">site_ext</span>, crs <span class="op">=</span> <span class="st">"EPSG:3005"</span><span class="op">)</span>, <span class="st">"EPSG:4326"</span><span class="op">)</span></span>
 <span><span class="va">se</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/ext.html" class="external-link">ext</a></span><span class="op">(</span><span class="va">site_wgs</span><span class="op">)</span></span>
@@ -310,7 +330,7 @@ at full 1 m resolution.</p>
 <span></span>
 <span><span class="va">site_items</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://brazil-data-cube.github.io/rstac/reference/stac.html" class="external-link">stac</a></span><span class="op">(</span><span class="st">"https://images.a11s.one/"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://brazil-data-cube.github.io/rstac/reference/stac_search.html" class="external-link">stac_search</a></span><span class="op">(</span></span>
-<span>    collections <span class="op">=</span> <span class="st">"stac-dem-bc"</span>,</span>
+<span>    collections <span class="op">=</span> <span class="st">"stac-elevation-bc"</span>,</span>
 <span>    bbox <span class="op">=</span> <span class="va">site_bbox</span>,</span>
 <span>    datetime <span class="op">=</span> <span class="st">"2019-01-01T00:00:00Z/2019-12-31T23:59:59Z"</span></span>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -318,10 +338,17 @@ at full 1 m resolution.</p>
 <span>  <span class="fu"><a href="https://brazil-data-cube.github.io/rstac/reference/items_functions.html" class="external-link">items_fetch</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"STAC tiles for site:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">site_items</span><span class="op">$</span><span class="va">features</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; STAC tiles for site: 2</span></span>
 <span></span>
-<span><span class="co"># Mosaic at 1 m</span></span>
-<span><span class="va">site_col</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/gdalcubes/man/stac_image_collection.html" class="external-link">stac_image_collection</a></span><span class="op">(</span><span class="va">site_items</span><span class="op">$</span><span class="va">features</span>, asset_names <span class="op">=</span> <span class="st">"image"</span><span class="op">)</span></span>
+<span><span class="co"># Mosaic at 1 m. These are the same two tiles as above, already downloaded.</span></span>
+<span><span class="va">site_hrefs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">vapply</a></span><span class="op">(</span><span class="va">site_items</span><span class="op">$</span><span class="va">features</span>, <span class="kw">function</span><span class="op">(</span><span class="va">f</span><span class="op">)</span> <span class="va">f</span><span class="op">$</span><span class="va">assets</span><span class="op">$</span><span class="va">dem</span><span class="op">$</span><span class="va">href</span>, <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">character</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">site_tiles</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/basename.html" class="external-link">basename</a></span><span class="op">(</span><span class="va">site_hrefs</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="kw">for</span> <span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_along</a></span><span class="op">(</span><span class="va">site_hrefs</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.exists</a></span><span class="op">(</span><span class="va">site_tiles</span><span class="op">[</span><span class="va">i</span><span class="op">]</span><span class="op">)</span><span class="op">)</span> <span class="fu">curl</span><span class="fu">::</span><span class="fu"><a href="https://jeroen.r-universe.dev/curl/reference/curl_download.html" class="external-link">curl_download</a></span><span class="op">(</span><span class="va">site_hrefs</span><span class="op">[</span><span class="va">i</span><span class="op">]</span>, <span class="va">site_tiles</span><span class="op">[</span><span class="va">i</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span><span class="va">site_col</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/gdalcubes/man/stac_image_collection.html" class="external-link">stac_image_collection</a></span><span class="op">(</span></span>
+<span>  <span class="va">site_items</span><span class="op">$</span><span class="va">features</span>, asset_names <span class="op">=</span> <span class="st">"dem"</span>,</span>
+<span>  url_fun <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">u</span><span class="op">)</span> <span class="va">site_tiles</span><span class="op">[</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/match.html" class="external-link">match</a></span><span class="op">(</span><span class="va">u</span>, <span class="va">site_hrefs</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="op">)</span></span>
 <span><span class="va">site_view</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/gdalcubes/man/cube_view.html" class="external-link">cube_view</a></span><span class="op">(</span></span>
 <span>  srs <span class="op">=</span> <span class="st">"EPSG:3005"</span>,</span>
 <span>  extent <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
@@ -340,18 +367,12 @@ at full 1 m resolution.</p>
 <span><span class="va">dem_1m</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.files.html" class="external-link">list.files</a></span><span class="op">(</span><span class="va">site_dir</span>, <span class="st">"\\.tif$"</span>, full.names <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"1 m DEM:"</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">dem_1m</span><span class="op">)</span>, <span class="st">"x"</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">dem_1m</span><span class="op">)</span>, <span class="st">"pixels ("</span>,</span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">ncell</a></span><span class="op">(</span><span class="va">dem_1m</span><span class="op">)</span>, big.mark <span class="op">=</span> <span class="st">","</span><span class="op">)</span>, <span class="st">"cells)\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; 1 m DEM: 3500 x 4000 pixels ( 1.4e+07 cells)</span></span></code></pre></div>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">ncell</a></span><span class="op">(</span><span class="va">dem_1m</span><span class="op">)</span>, big.mark <span class="op">=</span> <span class="st">","</span><span class="op">)</span>, <span class="st">"cells)\n"</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">#&gt; STAC tiles for site: 2</span></span>
+<span><span class="co">#&gt; 1 m DEM: 3500 x 4000 pixels ( 1.4e+07 cells)</span></span></code></pre>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">slope_1m</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/terrain.html" class="external-link">terrain</a></span><span class="op">(</span><span class="va">dem_1m</span>, v <span class="op">=</span> <span class="st">"slope"</span>, unit <span class="op">=</span> <span class="st">"degrees"</span><span class="op">)</span></span>
 <span><span class="va">slope_1m</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Trig.html" class="external-link">tan</a></span><span class="op">(</span><span class="va">slope_1m</span> <span class="op">*</span> <span class="va">pi</span> <span class="op">/</span> <span class="fl">180</span><span class="op">)</span> <span class="op">*</span> <span class="fl">100</span></span>
-<span></span>
-<span><span class="co"># Crop streams to site</span></span>
-<span><span class="va">streams_site</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_crop.html" class="external-link">st_crop</a></span><span class="op">(</span><span class="va">streams</span>, <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_as_sfc.html" class="external-link">st_as_sfc</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_bbox.html" class="external-link">st_bbox</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
-<span>  xmin <span class="op">=</span> <span class="fl">976560</span>, ymin <span class="op">=</span> <span class="fl">1055808</span>, xmax <span class="op">=</span> <span class="fl">980060</span>, ymax <span class="op">=</span> <span class="fl">1059808</span></span>
-<span><span class="op">)</span>, crs <span class="op">=</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_crs.html" class="external-link">st_crs</a></span><span class="op">(</span><span class="va">streams</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: attribute variables are assumed to be spatially constant throughout</span></span>
-<span><span class="co">#&gt; all geometries</span></span>
 <span></span>
 <span><span class="va">precip_1m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fl_stream_rasterize.html">fl_stream_rasterize</a></span><span class="op">(</span><span class="va">streams_site</span>, <span class="va">dem_1m</span>, field <span class="op">=</span> <span class="st">"map_upstream"</span><span class="op">)</span></span>
 <span></span>
@@ -365,16 +386,15 @@ at full 1 m resolution.</p>
 <span>  flood_factor <span class="op">=</span> <span class="fl">6</span>,</span>
 <span>  precip <span class="op">=</span> <span class="va">precip_1m</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: [costDist] distance algorithm did not converge</span></span>
 <span></span>
 <span><span class="va">n_1m</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/values.html" class="external-link">values</a></span><span class="op">(</span><span class="va">valleys_1m</span><span class="op">)</span> <span class="op">==</span> <span class="fl">1</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"1 m DEM valley cells:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="va">n_1m</span>, big.mark <span class="op">=</span> <span class="st">","</span><span class="op">)</span>, <span class="st">"/"</span>,</span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">ncell</a></span><span class="op">(</span><span class="va">valleys_1m</span><span class="op">)</span>, big.mark <span class="op">=</span> <span class="st">","</span><span class="op">)</span>,</span>
-<span>    <span class="st">"("</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="fl">100</span> <span class="op">*</span> <span class="va">n_1m</span> <span class="op">/</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">ncell</a></span><span class="op">(</span><span class="va">valleys_1m</span><span class="op">)</span>, <span class="fl">1</span><span class="op">)</span>, <span class="st">"%)\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; 1 m DEM valley cells: 3,883,179 / 1.4e+07 ( 27.7 %)</span></span></code></pre></div>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Run 10 m (resampled TRIM) on the same site for comparison</span></span>
-<span><span class="va">dem_site_10m</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/crop.html" class="external-link">crop</a></span><span class="op">(</span><span class="va">dem_10m</span>, <span class="va">site_ext</span><span class="op">)</span></span>
+<span>    <span class="st">"("</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="fl">100</span> <span class="op">*</span> <span class="va">n_1m</span> <span class="op">/</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">ncell</a></span><span class="op">(</span><span class="va">valleys_1m</span><span class="op">)</span>, <span class="fl">1</span><span class="op">)</span>, <span class="st">"%)\n"</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">#&gt; 1 m DEM valley cells: 3,096,003 / 1.4e+07 ( 22.1 %)</span></span></code></pre>
+<p>Run the resampled 10 m DEM over the same site for comparison:</p>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">dem_site_10m</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/crop.html" class="external-link">crop</a></span><span class="op">(</span><span class="va">dem_10m</span>, <span class="va">site_ext</span><span class="op">)</span></span>
 <span><span class="va">slope_site_10m</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/crop.html" class="external-link">crop</a></span><span class="op">(</span><span class="va">slope_10m</span>, <span class="va">site_ext</span><span class="op">)</span></span>
 <span><span class="va">precip_site_10m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fl_stream_rasterize.html">fl_stream_rasterize</a></span><span class="op">(</span><span class="va">streams_site</span>, <span class="va">dem_site_10m</span>, field <span class="op">=</span> <span class="st">"map_upstream"</span><span class="op">)</span></span>
 <span></span>
@@ -387,34 +407,31 @@ at full 1 m resolution.</p>
 <span>  cost_threshold <span class="op">=</span> <span class="fl">2500</span>,</span>
 <span>  flood_factor <span class="op">=</span> <span class="fl">6</span>,</span>
 <span>  precip <span class="op">=</span> <span class="va">precip_site_10m</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">1</span><span class="op">)</span>, mar <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">4</span>, <span class="fl">2</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Resample 1 m result to the 25 m (resampled to 10 m) site grid</span></span>
+<span><span class="va">valleys_1m_on_10m</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/resample.html" class="external-link">resample</a></span><span class="op">(</span><span class="va">valleys_1m</span>, <span class="va">dem_site_10m</span>, method <span class="op">=</span> <span class="st">"near"</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">1</span><span class="op">)</span>, mar <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">4</span>, <span class="fl">2</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">valleys_site_10m</span>, col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"grey90"</span>, <span class="st">"darkgreen"</span><span class="op">)</span>,</span>
 <span>     main <span class="op">=</span> <span class="st">"Site: 10 m (25 m TRIM resampled)"</span>, legend <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">streams_site</span><span class="op">)</span>, add <span class="op">=</span> <span class="cn">TRUE</span>, col <span class="op">=</span> <span class="st">"blue"</span>, lwd <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Resample 1 m result to same grid for visual comparison</span></span>
-<span><span class="va">valleys_1m_plot</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/resample.html" class="external-link">resample</a></span><span class="op">(</span><span class="va">valleys_1m</span>, <span class="va">dem_site_10m</span>, method <span class="op">=</span> <span class="st">"near"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">valleys_1m_plot</span>, col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"grey90"</span>, <span class="st">"darkgreen"</span><span class="op">)</span>,</span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">valleys_1m_on_10m</span>, col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"grey90"</span>, <span class="st">"darkgreen"</span><span class="op">)</span>,</span>
 <span>     main <span class="op">=</span> <span class="st">"Site: 1 m native lidar"</span>, legend <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">streams_site</span><span class="op">)</span>, add <span class="op">=</span> <span class="cn">TRUE</span>, col <span class="op">=</span> <span class="st">"blue"</span>, lwd <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
-<img src="figure/site-compare-1.png" alt="Site-level comparison: resampled 10 m (top) vs native 1 m lidar (bottom). Fine-scale features like side channels and terrace edges emerge at 1 m." width="100%"><p class="caption">
+<img src="stac-dem_files/figure-html/site-compare-1.png" class="r-plt" alt="Site-level comparison: resampled 10 m (top) vs native 1 m lidar (bottom). Narrow linear breaks emerge at 1 m." width="100%"><p class="caption">
 Site-level comparison: resampled 10 m (top) vs native 1 m lidar
-(bottom). Fine-scale features like side channels and terrace edges
-emerge at 1 m.
+(bottom). Narrow linear breaks emerge at 1 m.
 </p>
 </div>
 </div>
 <div class="section level2">
 <h2 id="quantifying-the-difference">Quantifying the difference<a class="anchor" aria-label="anchor" href="#quantifying-the-difference"></a>
 </h2>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Resample 1 m result to the 25 m (resampled to 10 m) site grid</span></span>
-<span><span class="va">valleys_1m_on_10m</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/resample.html" class="external-link">resample</a></span><span class="op">(</span><span class="va">valleys_1m</span>, <span class="va">dem_site_10m</span>, method <span class="op">=</span> <span class="st">"near"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Site floodplain area from each DEM</span></span>
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Site floodplain area from each DEM</span></span>
 <span><span class="va">cell_area_m2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">res</a></span><span class="op">(</span><span class="va">dem_site_10m</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span> <span class="op">*</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">res</a></span><span class="op">(</span><span class="va">dem_site_10m</span><span class="op">)</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>  <span class="co"># 100 m²</span></span>
 <span><span class="va">fp_25m</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/values.html" class="external-link">values</a></span><span class="op">(</span><span class="va">valleys_site_10m</span><span class="op">)</span> <span class="op">==</span> <span class="fl">1</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="va">fp_1m</span>  <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/values.html" class="external-link">values</a></span><span class="op">(</span><span class="va">valleys_1m_on_10m</span><span class="op">)</span> <span class="op">==</span> <span class="fl">1</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
@@ -423,18 +440,28 @@ emerge at 1 m.
 <span><span class="va">popups</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/values.html" class="external-link">values</a></span><span class="op">(</span><span class="va">valleys_site_10m</span><span class="op">)</span> <span class="op">==</span> <span class="fl">1</span> <span class="op">&amp;</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/values.html" class="external-link">values</a></span><span class="op">(</span><span class="va">valleys_1m_on_10m</span><span class="op">)</span> <span class="op">!=</span> <span class="fl">1</span>,</span>
 <span>              na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
+<span><span class="co"># Slope of the pop-up cells as the 25 m DEM sees them</span></span>
+<span><span class="va">is_popup</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/values.html" class="external-link">values</a></span><span class="op">(</span><span class="va">valleys_site_10m</span><span class="op">)</span> <span class="op">==</span> <span class="fl">1</span> <span class="op">&amp;</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/values.html" class="external-link">values</a></span><span class="op">(</span><span class="va">valleys_1m_on_10m</span><span class="op">)</span> <span class="op">!=</span> <span class="fl">1</span></span>
+<span><span class="va">popup_slope_25m</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/summarize-generics.html" class="external-link">median</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/values.html" class="external-link">values</a></span><span class="op">(</span><span class="va">slope_site_10m</span><span class="op">)</span><span class="op">[</span><span class="va">is_popup</span><span class="op">]</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># The other direction: floodplain at 1 m that the 25 m DEM misses</span></span>
+<span><span class="va">fp_1m_only</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/values.html" class="external-link">values</a></span><span class="op">(</span><span class="va">valleys_site_10m</span><span class="op">)</span> <span class="op">!=</span> <span class="fl">1</span> <span class="op">&amp;</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/values.html" class="external-link">values</a></span><span class="op">(</span><span class="va">valleys_1m_on_10m</span><span class="op">)</span> <span class="op">==</span> <span class="fl">1</span>,</span>
+<span>                  na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  Metric <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>    <span class="st">"Floodplain area (25 m TRIM)"</span>,</span>
 <span>    <span class="st">"Floodplain area (1 m lidar)"</span>,</span>
-<span>    <span class="st">"Elevated features (pop-ups)"</span>,</span>
-<span>    <span class="st">"Pop-ups as % of 25 m floodplain"</span></span>
+<span>    <span class="st">"Floodplain only at 25 m (pop-ups)"</span>,</span>
+<span>    <span class="st">"Pop-ups as % of 25 m floodplain"</span>,</span>
+<span>    <span class="st">"Floodplain found only at 1 m"</span></span>
 <span>  <span class="op">)</span>,</span>
 <span>  Value <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="va">fp_25m</span> <span class="op">*</span> <span class="va">cell_area_m2</span> <span class="op">/</span> <span class="fl">1e4</span>, <span class="fl">1</span><span class="op">)</span>, <span class="st">"ha"</span><span class="op">)</span>,</span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="va">fp_1m</span> <span class="op">*</span> <span class="va">cell_area_m2</span> <span class="op">/</span> <span class="fl">1e4</span>, <span class="fl">1</span><span class="op">)</span>, <span class="st">"ha"</span><span class="op">)</span>,</span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="va">popups</span> <span class="op">*</span> <span class="va">cell_area_m2</span> <span class="op">/</span> <span class="fl">1e4</span>, <span class="fl">1</span><span class="op">)</span>, <span class="st">"ha"</span><span class="op">)</span>,</span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="fl">100</span> <span class="op">*</span> <span class="va">popups</span> <span class="op">/</span> <span class="va">fp_25m</span>, <span class="fl">1</span><span class="op">)</span>, <span class="st">"%"</span><span class="op">)</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="fl">100</span> <span class="op">*</span> <span class="va">popups</span> <span class="op">/</span> <span class="va">fp_25m</span>, <span class="fl">1</span><span class="op">)</span>, <span class="st">"%"</span><span class="op">)</span>,</span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="va">fp_1m_only</span> <span class="op">*</span> <span class="va">cell_area_m2</span> <span class="op">/</span> <span class="fl">1e4</span>, <span class="fl">1</span><span class="op">)</span>, <span class="st">"ha"</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <table class="table">
@@ -445,42 +472,60 @@ emerge at 1 m.
 <tbody>
 <tr class="odd">
 <td align="left">Floodplain area (25 m TRIM)</td>
-<td align="left">373 ha</td>
+<td align="left">205.9 ha</td>
 </tr>
 <tr class="even">
 <td align="left">Floodplain area (1 m lidar)</td>
-<td align="left">388.3 ha</td>
+<td align="left">310.3 ha</td>
 </tr>
 <tr class="odd">
-<td align="left">Elevated features (pop-ups)</td>
-<td align="left">36.1 ha</td>
+<td align="left">Floodplain only at 25 m (pop-ups)</td>
+<td align="left">19.8 ha</td>
 </tr>
 <tr class="even">
 <td align="left">Pop-ups as % of 25 m floodplain</td>
-<td align="left">9.7%</td>
+<td align="left">9.6%</td>
+</tr>
+<tr class="odd">
+<td align="left">Floodplain found only at 1 m</td>
+<td align="left">124.3 ha</td>
 </tr>
 </tbody>
 </table>
-<p>The elevated features — “pop-ups” — are areas the 25 m TRIM DEM
-classifies as floodplain but the 1 m lidar reveals are sitting above the
-flood surface. These are the barriers: roads, dykes, fill, and other
-raised features that block lateral connectivity.</p>
+<p>The “pop-ups” are floodplain at 25 m that the 1 m run excludes. The
+table does not say why: <code><a href="../reference/fl_valley_confine.html">fl_valley_confine()</a></code> can exclude a
+cell on any of its criteria — slope, distance, cost-distance, flood
+depth — or in cleanup. One measurement helps. 77% of pop-up cells sit on
+1 m ground steeper than the 9% slope threshold, against 24% across the
+whole 25 m floodplain. The lidar resolves the sides of embankments,
+banks and terrace risers, which a 25 m pixel smooths to below the
+threshold: the same cells have a median slope of 5% on the 25 m DEM.
+These are the candidate barriers: roads, dykes, fill, and other raised
+features that can block lateral connectivity. Some will be natural high
+ground.</p>
+<p>The difference runs in both directions. The 1 m lidar also finds
+floodplain that the 25 m DEM misses entirely — low ground that a 25 m
+pixel likely averages upward with the slopes around it — and at this
+site that is the larger of the two. The coarse DEM does not simply
+over-map the floodplain; it gets the shape wrong.</p>
 </div>
 <div class="section level2">
 <h2 id="anthropogenic-barriers-to-floodplain-connectivity">Anthropogenic barriers to floodplain connectivity<a class="anchor" aria-label="anchor" href="#anthropogenic-barriers-to-floodplain-connectivity"></a>
 </h2>
-<p>The difference between Figures @ref(fig:plot-compare) and
-@ref(fig:site-compare) is striking — and informative. The 25 m TRIM DEM
-(resampled to a 10 m grid but still only 25 m terrain detail) shows the
-floodplain as one continuous green mass. The 1 m lidar reveals a
-different story: white gaps cut through the green where the ground
-surface sits <strong>above</strong> the modelled flood level.</p>
+<p>In the site-level comparison, the 25 m TRIM DEM (resampled to a 10 m
+grid but still only 25 m terrain detail) shows broad gaps in the
+floodplain. The 1 m lidar fills most of them in, and reveals a different
+pattern: narrow white lines cut diagonally across the green, where the
+lidar resolves steep ground — the sides of a raised grade — that the 25
+m DEM cannot see.</p>
 <p>These white features are areas the VCA identifies as “not floodplain”
-— pixels too high or too steep to be reached by the flood surface. At 25
-m resolution those features are invisible because a single pixel
-averages the road embankment with the surrounding low ground, smoothing
-it away. At 1 m, the actual elevation of a raised road bed, railway
-grade, or dyke is resolved, so it stands out.</p>
+— pixels it excludes as too steep, or as too high above the modelled
+flood surface. At 25 m resolution those features are smeared or lost,
+because a single pixel averages the road embankment with the surrounding
+low ground — where the 25 m DEM registers a raised grade at all, it
+shows a broad gap rather than a line. At 1 m, the steep sides of a
+raised road bed, railway grade, or dyke are resolved, so it stands out
+as a line.</p>
 <p><strong>Linear white features</strong> cutting through the floodplain
 are likely:</p>
 <ul>
@@ -508,19 +553,20 @@ structures</li>
 <strong>Natural terraces</strong> — legitimately higher ground not
 connected to the flood surface</li>
 </ul>
-<p>The implication for restoration is direct: <strong>the gap between
-the 25 m and 1 m results is largely the anthropogenic footprint on the
-floodplain.</strong> The 25 m DEM says “this is all floodplain” because
-it cannot see the barriers. The 1 m DEM says “this would be floodplain,
-except these raised features are blocking it.” Those white features —
-roads, dykes, fill — are potential intervention targets. Removing or
-breaching them could reconnect floodplain function: filling drainage
-trenches, excavating historic fill back to floodplain grade, or
-installing culverts and bridges to restore lateral connectivity.</p>
-<p>This is the power of running <code>flooded</code> at 1 m: it turns a
-binary floodplain/not-floodplain map into a diagnostic tool for
-identifying <strong>what is preventing floodplain from
-functioning</strong> and <strong>where to act</strong>.</p>
+<p>The implication for restoration: <strong>the pop-ups — floodplain at
+25 m that the 1 m run excludes, mostly on steep ground — are where to
+look for the anthropogenic footprint on the floodplain.</strong> The
+model does not say that a feature blocks connectivity; it says the
+ground there is steep, which is what the sides of an embankment look
+like. Whether a given line is a road, a dyke or a natural bank is a
+question for the map and the field. Where it is a raised grade, it is a
+potential intervention target: breaching or removing it, excavating
+historic fill back to floodplain grade, or installing culverts and
+bridges could restore lateral connectivity.</p>
+<p>Run at 1 m, <code>flooded</code> gives more than a
+floodplain/not-floodplain map: it points to <strong>where to
+look</strong> for what may be preventing floodplain from
+functioning.</p>
 </div>
 <div class="section level2">
 <h2 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
@@ -565,7 +611,7 @@ works:</p>
 </td>
 </tr>
 <tr class="odd">
-<td>stac-dem-bc (this vignette)</td>
+<td>stac-elevation-bc (this vignette)</td>
 <td>1 m</td>
 <td>Provincial lidar; <code>rstac</code> + <code>gdalcubes</code>
 </td>

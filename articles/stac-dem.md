@@ -4,43 +4,43 @@
 This vignette demonstrates fetching 1 m lidar tiles from a STAC catalog
 and comparing the resulting floodplain with the bundled 10 m DEM.
 
-> **The numeric output below predates the 0.5.0 units fix and is
-> over-mapped.** This vignette is pre-baked from `stac-dem.Rmd.orig`,
-> and re-baking needs the STAC endpoint plus a 1 m lidar re-run, so its
-> embedded results still come from the defective bankfull regression
-> (flooded#49 — depth was 3.5926x too large). Re-running its own 10 m
-> baseline configuration today gives **28,727** cells corrected, against
-> **53,635** under the old units — and neither matches the **54,637**
-> printed below, so roughly a thousand cells of that gap predate this
-> release and come from other changes since the vignette was last baked.
-> Treat every cell count and area here as illustrative of the
-> *workflow*, not as current output. The resolution comparison the
-> vignette makes is still directionally valid, since every run shown
-> carries the same error.
-
 We use the same Neexdzii Kwah test area (Bulkley River near Topley, BC)
 as the main vignette, but source the DEM from
-[stac-dem-bc](https://images.a11s.one/) — a STAC collection of BC
+[stac-elevation-bc](https://images.a11s.one/) — a STAC collection of BC
 provincial lidar DEMs.
+
+The 10 m runs below execute live when this page is built. The lidar
+steps need the STAC endpoint and about 20 minutes of processing, so
+their code is shown as you would run it, and their results come from
+`data-raw/stac_dem_vignette_data.R`, last run from `flooded` 0.6.1
+source (c0c0e46) on 2026-10-07. When this page is built, the two 10 m
+runs are checked against the 10 m counts that script recorded, and a
+note appears beside the comparison if they differ. That check catches
+changes to the 10 m pipeline; it cannot see a change that only shows at
+1–5 m, or a change in the lidar itself.
 
 ## Setup
 
 ``` r
 
 library(flooded)
+#> 
+#>  'Whatever you think is a permanent, lasting, eternal feature of human life — all of it will be affected by climate change.' - David Wallace-Wells
+#>   source
 library(terra)
-#> terra 1.8.93
+#> terra 1.9.50
 library(sf)
-#> Linking to GEOS 3.13.0, GDAL 3.8.5, PROJ 9.5.1; sf_use_s2() is TRUE
-library(rstac)
-library(gdalcubes)
-#> 
-#> Attaching package: 'gdalcubes'
-#> The following objects are masked from 'package:terra':
-#> 
-#>     animate, crop, size
+#> Linking to GEOS 3.12.1, GDAL 3.8.4, PROJ 9.4.0; sf_use_s2() is TRUE
 
 terra::terraOptions(threads = 12)
+```
+
+The lidar steps also need `rstac` and `gdalcubes`:
+
+``` r
+
+library(rstac)
+library(gdalcubes)
 ```
 
 ## What does “resampled to 10 m” mean?
@@ -88,13 +88,13 @@ valleys_10m <- fl_valley_confine(
 n_10m <- sum(values(valleys_10m) == 1, na.rm = TRUE)
 cat("10 m DEM valley cells:", n_10m, "/", ncell(valleys_10m),
     "(", round(100 * n_10m / ncell(valleys_10m), 1), "%)\n")
-#> 10 m DEM valley cells: 54637 / 518400 ( 10.5 %)
+#> 10 m DEM valley cells: 28727 / 518400 ( 5.5 %)
 ```
 
 ## Fetch 1 m lidar DEM from STAC
 
-Query the `stac-dem-bc` collection for tiles intersecting our test area.
-We filter to 2019 tiles only (1 m lidar).
+Query the `stac-elevation-bc` collection for tiles intersecting our test
+area. We filter to 2019 tiles only (1 m lidar).
 
 ``` r
 
@@ -107,7 +107,7 @@ bbox <- c(e$xmin, e$ymin, e$xmax, e$ymax)
 # Query STAC
 items <- stac("https://images.a11s.one/") |>
   stac_search(
-    collections = "stac-dem-bc",
+    collections = "stac-elevation-bc",
     bbox = bbox,
     datetime = "2019-01-01T00:00:00Z/2019-12-31T23:59:59Z"
   ) |>
@@ -115,28 +115,42 @@ items <- stac("https://images.a11s.one/") |>
   items_fetch()
 
 cat("STAC items found:", length(items$features), "\n")
-#> STAC items found: 2
 for (f in items$features) cat(" ", f$id, "\n")
-#>   093-093l-2019-dem-bc_093l059_xli1m_utm09_2019 
-#>   093-093l-2019-dem-bc_093l049_xli1m_utm09_2019
 ```
+
+    #> STAC items found: 2
+    #>   093-093l-2019-dem-bc_093l059_xli1m_utm09_2019 
+    #>   093-093l-2019-dem-bc_093l049_xli1m_utm09_2019
 
 ## Mosaic and crop with gdalcubes
 
 Use `gdalcubes` to mosaic the STAC tiles and reproject to BC Albers
 (EPSG:3005), matching the test area extent. We use 5 m resolution as a
-practical compromise — finer than the bundled 10 m, but fast enough to
-build in a vignette. For production work, set `dx = 1, dy = 1` for full
-1 m resolution.
+practical compromise — finer than the bundled 10 m, but fast enough for
+a watershed-scale run. For production work, set `dx = 1, dy = 1` for
+full 1 m resolution.
 
 ``` r
 
+# The tiles are strip-organised GeoTIFFs (~630 MB each, no overviews).
+# Reading them over /vsicurl/ is slow and can leave gdalcubes with a partial
+# mosaic and no error, so download them first and point the collection at
+# the local copies.
+hrefs <- vapply(items$features, function(f) f$assets$dem$href, character(1))
+tiles <- file.path(tempdir(), basename(hrefs))
+for (i in seq_along(hrefs)) {
+  if (!file.exists(tiles[i])) curl::curl_download(hrefs[i], tiles[i])
+}
+
 # Build gdalcubes image collection from STAC items
-col <- stac_image_collection(items$features, asset_names = "image")
+col <- stac_image_collection(
+  items$features, asset_names = "dem",
+  url_fun = function(u) tiles[match(u, hrefs)]
+)
 
 # Define target cube — same extent as bundled DEM, 5 m resolution
 e <- ext(dem_10m)
-stac_res <- 5  # use 1 for full resolution (100x more cells, ~25 min fetch)
+stac_res <- 5  # use 1 for full resolution (25x more cells)
 v <- cube_view(
   srs = "EPSG:3005",
   extent = list(
@@ -157,10 +171,11 @@ dem_stac_path <- list.files(out_dir, pattern = "\\.tif$", full.names = TRUE)[1]
 dem_stac <- rast(dem_stac_path)
 
 cat(stac_res, "m DEM:", ncol(dem_stac), "x", nrow(dem_stac), "pixels\n")
-#> 5 m DEM: 1600 x 1296 pixels
 cat("Resolution:", res(dem_stac), "m\n")
-#> Resolution: 5 5 m
 ```
+
+    #> 5 m DEM: 1600 x 1296 pixels
+    #> Resolution: 5 5 m
 
 ## Derive slope
 
@@ -192,8 +207,9 @@ valleys_stac <- fl_valley_confine(
 n_stac <- sum(values(valleys_stac) == 1, na.rm = TRUE)
 cat(stac_res, "m DEM valley cells:", n_stac, "/", ncell(valleys_stac),
     "(", round(100 * n_stac / ncell(valleys_stac), 1), "%)\n")
-#> 5 m DEM valley cells: 250564 / 2073600 ( 12.1 %)
 ```
+
+    #> 5 m DEM valley cells: 186675 / 2073600 ( 9 %)
 
 ## Compare
 
@@ -201,6 +217,9 @@ cat(stac_res, "m DEM valley cells:", n_stac, "/", ncell(valleys_stac),
 
 # Resample STAC result to 10 m grid for visual comparison
 valleys_stac_10 <- resample(valleys_stac, dem_10m, method = "near")
+```
+
+``` r
 
 # Area comparison
 area_10m <- n_10m * res(dem_10m)[1] * res(dem_10m)[2] / 1e6
@@ -208,10 +227,17 @@ area_stac <- sum(values(valleys_stac_10) == 1, na.rm = TRUE) *
   res(dem_10m)[1] * res(dem_10m)[2] / 1e6
 
 cat("Valley area (bundled 10 m DEM):", round(area_10m, 2), "km²\n")
-#> Valley area (bundled 10 m DEM): 5.46 km²
+#> Valley area (bundled 10 m DEM): 2.87 km²
 cat("Valley area (STAC", stac_res, "m DEM):", round(area_stac, 2), "km²\n")
-#> Valley area (STAC 5 m DEM): 6.26 km²
+#> Valley area (STAC 5 m DEM): 4.67 km²
 ```
+
+The lidar maps more valley bottom than the resampled TRIM DEM. The two
+mostly agree where the 10 m run finds floodplain, and the lidar adds to
+it along both the tributaries and the main stem. The 2019 lidar flight
+covers about 78% of the test area. The rest is upland: only 32 of the
+28,727 10 m floodplain cells fall outside the lidar, so the missing
+coverage has almost no effect on this comparison.
 
 ``` r
 
@@ -226,7 +252,7 @@ plot(st_geometry(streams), add = TRUE, col = "blue", lwd = 1)
 ```
 
 ![Valley delineation from bundled 10 m DEM (top) vs STAC lidar DEM
-(bottom).](figure/plot-compare-1.png)
+(bottom).](stac-dem_files/figure-html/plot-compare-1.png)
 
 Valley delineation from bundled 10 m DEM (top) vs STAC lidar DEM
 (bottom).
@@ -236,7 +262,7 @@ Valley delineation from bundled 10 m DEM (top) vs STAC lidar DEM
 At watershed scale, 5–10 m resolution is practical. But for site-level
 restoration prescriptions — identifying where to excavate historic fill,
 reconnect side channels, or plug drainage trenches — 1 m lidar is
-essential. Those features are invisible at 25 m.
+essential. Those features are smeared or lost at 25 m.
 
 Here we crop to a ~3.5 × 4 km site around Robert Hatch Creek and
 Richfield Creek where they enter the Bulkley River floodplain, and run
@@ -246,6 +272,12 @@ at full 1 m resolution.
 
 # Site extent — Robert Hatch / Richfield confluence with Bulkley
 site_ext <- ext(976560, 980060, 1055808, 1059808)
+
+# Crop streams to site
+# (suppressWarnings: st_crop notes that attributes are carried over unchanged)
+streams_site <- suppressWarnings(st_crop(streams, st_as_sfc(st_bbox(c(
+  xmin = 976560, ymin = 1055808, xmax = 980060, ymax = 1059808
+), crs = st_crs(streams)))))
 ```
 
 ``` r
@@ -257,7 +289,7 @@ site_bbox <- c(se$xmin, se$ymin, se$xmax, se$ymax)
 
 site_items <- stac("https://images.a11s.one/") |>
   stac_search(
-    collections = "stac-dem-bc",
+    collections = "stac-elevation-bc",
     bbox = site_bbox,
     datetime = "2019-01-01T00:00:00Z/2019-12-31T23:59:59Z"
   ) |>
@@ -265,10 +297,17 @@ site_items <- stac("https://images.a11s.one/") |>
   items_fetch()
 
 cat("STAC tiles for site:", length(site_items$features), "\n")
-#> STAC tiles for site: 2
 
-# Mosaic at 1 m
-site_col <- stac_image_collection(site_items$features, asset_names = "image")
+# Mosaic at 1 m. These are the same two tiles as above, already downloaded.
+site_hrefs <- vapply(site_items$features, function(f) f$assets$dem$href, character(1))
+site_tiles <- file.path(tempdir(), basename(site_hrefs))
+for (i in seq_along(site_hrefs)) {
+  if (!file.exists(site_tiles[i])) curl::curl_download(site_hrefs[i], site_tiles[i])
+}
+site_col <- stac_image_collection(
+  site_items$features, asset_names = "dem",
+  url_fun = function(u) site_tiles[match(u, site_hrefs)]
+)
 site_view <- cube_view(
   srs = "EPSG:3005",
   extent = list(
@@ -288,20 +327,15 @@ dem_1m <- rast(list.files(site_dir, "\\.tif$", full.names = TRUE)[1])
 
 cat("1 m DEM:", ncol(dem_1m), "x", nrow(dem_1m), "pixels (",
     format(ncell(dem_1m), big.mark = ","), "cells)\n")
-#> 1 m DEM: 3500 x 4000 pixels ( 1.4e+07 cells)
 ```
+
+    #> STAC tiles for site: 2
+    #> 1 m DEM: 3500 x 4000 pixels ( 1.4e+07 cells)
 
 ``` r
 
 slope_1m <- terra::terrain(dem_1m, v = "slope", unit = "degrees")
 slope_1m <- tan(slope_1m * pi / 180) * 100
-
-# Crop streams to site
-streams_site <- st_crop(streams, st_as_sfc(st_bbox(c(
-  xmin = 976560, ymin = 1055808, xmax = 980060, ymax = 1059808
-), crs = st_crs(streams))))
-#> Warning: attribute variables are assumed to be spatially constant throughout
-#> all geometries
 
 precip_1m <- fl_stream_rasterize(streams_site, dem_1m, field = "map_upstream")
 
@@ -315,18 +349,19 @@ valleys_1m <- fl_valley_confine(
   flood_factor = 6,
   precip = precip_1m
 )
-#> Warning: [costDist] distance algorithm did not converge
 
 n_1m <- sum(values(valleys_1m) == 1, na.rm = TRUE)
 cat("1 m DEM valley cells:", format(n_1m, big.mark = ","), "/",
     format(ncell(valleys_1m), big.mark = ","),
     "(", round(100 * n_1m / ncell(valleys_1m), 1), "%)\n")
-#> 1 m DEM valley cells: 3,883,179 / 1.4e+07 ( 27.7 %)
 ```
+
+    #> 1 m DEM valley cells: 3,096,003 / 1.4e+07 ( 22.1 %)
+
+Run the resampled 10 m DEM over the same site for comparison:
 
 ``` r
 
-# Run 10 m (resampled TRIM) on the same site for comparison
 dem_site_10m <- terra::crop(dem_10m, site_ext)
 slope_site_10m <- terra::crop(slope_10m, site_ext)
 precip_site_10m <- fl_stream_rasterize(streams_site, dem_site_10m, field = "map_upstream")
@@ -341,33 +376,36 @@ valleys_site_10m <- fl_valley_confine(
   flood_factor = 6,
   precip = precip_site_10m
 )
+```
+
+``` r
+
+# Resample 1 m result to the 25 m (resampled to 10 m) site grid
+valleys_1m_on_10m <- resample(valleys_1m, dem_site_10m, method = "near")
+```
+
+``` r
 
 par(mfrow = c(2, 1), mar = c(2, 4, 2, 1))
 plot(valleys_site_10m, col = c("grey90", "darkgreen"),
      main = "Site: 10 m (25 m TRIM resampled)", legend = FALSE)
 plot(st_geometry(streams_site), add = TRUE, col = "blue", lwd = 1)
 
-# Resample 1 m result to same grid for visual comparison
-valleys_1m_plot <- resample(valleys_1m, dem_site_10m, method = "near")
-plot(valleys_1m_plot, col = c("grey90", "darkgreen"),
+plot(valleys_1m_on_10m, col = c("grey90", "darkgreen"),
      main = "Site: 1 m native lidar", legend = FALSE)
 plot(st_geometry(streams_site), add = TRUE, col = "blue", lwd = 1)
 ```
 
 ![Site-level comparison: resampled 10 m (top) vs native 1 m lidar
-(bottom). Fine-scale features like side channels and terrace edges
-emerge at 1 m.](figure/site-compare-1.png)
+(bottom). Narrow linear breaks emerge at 1
+m.](stac-dem_files/figure-html/site-compare-1.png)
 
 Site-level comparison: resampled 10 m (top) vs native 1 m lidar
-(bottom). Fine-scale features like side channels and terrace edges
-emerge at 1 m.
+(bottom). Narrow linear breaks emerge at 1 m.
 
 ## Quantifying the difference
 
 ``` r
-
-# Resample 1 m result to the 25 m (resampled to 10 m) site grid
-valleys_1m_on_10m <- resample(valleys_1m, dem_site_10m, method = "near")
 
 # Site floodplain area from each DEM
 cell_area_m2 <- res(dem_site_10m)[1] * res(dem_site_10m)[2]  # 100 m²
@@ -378,49 +416,75 @@ fp_1m  <- sum(values(valleys_1m_on_10m) == 1, na.rm = TRUE)
 popups <- sum(values(valleys_site_10m) == 1 & values(valleys_1m_on_10m) != 1,
               na.rm = TRUE)
 
+# Slope of the pop-up cells as the 25 m DEM sees them
+is_popup <- values(valleys_site_10m) == 1 & values(valleys_1m_on_10m) != 1
+popup_slope_25m <- median(values(slope_site_10m)[is_popup], na.rm = TRUE)
+
+# The other direction: floodplain at 1 m that the 25 m DEM misses
+fp_1m_only <- sum(values(valleys_site_10m) != 1 & values(valleys_1m_on_10m) == 1,
+                  na.rm = TRUE)
+
 data.frame(
   Metric = c(
     "Floodplain area (25 m TRIM)",
     "Floodplain area (1 m lidar)",
-    "Elevated features (pop-ups)",
-    "Pop-ups as % of 25 m floodplain"
+    "Floodplain only at 25 m (pop-ups)",
+    "Pop-ups as % of 25 m floodplain",
+    "Floodplain found only at 1 m"
   ),
   Value = c(
     paste(round(fp_25m * cell_area_m2 / 1e4, 1), "ha"),
     paste(round(fp_1m * cell_area_m2 / 1e4, 1), "ha"),
     paste(round(popups * cell_area_m2 / 1e4, 1), "ha"),
-    paste0(round(100 * popups / fp_25m, 1), "%")
+    paste0(round(100 * popups / fp_25m, 1), "%"),
+    paste(round(fp_1m_only * cell_area_m2 / 1e4, 1), "ha")
   )
 ) |> knitr::kable()
 ```
 
-| Metric                          | Value    |
-|:--------------------------------|:---------|
-| Floodplain area (25 m TRIM)     | 373 ha   |
-| Floodplain area (1 m lidar)     | 388.3 ha |
-| Elevated features (pop-ups)     | 36.1 ha  |
-| Pop-ups as % of 25 m floodplain | 9.7%     |
+| Metric                            | Value    |
+|:----------------------------------|:---------|
+| Floodplain area (25 m TRIM)       | 205.9 ha |
+| Floodplain area (1 m lidar)       | 310.3 ha |
+| Floodplain only at 25 m (pop-ups) | 19.8 ha  |
+| Pop-ups as % of 25 m floodplain   | 9.6%     |
+| Floodplain found only at 1 m      | 124.3 ha |
 
-The elevated features — “pop-ups” — are areas the 25 m TRIM DEM
-classifies as floodplain but the 1 m lidar reveals are sitting above the
-flood surface. These are the barriers: roads, dykes, fill, and other
-raised features that block lateral connectivity.
+The “pop-ups” are floodplain at 25 m that the 1 m run excludes. The
+table does not say why:
+[`fl_valley_confine()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_confine.md)
+can exclude a cell on any of its criteria — slope, distance,
+cost-distance, flood depth — or in cleanup. One measurement helps. 77%
+of pop-up cells sit on 1 m ground steeper than the 9% slope threshold,
+against 24% across the whole 25 m floodplain. The lidar resolves the
+sides of embankments, banks and terrace risers, which a 25 m pixel
+smooths to below the threshold: the same cells have a median slope of 5%
+on the 25 m DEM. These are the candidate barriers: roads, dykes, fill,
+and other raised features that can block lateral connectivity. Some will
+be natural high ground.
+
+The difference runs in both directions. The 1 m lidar also finds
+floodplain that the 25 m DEM misses entirely — low ground that a 25 m
+pixel likely averages upward with the slopes around it — and at this
+site that is the larger of the two. The coarse DEM does not simply
+over-map the floodplain; it gets the shape wrong.
 
 ## Anthropogenic barriers to floodplain connectivity
 
-The difference between Figures @ref(fig:plot-compare) and
-@ref(fig:site-compare) is striking — and informative. The 25 m TRIM DEM
-(resampled to a 10 m grid but still only 25 m terrain detail) shows the
-floodplain as one continuous green mass. The 1 m lidar reveals a
-different story: white gaps cut through the green where the ground
-surface sits **above** the modelled flood level.
+In the site-level comparison, the 25 m TRIM DEM (resampled to a 10 m
+grid but still only 25 m terrain detail) shows broad gaps in the
+floodplain. The 1 m lidar fills most of them in, and reveals a different
+pattern: narrow white lines cut diagonally across the green, where the
+lidar resolves steep ground — the sides of a raised grade — that the 25
+m DEM cannot see.
 
 These white features are areas the VCA identifies as “not floodplain” —
-pixels too high or too steep to be reached by the flood surface. At 25 m
-resolution those features are invisible because a single pixel averages
-the road embankment with the surrounding low ground, smoothing it away.
-At 1 m, the actual elevation of a raised road bed, railway grade, or
-dyke is resolved, so it stands out.
+pixels it excludes as too steep, or as too high above the modelled flood
+surface. At 25 m resolution those features are smeared or lost, because
+a single pixel averages the road embankment with the surrounding low
+ground — where the 25 m DEM registers a raised grade at all, it shows a
+broad gap rather than a line. At 1 m, the steep sides of a raised road
+bed, railway grade, or dyke are resolved, so it stands out as a line.
 
 **Linear white features** cutting through the floodplain are likely:
 
@@ -436,19 +500,20 @@ dyke is resolved, so it stands out.
 - **Natural terraces** — legitimately higher ground not connected to the
   flood surface
 
-The implication for restoration is direct: **the gap between the 25 m
-and 1 m results is largely the anthropogenic footprint on the
-floodplain.** The 25 m DEM says “this is all floodplain” because it
-cannot see the barriers. The 1 m DEM says “this would be floodplain,
-except these raised features are blocking it.” Those white features —
-roads, dykes, fill — are potential intervention targets. Removing or
-breaching them could reconnect floodplain function: filling drainage
-trenches, excavating historic fill back to floodplain grade, or
-installing culverts and bridges to restore lateral connectivity.
+The implication for restoration: **the pop-ups — floodplain at 25 m that
+the 1 m run excludes, mostly on steep ground — are where to look for the
+anthropogenic footprint on the floodplain.** The model does not say that
+a feature blocks connectivity; it says the ground there is steep, which
+is what the sides of an embankment look like. Whether a given line is a
+road, a dyke or a natural bank is a question for the map and the field.
+Where it is a raised grade, it is a potential intervention target:
+breaching or removing it, excavating historic fill back to floodplain
+grade, or installing culverts and bridges could restore lateral
+connectivity.
 
-This is the power of running `flooded` at 1 m: it turns a binary
-floodplain/not-floodplain map into a diagnostic tool for identifying
-**what is preventing floodplain from functioning** and **where to act**.
+Run at 1 m, `flooded` gives more than a floodplain/not-floodplain map:
+it points to **where to look** for what may be preventing floodplain
+from functioning.
 
 ## Summary
 
@@ -469,5 +534,5 @@ The `flooded` pipeline is DEM-agnostic. Any source works:
 |----|----|----|
 | BC Data Catalogue (WCS) | 25 m | Provincial TRIM DEM; `bcdata get-dem` (Python CLI) |
 | Bundled test data | 25 m → 10 m | TRIM resampled via bilinear; `system.file("testdata/", package = "flooded")` |
-| stac-dem-bc (this vignette) | 1 m | Provincial lidar; `rstac` + `gdalcubes` |
+| stac-elevation-bc (this vignette) | 1 m | Provincial lidar; `rstac` + `gdalcubes` |
 | CDEM / SRTM | 30 m | Federal/global fallback for areas without lidar |

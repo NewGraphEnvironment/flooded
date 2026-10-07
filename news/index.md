@@ -1,5 +1,51 @@
 # Changelog
 
+## flooded (development version)
+
+- The `stac-dem` vignette now runs live, and its figures are current
+  ([\#51](https://github.com/NewGraphEnvironment/flooded/issues/51)). It
+  was pre-baked from a `.Rmd.orig` and had drifted for several releases:
+  its numbers predated the 0.5.0 units fix and did not reproduce even
+  under the old units, its two figure images were never committed (both
+  404 on the site), and a figure cross-reference printed as literal
+  `@ref(...)`. The 10 m runs now execute when the page is built. The 5 m
+  and 1 m lidar runs need the STAC endpoint, a ~1.3 GB tile download and
+  ~20 minutes, so `data-raw/stac_dem_vignette_data.R` runs them once and
+  caches the results in `inst/vignette-data/` (~13 KB).
+- The cache records the 10 m cell counts it was built against.
+  `tests/testthat/test-vignette_data.R` fails, and the vignette shows a
+  note, when the current
+  [`fl_valley_confine()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_confine.md)
+  no longer reproduces them, so the next drift is caught by the test
+  suite rather than by a reader. It cannot see a change that only shows
+  at 1-5 m.
+- At corrected depths the vignette’s resolution argument holds, but in a
+  different shape. Over the test tile, 5 m lidar maps 4.67 km2 of valley
+  bottom against 2.87 km2 from the resampled 25 m TRIM DEM (previously
+  published as 6.26 vs 5.46). At the 1 m site, lidar maps 310.3 ha
+  against 205.9 ha. The “pop-ups” (25 m floodplain that the 1 m run
+  excludes) are 19.8 ha, 9.6% of the 25 m floodplain (previously 36.1
+  ha, 9.7%), while 124.3 ha are found only at 1 m. So the gap between
+  resolutions is no longer described as mostly the anthropogenic
+  footprint: the coarse DEM gets the floodplain’s shape wrong in both
+  directions.
+- The vignette said pop-ups sit above the flood surface. At this site
+  77% of them sit on 1 m ground steeper than the 9% slope threshold,
+  against 24% across the whole 25 m floodplain. The lidar resolves
+  embankment sides and banks that a 25 m pixel smooths to just under the
+  threshold (median 5% on the 25 m DEM); the slope criterion, not flood
+  depth, is what mostly removes them. The build script now records this
+  share and the page states it, rather than describing the mechanism
+  from the figure.
+- The STAC collection `stac-dem-bc` is now `stac-elevation-bc`, with the
+  DEM under asset `dem` (formerly `image`). The vignette and the
+  [`fl_dem_aoi()`](https://newgraphenvironment.github.io/flooded/reference/fl_dem_aoi.md)
+  lidar example are updated. A search against the old name returns no
+  items rather than an error.
+- `gdalcubes` remains in Suggests (with the 0.6.1 `Remotes:` pin), but
+  only `data-raw/stac_dem_vignette_data.R` uses it now. The vignette no
+  longer loads it.
+
 ## flooded 0.6.1
 
 - `gdalcubes` (Suggests, for the `stac-dem` vignette) is pinned to
