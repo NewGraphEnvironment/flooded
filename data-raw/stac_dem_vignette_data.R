@@ -24,7 +24,8 @@
 # flags the cache as stale when they differ — i.e. when fl_valley_confine()
 # has changed since the lidar results were built.
 #
-# Configuration matches the vignette exactly. Change one, change both.
+# The VCA configuration and the tile download match the code shown in the
+# vignette. Change one, change both.
 #
 # Prerequisites:
 #   - Outbound HTTPS to https://images.a11s.one/ (stac-elevation-bc) and its COGs
@@ -207,6 +208,12 @@ message("Running VCA at ", stac_res, " m ...")
 run_5m <- vca(dem_5m, streams, slope_pct(dem_5m))
 valleys_5m <- run_5m$valleys
 valleys_5m_on_10m <- terra::resample(valleys_5m, dem_10m, method = "near")
+
+# How much of the 10 m floodplain falls where the 2019 flight has no lidar.
+# The vignette states this rather than describing it from the figure.
+no_lidar_10m <- terra::resample(is.na(dem_5m), dem_10m, method = "near")
+n_10m_no_lidar <- sum(terra::values(valleys_10m) == 1 & terra::values(no_lidar_10m) == 1,
+                      na.rm = TRUE)
 write_valleys(valleys_5m_on_10m, "stac_valleys_5m.tif")
 
 # ---- 4. 1 m lidar over the site -----------------------------------------
@@ -219,6 +226,17 @@ message("Running VCA at 1 m (slow) ...")
 run_1m <- vca(dem_1m, streams_site, slope_pct(dem_1m))
 valleys_1m <- run_1m$valleys
 valleys_1m_on_10m <- terra::resample(valleys_1m, dem_site_10m, method = "near")
+
+# Why the 1 m run drops 25 m floodplain ("pop-ups"): the share sitting on 1 m
+# ground steeper than slope_threshold, sampled the same way the valley raster
+# is (nearest 1 m cell to each 10 m centre), against the same share across the
+# whole 25 m floodplain as a baseline. A 0 cell can come from any criterion;
+# this keeps the page from asserting which one.
+steep_1m_on_10m <- terra::resample(
+  slope_pct(dem_1m) > vca_args$slope_threshold, dem_site_10m, method = "near"
+)
+popup <- terra::values(valleys_site_10m) == 1 & terra::values(valleys_1m_on_10m) != 1
+steep <- terra::values(steep_1m_on_10m) == 1
 write_valleys(valleys_1m_on_10m, "stac_valleys_1m_site.tif")
 
 # Native 1 m result for inspection only - 14 M cells, not shipped
@@ -255,7 +273,10 @@ meta <- list(
   n_1m = n_valley(valleys_1m),
   ncell_1m = terra::ncell(valleys_1m),
   n_10m = n_10m,
-  n_site_10m = n_site_10m
+  n_site_10m = n_site_10m,
+  n_10m_no_lidar = n_10m_no_lidar,
+  popup_steep_share = sum(popup & steep, na.rm = TRUE) / sum(popup, na.rm = TRUE),
+  site_steep_share = mean(steep[terra::values(valleys_site_10m) == 1], na.rm = TRUE)
 )
 saveRDS(meta, out("stac_meta.rds"))
 
