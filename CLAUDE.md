@@ -68,6 +68,12 @@ tests/testthat/          — unit tests for each fl_* function (17 test files, 1
   cell counts it was built against, and `test-vignette_data.R` fails when the live
   `fl_valley_confine()` no longer reproduces them — that is the signal to re-run
   `data-raw/stac_dem_vignette_data.R`.
+- **A non-valley cell has no single cause.** `fl_valley_confine()` drops a cell on slope, distance,
+  cost, flood depth or cleanup, and its output does not say which. Prose that explains a figure
+  ("sits above the flood surface") is a claim about the criterion; compute it or do not make it.
+  In #51 four review rounds each found a false sentence written from the image; at the stac-dem
+  site 77% of pop-ups fail the 1 m **slope** test, not the flood test. The build script now
+  records the share and the page states it.
 - **The STAC catalog is `stac-elevation-bc`, asset `dem`** (formerly `stac-dem-bc`, asset `image`;
   renamed upstream in rtj#229). The old collection returns zero items, not an error.
 - **25 m TRIM resampled to 10 m** is not real 10 m detail — note this when comparing TRIM-derived outputs to true 10 m or 1 m lidar.
@@ -116,6 +122,9 @@ tests/testthat/          — unit tests for each fl_* function (17 test files, 1
   union of its finer members — not by swapping keys.
 - **The bundled DEM has no exactly-zero slope cells** (min 1.42e-14), which hides #41 entirely.
   Anything about flat-ground behaviour needs a synthetic grid, not this tile.
+- **The bundled DEM has no NA cells**, which hides #63 (`fl_valley_confine()` returns 0, not NA,
+  on NA DEM cells). Anything about no-data behaviour needs a synthetic NA block or a patchy lidar
+  DEM — the 2019 stac-dem lidar leaves 22% of the tile NA.
 - **Package defaults are not binding on this tile** — `max_width = 2000` / `cost_threshold = 2500`
   leave the criteria slack, so a coverage test at defaults can pass for the wrong reason. Squeeze
   `cost_threshold` (300 works) to make cleanup-added cells actually cross a boundary.
