@@ -1,6 +1,6 @@
 # Changelog
 
-## flooded (development version)
+## flooded 0.6.2
 
 - The `stac-dem` vignette now runs live, and its figures are current
   ([\#51](https://github.com/NewGraphEnvironment/flooded/issues/51)). It
