@@ -197,9 +197,10 @@ runs morphological cleanup — enough to absorb all 2,289 Parsnip cells. That is
 two datasets, not a guarantee: wherever cost is the binding criterion (flat terrain, a lax
 `slope_threshold`, a large `flood_factor`) the delineation will move.
 
-The 1 m lidar run in `vignettes/stac-dem.Rmd` emits `[costDist] distance algorithm did not
-converge`, which is the shape of large zero-cost plateaus — suggestive, not confirmed, since that
-vignette is pre-baked and was not re-run.
+The 1 m lidar run in `vignettes/stac-dem.Rmd` once emitted `[costDist] distance algorithm did not
+converge`, which is the shape of large zero-cost plateaus. Re-run for #51 from 0.6.1 source, the
+same run emits no warnings at all (`warnings_1m` in `inst/vignette-data/stac_meta.rds` is empty),
+so that site no longer offers evidence either way.
 
 It matters most under attribution. Cost is what separates one watercourse's floodplain from
 another's, so a flat patch inside a group's corridor would spread that group's mask across ground
