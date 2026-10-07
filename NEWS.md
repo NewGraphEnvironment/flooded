@@ -1,4 +1,4 @@
-# flooded (development version)
+# flooded 0.6.2
 
 * The `stac-dem` vignette now runs live, and its figures are current (#51). It was pre-baked from
   a `.Rmd.orig` and had drifted for several releases: its numbers predated the 0.5.0 units fix and
