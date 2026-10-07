@@ -44,7 +44,7 @@ MRDEM-30 (\verb{s3://canelevation-dem/mrdem-30/mrdem-30-dtm.tif}) is a single
 so total bandwidth scales with AOI size, not the COG size.
 
 For sub-10 m riparian-scale work where lidar coverage exists, query the
-\code{stac-dem-bc} STAC catalog and pass an item's COG URL as \code{source}. See the
+\code{stac-elevation-bc} STAC catalog and pass an item's COG URL as \code{source}. See the
 example below.
 }
 \examples{
@@ -66,17 +66,17 @@ terra::plot(dem)
 dem <- fl_dem_aoi(aoi, buffer = 2000)
 terra::plot(dem, main = "MRDEM-30 over AOI")
 
-# LidarBC via stac-dem-bc — sub-10 m where lidar coverage exists
+# LidarBC via stac-elevation-bc — sub-10 m where lidar coverage exists
 bbox_4326 <- sf::st_bbox(sf::st_transform(aoi, 4326))
 items <- rstac::stac("https://images.a11s.one/") |>
   rstac::stac_search(
-    collections = "stac-dem-bc",
+    collections = "stac-elevation-bc",
     bbox = unname(bbox_4326)
   ) |>
   rstac::post_request() |>
   rstac::items_fetch()
 if (length(items$features) > 0L) {
-  cog <- paste0("/vsicurl/", items$features[[1]]$assets$image$href)
+  cog <- paste0("/vsicurl/", items$features[[1]]$assets$dem$href)
   dem_lidar <- fl_dem_aoi(aoi, source = cog, buffer = 100)
 }
 }
