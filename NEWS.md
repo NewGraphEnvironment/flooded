@@ -1,4 +1,4 @@
-# flooded (development version)
+# flooded 0.6.3
 
 * `fl_valley_confine()` now returns `NA` where the DEM is `NA`, as its documentation already
   said (#63). It usually returned 0 or 1 there instead (`NA` survived only when no valley patch was
