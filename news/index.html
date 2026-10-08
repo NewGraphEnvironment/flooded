@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">flooded</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,7 +38,7 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="development version" id="flooded-development-version">flooded (development version)<a class="anchor" aria-label="anchor" href="#flooded-development-version"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.6.3" id="flooded-063">flooded 0.6.3<a class="anchor" aria-label="anchor" href="#flooded-063"></a></h2>
 <ul><li>
 <code><a href="../reference/fl_valley_confine.html">fl_valley_confine()</a></code> now returns <code>NA</code> where the DEM is <code>NA</code>, as its documentation already said (<a href="https://github.com/NewGraphEnvironment/flooded/issues/63" class="external-link">#63</a>). It usually returned 0 or 1 there instead (<code>NA</code> survived only when no valley patch was small enough for <code><a href="../reference/fl_patch_rm.html">fl_patch_rm()</a></code> to remove), so a gap in coverage (patchy lidar, a DEM clipped to a watershed) read as measured hillslope or valley: a plot drew it as hillslope or valley, and any share taken over non-<code>NA</code> cells counted it as measured. The channel buffer and waterbodies are still added inside a gap, because neither depends on the DEM. A gap still feeds the slope, cost-distance and flood steps, so valid cells around it can differ from a run on a complete DEM. If you sum or average the output on a DEM with gaps, pass <code>na.rm = TRUE</code>.</li>
 <li>Results on the bundled tile do not change, because it has no <code>NA</code> cells. The <code>stac-dem</code> lidar cache was rebuilt with the fix. Its uncovered cells, counted on the 10 m grids the lidar results are compared on (115,385 for the 5 m run, 11,020 for the 1 m site, outside the channel buffer), were all 0 and are now <code>NA</code>. No valley cell moved, and none of the vignette’s areas or shares changed. Its lidar figures now draw the uncovered area in its own colour. The cached Parsnip result has no valley cells on <code>NA</code> DEM, so its hectares hold.</li>

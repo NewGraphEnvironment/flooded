@@ -1,6 +1,6 @@
 # Changelog
 
-## flooded (development version)
+## flooded 0.6.3
 
 - [`fl_valley_confine()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_confine.md)
   now returns `NA` where the DEM is `NA`, as its documentation already
