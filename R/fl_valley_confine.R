@@ -48,7 +48,10 @@
 #'   warns and forwards to `area_field`; removal is tracked in flooded#53.
 #'
 #' @return A `SpatRaster` with binary values: `1` = unconfined valley, `0` =
-#'   confined / hillslope, `NA` = outside analysis extent.
+#'   confined / hillslope. A cell is `NA` wherever `dem` is `NA`, unless the
+#'   channel buffer or a waterbody covers it, in which case it is `1`. A cell
+#'   with a DEM value can also be `NA` when a gap cuts it off from every stream
+#'   (#65).
 #'
 #' @details
 #' The algorithm combines four criteria via intersection (AND):
@@ -63,7 +66,14 @@
 #' - Remove small patches (< `size_threshold`)
 #' - Majority filter (3x3) to smooth edges
 #'
-#' After cleanup, optional features are added via logical OR:
+#' The cleaned result is then set to `NA` wherever `dem` is `NA`, so a coverage
+#' gap (patchy lidar, a DEM clipped to a watershed) reads as unmeasured rather
+#' than as measured ground. The gap still enters the slope, cost-distance and
+#' flood steps, so valid cells around it, not only at its edge, can differ from
+#' a run on a complete DEM.
+#'
+#' After cleanup, optional features are added via logical OR. They do not depend
+#' on the DEM, so they apply inside `NA` gaps too:
 #' - **Channel buffer** — streams buffered by `channel_width` (DEM correction)
 #' - **Waterbodies** — user-supplied lake/wetland polygons rasterized as-is
 #'
@@ -258,6 +268,12 @@ fl_valley_confine <- function(dem, streams,
 
   # Ensure binary output
   valleys <- terra::ifel(valleys >= 1, 1L, 0L)
+
+  # No DEM, no measurement (#63). fl_patch_rm() can turn NA into 0 (#65) and the focal
+  # filters smear 1s into a gap's edge, so restore NA here. Before the overlays,
+  # not after: the channel buffer and waterbodies do not depend on the DEM, so a
+  # channel or lake inside a DEM gap is still a channel or lake.
+  valleys <- terra::mask(valleys, dem)
 
   # --- Add features (OR into valley output) ---
 
