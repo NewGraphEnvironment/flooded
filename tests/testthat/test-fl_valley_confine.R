@@ -352,3 +352,80 @@ test_that("area_field must be a single column name", {
                                  area_field = c("upstream_area_ha", "channel_width")),
                "area_field")
 })
+
+# --- NA DEM cells (#63) ----------------------------------------------------
+# The bundled DEM has no NA cells, which hid this: fl_patch_rm() turned NA
+# reaching it into 0 (#65) and the focal filters smeared 1s into it, so a coverage
+# gap came back as measured hillslope and valley. Punch a
+# synthetic gap over a stream so the gap also overlaps valley floor, the channel
+# buffer, and (in the last test) a waterbody.
+na_block_fixture <- function() {
+  dem <- terra::rast(testdata_path("dem.tif"))
+  streams_sf <- sf::st_read(testdata_path("streams.gpkg"), quiet = TRUE)
+  # Centre on the median buffered-stream cell: deterministic, and on the
+  # floodplain rather than on hillslope.
+  wide <- streams_sf[!is.na(streams_sf$channel_width) & streams_sf$channel_width > 0, ]
+  buf <- sf::st_buffer(wide, dist = wide$channel_width / 2)
+  buf_r <- terra::rasterize(terra::vect(buf), dem, field = 1L, background = 0L)
+  buf_cells <- which(terra::values(buf_r)[, 1] == 1L)
+  centre <- terra::rowColFromCell(dem, buf_cells[ceiling(length(buf_cells) / 2)])
+  rows <- (centre[1] - 15L):(centre[1] + 15L)
+  cols <- (centre[2] - 15L):(centre[2] + 15L)
+  stopifnot(all(rows %in% seq_len(nrow(dem))), all(cols %in% seq_len(ncol(dem))))
+  dem[rows, cols] <- NA
+  block <- terra::cellFromRowColCombine(dem, rows, cols)
+  list(dem = dem, streams = streams_sf, block = block, buf = terra::values(buf_r)[, 1],
+       centre = centre)
+}
+
+test_that("NA DEM cells come back NA, not 0 (#63)", {
+  f <- na_block_fixture()
+  v <- terra::values(
+    fl_valley_confine(f$dem, f$streams, area_field = "upstream_area_ha",
+                      channel_buffer = FALSE)
+  )[, 1]
+
+  expect_true(all(is.na(v[f$block])))
+  # The gap must not leak: on this fixture every cell with a DEM value is measured,
+  # including the ring next to the gap where slope is undefined (exception: #65).
+  expect_false(anyNA(v[-f$block]))
+})
+
+test_that("channel buffer still marks a stream crossing an NA DEM gap (#63)", {
+  f <- na_block_fixture()
+  v <- terra::values(
+    fl_valley_confine(f$dem, f$streams, area_field = "upstream_area_ha",
+                      channel_buffer = TRUE)
+  )[, 1]
+  in_buf <- f$buf[f$block] == 1L
+
+  # Fixture reaches the case: the buffer crosses the gap, and not all of it.
+  expect_gt(sum(in_buf), 0)
+  expect_gt(sum(!in_buf), 0)
+  expect_true(all(v[f$block][in_buf] == 1L))
+  expect_true(all(is.na(v[f$block][!in_buf])))
+})
+
+test_that("a waterbody inside an NA DEM gap is valley, the rest of the gap NA (#63)", {
+  f <- na_block_fixture()
+  xy <- terra::xyFromCell(f$dem, terra::cellFromRowCol(f$dem, f$centre[1], f$centre[2]))
+  half <- 3 * terra::res(f$dem)[1]
+  lake <- sf::st_sf(
+    geometry = sf::st_as_sfc(sf::st_bbox(c(xmin = xy[1] - half, ymin = xy[2] - half,
+                                           xmax = xy[1] + half, ymax = xy[2] + half),
+                                         crs = sf::st_crs(f$streams)))
+  )
+  lake_r <- terra::values(
+    terra::rasterize(terra::vect(lake), f$dem, field = 1L, background = 0L)
+  )[, 1]
+  in_lake <- lake_r[f$block] == 1L
+
+  v <- terra::values(
+    fl_valley_confine(f$dem, f$streams, area_field = "upstream_area_ha",
+                      channel_buffer = FALSE, waterbodies = lake)
+  )[, 1]
+
+  expect_gt(sum(in_lake), 0)
+  expect_true(all(v[f$block][in_lake] == 1L))
+  expect_true(all(is.na(v[f$block][!in_lake])))
+})

@@ -80,7 +80,8 @@ warns and forwards to \code{area_field}; removal is tracked in flooded#53.}
 }
 \value{
 A \code{SpatRaster} with binary values: \code{1} = unconfined valley, \code{0} =
-confined / hillslope, \code{NA} = outside analysis extent.
+confined / hillslope. A cell is \code{NA} wherever \code{dem} is \code{NA}, unless the
+channel buffer or a waterbody covers it, in which case it is \code{1}.
 }
 \description{
 Orchestrates the full VCA pipeline: slope thresholding, cost-distance
@@ -104,7 +105,14 @@ The combined mask then undergoes morphological cleanup:
 \item Majority filter (3x3) to smooth edges
 }
 
-After cleanup, optional features are added via logical OR:
+The cleaned result is then set to \code{NA} wherever \code{dem} is \code{NA}, so a coverage
+gap (patchy lidar, a DEM clipped to a watershed) reads as unmeasured rather
+than as measured ground. The gap still enters the slope, cost-distance and
+flood steps, so valid cells around it, not only at its edge, can differ from
+a run on a complete DEM.
+
+After cleanup, optional features are added via logical OR. They do not depend
+on the DEM, so they apply inside \code{NA} gaps too:
 \itemize{
 \item \strong{Channel buffer} — streams buffered by \code{channel_width} (DEM correction)
 \item \strong{Waterbodies} — user-supplied lake/wetland polygons rasterized as-is

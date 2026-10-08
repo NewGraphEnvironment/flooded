@@ -31,12 +31,17 @@ Found during #51 (code-check round 4).
 ## Plan-mode probes (2026-10-08)
 
 - Cause: `fl_patch_rm()` (`R/fl_patch_rm.R:46`) sets `is.na(patches)` cells to 0, which converts
-  every NA reaching it (NA slope -> NA mask product) to 0; the 3x3 modal then smears 1s into the
+  NA reaching it (NA slope -> NA mask product) to 0 when any patch is small enough to remove (no
+  early return; #65); the 3x3 modal then smears 1s into the
   gap edge.
 - Bundled tile, 31x31 NA block centred on a valley cell: 815 zeros / 146 ones / 0 NA in the block.
   `channel_buffer = FALSE`: 918 / 43 / 0 — 42 of the 43 on the block's outer ring (focal smear).
-- 1,028 valid-DEM cells outside the block also change vs the no-NA run: the NA acts as a barrier
-  (cost distance, patch connectivity). Real algorithm behaviour, not this bug; out of scope.
+- 1,028 valid-DEM cells outside this block also change vs the no-NA run. Code-check round 3 measured
+  the test fixture's block (a different location; round 4 confirmed 679 with the buffer on or off,
+  since the buffer is OR'd in after cleanup): 679 cells change, 659 of them 0->1; the flood
+  criterion differs on 488 (fl_flood_model reads the DEM directly), slope and cost on 25 cells of the
+  128-cell ring, distance on none; median 670 m, max 940 m from the gap. An earlier "barrier" explanation was
+  unmeasured and wrong in direction. Real algorithm behaviour, not this bug; out of scope.
 - `pars_dem.tif` is 49% NA (10,180,862 of 20,888,140); `pars_valleys.tif` has 0 NA and **0 of
   441,054** valley cells on NA DEM, so published Parsnip hectares do not move. The cached tif still
   carries 0 (not NA) outside the DEM; not rebuilt here (needs the DB).
