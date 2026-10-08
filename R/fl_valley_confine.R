@@ -49,7 +49,9 @@
 #'
 #' @return A `SpatRaster` with binary values: `1` = unconfined valley, `0` =
 #'   confined / hillslope. A cell is `NA` wherever `dem` is `NA`, unless the
-#'   channel buffer or a waterbody covers it, in which case it is `1`.
+#'   channel buffer or a waterbody covers it, in which case it is `1`. A cell
+#'   with a DEM value can also be `NA` when a gap cuts it off from every stream
+#'   (#65).
 #'
 #' @details
 #' The algorithm combines four criteria via intersection (AND):

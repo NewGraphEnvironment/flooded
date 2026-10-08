@@ -17,3 +17,11 @@
   (claims about model output written from intent, not measured); R4 found one inside R3's planning
   fix (679 vs 1,028 conflated) and enumerated every shipped sentence clean — loop ended on that
   enumeration. Follow-up filed: #65 (fl_patch_rm/fl_patch_conn NA->0)
+- Phase 4: lidar cache rebuilt from 1ea1ae5 (24 min). No valley cell moved; 115,385 (5 m grid) and
+  11,020 (site) uncovered cells 0 → NA. Vignette: tan no-lidar colour, pop-up denominator over
+  lidar-covered floodplain, share labels; rendered, numbers unchanged. Cache-NA test added.
+- Phase 5: NEWS, CLAUDE.md test-data trap, findings
+- `/code-check` on commit 2: three rounds. R1 2 findings, R2 4 findings (same mechanism: absolute
+  claims from one code path — pre-fix "never NA", channel buffer in the gap, @return converse,
+  fl_patch_conn early return, slope.tif NA ring), R3 clean. #65 body extended with both new facts.
+  Cache-NA test now pins exact counts (115,385 / 11,020).

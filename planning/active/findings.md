@@ -52,3 +52,29 @@ Found during #51 (code-check round 4).
 
 | Error | Resolution |
 |-------|------------|
+
+## stac-dem cache rebuild (2026-10-08, from 1ea1ae5)
+
+Run: `data-raw/stac_dem_vignette_data.R` from a frozen copy, 14:23:40 → 14:47:55 UTC (24 min, tiles
+pre-downloaded). Log: scratch only (not committed).
+
+- `stac_meta.rds`: only `flooded_version` (0.6.1 → 0.6.2), `git_sha` (c0c0e46 → 1ea1ae5) and
+  `date_built` changed. `n_5m` 186675, `n_1m` 3096003, `n_10m` 28727, `n_site_10m` 20586,
+  `n_10m_no_lidar` 32, `popup_steep_share` 0.774, `site_steep_share` 0.236 all identical.
+- `stac_valleys_5m.tif` (10 m grid): old 0/1/NA = 471,744 / 46,656 / 0 → new 356,359 / 46,656 /
+  115,385. Every new NA was an old 0; no old 1 became NA; no non-NA cell changed.
+- `stac_valleys_1m_site.tif`: old 108,970 / 31,030 / 0 → new 97,950 / 31,030 / 11,020. Same pattern.
+- Vignette pop-up table recomputed under both caches: identical (fp25 20586, fp1 31030, pop-ups
+  1984 = 9.64%, 1 m only 12428). Zero 25 m floodplain cells fall in the 1 m lidar gap, which is why
+  the plan review's predicted `popup_steep_share` jump did not happen. `area_stac` 4.67 km2 unchanged.
+- Vignette changes: `colNA = "tan"` on both lidar plots + captions; pop-up % denominator restricted
+  to 25 m floodplain with 1 m lidar (same 9.6% here); per-tile shares labelled as including no-lidar
+  cells. Rendered and checked: no stale note, numbers unchanged.
+- New test pins the cache: both cached lidar rasters must contain NA (fails on the old cache, which
+  had none).
+
+## Parsnip cache (not rebuilt)
+
+`pars_valleys.tif` still carries 0 (not NA) outside the DEM. 0 of 441,054 valley cells sit on NA
+DEM, so the published hectares are unaffected; the vignette plots `col = c(NA, green)` and masks to
+the AOI, so the 0s are not drawn. A rebuild needs the DB; it will pick up NA on the next run.

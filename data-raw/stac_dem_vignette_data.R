@@ -152,7 +152,7 @@ stac_dem <- function(e, res) {
   # Not every cell has lidar: the 2019 flight footprint leaves ~22% of the
   # bundled DEM extent and ~8% of the site uncovered (measured from the local
   # tiles, 2026-10-07). fl_valley_confine() returns NA there since #63, except
-  # under the channel buffer; before that it returned 0 or 1, as if measured.
+  # under the channel buffer; the cache built before that held 0 there, as if measured.
   na_frac <- terra::global(is.na(dem), "mean")[[1]]
   list(
     dem = dem,

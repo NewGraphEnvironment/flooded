@@ -1,3 +1,21 @@
+# flooded (development version)
+
+* `fl_valley_confine()` now returns `NA` where the DEM is `NA`, as its documentation already
+  said (#63). It usually returned 0 or 1 there instead (`NA` survived only when no valley patch was
+  small enough for `fl_patch_rm()` to remove), so a gap in coverage (patchy lidar, a DEM clipped to
+  a watershed) read as measured hillslope or valley: a plot drew it as hillslope or valley, and any
+  share taken over non-`NA` cells counted it as measured. The channel buffer and waterbodies
+  are still added inside a gap, because neither depends on the DEM. A gap still feeds the slope,
+  cost-distance and flood steps, so valid cells around it can differ from a run on a complete DEM.
+  If you sum or average the output on a DEM with gaps, pass `na.rm = TRUE`.
+* Results on the bundled tile do not change, because it has no `NA` cells. The `stac-dem` lidar
+  cache was rebuilt with the fix. Its uncovered cells, counted on the 10 m grids the lidar results
+  are compared on (115,385 for the 5 m run, 11,020 for the 1 m site, outside the channel buffer),
+  were all 0 and are now `NA`. No valley cell moved, and none of the vignette's areas or shares
+  changed. Its lidar figures now draw the uncovered area in its own colour. The cached Parsnip
+  result has no valley cells on `NA` DEM, so its hectares hold.
+* `fl_patch_rm()` and `fl_patch_conn()` can still turn `NA` input cells into 0 (#65).
+
 # flooded 0.6.2
 
 * The `stac-dem` vignette now runs live, and its figures are current (#51). It was pre-baked from

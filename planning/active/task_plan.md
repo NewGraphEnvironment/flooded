@@ -1,13 +1,13 @@
 # Task: fl_valley_confine() returns 0, not NA, where the DEM is NA (#63)
 
 `fl_valley_confine()` documents its return as `1` = valley, `0` = confined / hillslope, `NA` = outside
-analysis extent. Where the input DEM is `NA`, it actually returns **0 or 1, never NA** — no-data reads as measured
+analysis extent. Where the input DEM is `NA`, it usually returns **0 or 1, not NA** (NA survives only on `fl_patch_rm()`'s early return) — no-data reads as measured
 non-valley, a plot draws the gap the same grey as hillslope, and any share over `ncell()` or non-NA
 cells counts the gap as not-floodplain.
 
 ## Context
 
-`fl_valley_confine()` documents `NA` = outside analysis extent, but returns `0` or `1` (never `NA`) on NA DEM cells.
+`fl_valley_confine()` documents `NA` = outside analysis extent, but usually returns `0` or `1` on NA DEM cells (`NA` survives only when `fl_patch_rm()` returns early; #65).
 The cause is `fl_patch_rm()` (`R/fl_patch_rm.R:46`): when any patch is small enough to remove (no early
 return), it sets NA cells to 0 (`is.na(patches) -> 0L`; see #65). After that, the focal smoothing smears 1s into the gap edge. Probe on the
 bundled tile with a 31x31 NA block over a valley: **815 zeros, 146 ones, 0 NA**. Of the 146 ones,
@@ -56,20 +56,20 @@ Measured facts that bound the change:
 - [x] `/code-check` on the staged diff, then commit
 
 ## Phase 4: Rebuild the stac-dem lidar cache
-- [ ] Run `data-raw/stac_dem_vignette_data.R` from a frozen copy in the background (network, about
+- [x] Run `data-raw/stac_dem_vignette_data.R` from a frozen copy in the background (network, about
       1.3 GB, about 20 min)
-- [ ] Diff the new `stac_meta.rds` against the old one (`n_5m`, `n_1m`, `popup_steep_share`,
+- [x] Diff the new `stac_meta.rds` against the old one (`n_5m`, `n_1m`, `popup_steep_share`,
       `site_steep_share`, etc.) and record the deltas in findings
-- [ ] Update `vignettes/stac-dem.Rmd` wherever a number, a sentence or a caption moves: the gap now
+- [x] Update `vignettes/stac-dem.Rmd` wherever a number, a sentence or a caption moves: the gap now
       plots blank instead of grey, so the caption must say what blank means. Compute every claim;
       don't write one from the image
-- [ ] Render the vignette and check the figure and the inline numbers
+- [x] Render the vignette and check the figure and the inline numbers
 
 ## Phase 5: NEWS + notes
-- [ ] `NEWS.md` entry: the behaviour change, why, which callers it affects (patchy DEMs), and that
+- [x] `NEWS.md` entry: the behaviour change, why, which callers it affects (patchy DEMs), and that
       the bundled-tile and Parsnip numbers are unchanged
-- [ ] `CLAUDE.md` test-data trap: update the "hides #63" line so it records the fix
-- [ ] `findings.md`: the Parsnip cache note and the cells that change outside the gap
+- [x] `CLAUDE.md` test-data trap: update the "hides #63" line so it records the fix
+- [x] `findings.md`: the Parsnip cache note and the cells that change outside the gap
 
 ## Validation
 - [ ] Tests pass
