@@ -12,8 +12,8 @@ provincial lidar DEMs.
 The 10 m runs below execute live when this page is built. The lidar
 steps need the STAC endpoint and about 20 minutes of processing, so
 their code is shown as you would run it, and their results come from
-`data-raw/stac_dem_vignette_data.R`, last run from `flooded` 0.6.1
-source (c0c0e46) on 2026-10-07. When this page is built, the two 10 m
+`data-raw/stac_dem_vignette_data.R`, last run from `flooded` 0.6.2
+source (1ea1ae5) on 2026-10-08. When this page is built, the two 10 m
 runs are checked against the 10 m counts that script recorded, and a
 note appears beside the comparison if they differ. That check catches
 changes to the 10 m pipeline; it cannot see a change that only shows at
@@ -206,10 +206,11 @@ valleys_stac <- fl_valley_confine(
 
 n_stac <- sum(values(valleys_stac) == 1, na.rm = TRUE)
 cat(stac_res, "m DEM valley cells:", n_stac, "/", ncell(valleys_stac),
-    "(", round(100 * n_stac / ncell(valleys_stac), 1), "%)\n")
+    "cells in the tile, no-lidar cells included (",
+    round(100 * n_stac / ncell(valleys_stac), 1), "%)\n")
 ```
 
-    #> 5 m DEM valley cells: 186675 / 2073600 ( 9 %)
+    #> 5 m DEM valley cells: 186675 / 2073600 cells in the tile, no-lidar cells included ( 9 %)
 
 ## Compare
 
@@ -246,16 +247,21 @@ plot(valleys_10m, col = c("grey90", "darkgreen"),
      main = "Bundled 10 m DEM (25 m TRIM resampled)", legend = FALSE)
 plot(st_geometry(streams), add = TRUE, col = "blue", lwd = 1)
 
-plot(valleys_stac_10, col = c("grey90", "darkgreen"),
+# Cells with no lidar are NA outside the channel buffer; give them their own colour so the gap does not
+# read as hillslope (grey) or as page-white.
+plot(valleys_stac_10, col = c("grey90", "darkgreen"), colNA = "tan",
      main = paste0("STAC lidar ", stac_res, " m DEM"), legend = FALSE)
 plot(st_geometry(streams), add = TRUE, col = "blue", lwd = 1)
 ```
 
 ![Valley delineation from bundled 10 m DEM (top) vs STAC lidar DEM
-(bottom).](stac-dem_files/figure-html/plot-compare-1.png)
+(bottom). Green is valley, grey is not; tan in the bottom panel has no
+2019 lidar, so it was not
+assessed.](stac-dem_files/figure-html/plot-compare-1.png)
 
 Valley delineation from bundled 10 m DEM (top) vs STAC lidar DEM
-(bottom).
+(bottom). Green is valley, grey is not; tan in the bottom panel has no
+2019 lidar, so it was not assessed.
 
 ## Site-level zoom: 1 m lidar
 
@@ -353,10 +359,11 @@ valleys_1m <- fl_valley_confine(
 n_1m <- sum(values(valleys_1m) == 1, na.rm = TRUE)
 cat("1 m DEM valley cells:", format(n_1m, big.mark = ","), "/",
     format(ncell(valleys_1m), big.mark = ","),
-    "(", round(100 * n_1m / ncell(valleys_1m), 1), "%)\n")
+    "cells in the site, no-lidar cells included (",
+    round(100 * n_1m / ncell(valleys_1m), 1), "%)\n")
 ```
 
-    #> 1 m DEM valley cells: 3,096,003 / 1.4e+07 ( 22.1 %)
+    #> 1 m DEM valley cells: 3,096,003 / 1.4e+07 cells in the site, no-lidar cells included ( 22.1 %)
 
 Run the resampled 10 m DEM over the same site for comparison:
 
@@ -391,17 +398,18 @@ plot(valleys_site_10m, col = c("grey90", "darkgreen"),
      main = "Site: 10 m (25 m TRIM resampled)", legend = FALSE)
 plot(st_geometry(streams_site), add = TRUE, col = "blue", lwd = 1)
 
-plot(valleys_1m_on_10m, col = c("grey90", "darkgreen"),
+plot(valleys_1m_on_10m, col = c("grey90", "darkgreen"), colNA = "tan",
      main = "Site: 1 m native lidar", legend = FALSE)
 plot(st_geometry(streams_site), add = TRUE, col = "blue", lwd = 1)
 ```
 
 ![Site-level comparison: resampled 10 m (top) vs native 1 m lidar
-(bottom). Narrow linear breaks emerge at 1
-m.](stac-dem_files/figure-html/site-compare-1.png)
+(bottom). Narrow linear breaks emerge at 1 m. Tan in the bottom panel
+has no 2019 lidar.](stac-dem_files/figure-html/site-compare-1.png)
 
 Site-level comparison: resampled 10 m (top) vs native 1 m lidar
-(bottom). Narrow linear breaks emerge at 1 m.
+(bottom). Narrow linear breaks emerge at 1 m. Tan in the bottom panel
+has no 2019 lidar.
 
 ## Quantifying the difference
 
@@ -412,9 +420,13 @@ cell_area_m2 <- res(dem_site_10m)[1] * res(dem_site_10m)[2]  # 100 m²
 fp_25m <- sum(values(valleys_site_10m) == 1, na.rm = TRUE)
 fp_1m  <- sum(values(valleys_1m_on_10m) == 1, na.rm = TRUE)
 
-# "Pop-ups": cells that are floodplain at 25 m but NOT at 1 m
+# "Pop-ups": cells that are floodplain at 25 m but NOT at 1 m. Cells with no
+# 1 m lidar are NA and drop out, so the share below is taken over the 25 m
+# floodplain that the lidar covers.
 popups <- sum(values(valleys_site_10m) == 1 & values(valleys_1m_on_10m) != 1,
               na.rm = TRUE)
+fp_25m_lidar <- sum(values(valleys_site_10m) == 1 & !is.na(values(valleys_1m_on_10m)),
+                    na.rm = TRUE)
 
 # Slope of the pop-up cells as the 25 m DEM sees them
 is_popup <- values(valleys_site_10m) == 1 & values(valleys_1m_on_10m) != 1
@@ -429,26 +441,26 @@ data.frame(
     "Floodplain area (25 m TRIM)",
     "Floodplain area (1 m lidar)",
     "Floodplain only at 25 m (pop-ups)",
-    "Pop-ups as % of 25 m floodplain",
+    "Pop-ups as % of 25 m floodplain with 1 m lidar",
     "Floodplain found only at 1 m"
   ),
   Value = c(
     paste(round(fp_25m * cell_area_m2 / 1e4, 1), "ha"),
     paste(round(fp_1m * cell_area_m2 / 1e4, 1), "ha"),
     paste(round(popups * cell_area_m2 / 1e4, 1), "ha"),
-    paste0(round(100 * popups / fp_25m, 1), "%"),
+    paste0(round(100 * popups / fp_25m_lidar, 1), "%"),
     paste(round(fp_1m_only * cell_area_m2 / 1e4, 1), "ha")
   )
 ) |> knitr::kable()
 ```
 
-| Metric                            | Value    |
-|:----------------------------------|:---------|
-| Floodplain area (25 m TRIM)       | 205.9 ha |
-| Floodplain area (1 m lidar)       | 310.3 ha |
-| Floodplain only at 25 m (pop-ups) | 19.8 ha  |
-| Pop-ups as % of 25 m floodplain   | 9.6%     |
-| Floodplain found only at 1 m      | 124.3 ha |
+| Metric                                         | Value    |
+|:-----------------------------------------------|:---------|
+| Floodplain area (25 m TRIM)                    | 205.9 ha |
+| Floodplain area (1 m lidar)                    | 310.3 ha |
+| Floodplain only at 25 m (pop-ups)              | 19.8 ha  |
+| Pop-ups as % of 25 m floodplain with 1 m lidar | 9.6%     |
+| Floodplain found only at 1 m                   | 124.3 ha |
 
 The “pop-ups” are floodplain at 25 m that the 1 m run excludes. The
 table does not say why:

@@ -159,7 +159,10 @@ warns and forwards to <code>area_field</code>; removal is tracked in flooded#53.
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A <code>SpatRaster</code> with binary values: <code>1</code> = unconfined valley, <code>0</code> =
-confined / hillslope, <code>NA</code> = outside analysis extent.</p>
+confined / hillslope. A cell is <code>NA</code> wherever <code>dem</code> is <code>NA</code>, unless the
+channel buffer or a waterbody covers it, in which case it is <code>1</code>. A cell
+with a DEM value can also be <code>NA</code> when a gap cuts it off from every stream
+(#65).</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -171,7 +174,13 @@ confined / hillslope, <code>NA</code> = outside analysis extent.</p>
 <li><p>Fill small holes (&lt; <code>hole_threshold</code>)</p></li>
 <li><p>Remove small patches (&lt; <code>size_threshold</code>)</p></li>
 <li><p>Majority filter (3x3) to smooth edges</p></li>
-</ul><p>After cleanup, optional features are added via logical OR:</p><ul><li><p><strong>Channel buffer</strong> — streams buffered by <code>channel_width</code> (DEM correction)</p></li>
+</ul><p>The cleaned result is then set to <code>NA</code> wherever <code>dem</code> is <code>NA</code>, so a coverage
+gap (patchy lidar, a DEM clipped to a watershed) reads as unmeasured rather
+than as measured ground. The gap still enters the slope, cost-distance and
+flood steps, so valid cells around it, not only at its edge, can differ from
+a run on a complete DEM.</p>
+<p>After cleanup, optional features are added via logical OR. They do not depend
+on the DEM, so they apply inside <code>NA</code> gaps too:</p><ul><li><p><strong>Channel buffer</strong> — streams buffered by <code>channel_width</code> (DEM correction)</p></li>
 <li><p><strong>Waterbodies</strong> — user-supplied lake/wetland polygons rasterized as-is</p></li>
 </ul><p>Adapted from the USDA Valley Confinement Algorithm Toolbox (BlueGeo
 implementation by Devin Cairns, MIT license) and bcfishpass lateral

@@ -113,7 +113,10 @@ fl_valley_confine(
 ## Value
 
 A `SpatRaster` with binary values: `1` = unconfined valley, `0` =
-confined / hillslope, `NA` = outside analysis extent.
+confined / hillslope. A cell is `NA` wherever `dem` is `NA`, unless the
+channel buffer or a waterbody covers it, in which case it is `1`. A cell
+with a DEM value can also be `NA` when a gap cuts it off from every
+stream (#65).
 
 ## Details
 
@@ -138,7 +141,14 @@ The combined mask then undergoes morphological cleanup:
 
 - Majority filter (3x3) to smooth edges
 
-After cleanup, optional features are added via logical OR:
+The cleaned result is then set to `NA` wherever `dem` is `NA`, so a
+coverage gap (patchy lidar, a DEM clipped to a watershed) reads as
+unmeasured rather than as measured ground. The gap still enters the
+slope, cost-distance and flood steps, so valid cells around it, not only
+at its edge, can differ from a run on a complete DEM.
+
+After cleanup, optional features are added via logical OR. They do not
+depend on the DEM, so they apply inside `NA` gaps too:
 
 - **Channel buffer** — streams buffered by `channel_width` (DEM
   correction)
