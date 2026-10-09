@@ -1,0 +1,17 @@
+segments: arm1 58613, arm5 4877, added 53736
+arm5 floodplain 385021 cells (35654 ha); lost in arm1 4880 cells (451.9 ha, 1.27%)
+distance to nearest added stream (m), quantiles 0.1/0.25/0.5/0.75/0.9 
+  lost cells:       61 110 213 356 511 
+  all arm5 fp:      30 68 185 355 551 
+  share within   60 m: lost 9.1%  all arm5 fp 17.9%
+  share within  120 m: lost 26.9%  all arm5 fp 35.0%
+  share within  250 m: lost 58.8%  all arm5 fp 61.5%
+  share within  500 m: lost 89.3%  all arm5 fp 87.1%
+  share within 1000 m: lost 100.0%  all arm5 fp 98.8%
+  flood model arm1: 21.6 s
+  flood model arm5: 8.7 s
+lost cells flooded in arm5 mask: 86.9%; flooded in arm1 mask: 8.3%
+lost cells: arm1 flood mask dropped them 78.6% | arm1 pre-cleanup mask kept them 4.8%
+flood mask cells wet with arm5 seeds, dry with arm1 seeds: 13569 (1256.5 ha)
+  their distance to nearest added stream (m): 30 68 155 300 461 
+arm5 flood depth on lost cells (m): 0.27 0.78 2.16 5.41 10.2 

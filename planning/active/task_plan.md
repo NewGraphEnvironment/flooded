@@ -52,14 +52,14 @@ Exploration notes that shape the phases:
 - Raster `streams` input: new `groups` SpatRaster argument; absent, fall back to the blend with a warning naming #68.
 
 ## Phase 1: Measure the mechanism (read-only on floodplains data)
-- [ ] Script `planning/active/measure_lost_cells.R`: load arm1/arm5 floodplain on the common grid
+- [x] Script `planning/active/measure_lost_cells.R`: load arm1/arm5 floodplain on the common grid
       (copies / in memory only — write nothing into `floodplains/data/morr/`)
-- [ ] Rebuild arm 1 and arm 5 streams via `fp_whole_fwa.R` (`fp_wf_read_network()` +
+- [x] Rebuild arm 1 and arm 5 streams via `fp_whole_fwa.R` (`fp_wf_read_network()` +
       `fp_wf_keep()`); added streams = arm 1 segments not in arm 5
-- [ ] Lost cells = arm 5 floodplain ∧ ¬arm 1; distance of each to the nearest added stream;
+- [x] Lost cells = arm 5 floodplain ∧ ¬arm 1; distance of each to the nearest added stream;
       share within 1 km and distance distribution vs the same for all arm 5 floodplain cells
-- [ ] Split lost cells by cause where computable: in arm-1 waterbody/hole-fill vs flood-surface
-- [ ] Record in `findings.md` with numbers + units. **Gate:** if lost cells do not concentrate
+- [x] Split lost cells by cause where computable: in arm-1 waterbody/hole-fill vs flood-surface
+- [x] Record in `findings.md` with numbers + units. **Gate:** if lost cells do not concentrate
       near added streams, stop, rewrite the issue body, report — no code phases
 
 ## Phase 2: Lineage

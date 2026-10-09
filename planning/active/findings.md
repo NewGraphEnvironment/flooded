@@ -91,3 +91,46 @@ how the waterline is carried laterally.**
 - **Consequence for docs:** state it as a departure from the Python VCA's pooled interpolation, and
   as consistent with Nagel's per-segment flood height (each watercourse floods to its own height;
   where two overlap, the higher wins). Do not claim Nagel prescribes the max — the text does not.
+
+## Phase 1 — Is the pooled blend what loses the 452 ha? (2026-10-09)
+
+Script `planning/active/measure_lost_cells.R`, output `planning/active/measure_lost_cells.log`
+(flooded main @ 6498d49 via `load_all`, terra 12 threads, MORR `co_ff04`, floodplains#110 probe
+rasters on `dem_common.tif`, network from `fp_wf_read_network(conn, "fresh", "MORR", "co")`).
+
+**Reproduced:** arm 5 floodplain 385,021 cells (35,654 ha); 4,880 cells (**451.9 ha, 1.27%**) are
+floodplain in arm 5 and not in arm 1 — the issue's 452 ha exactly. Arm 1 = 58,613 segments,
+arm 5 = 4,877, added = 53,736.
+
+**The distance signature the issue predicted did not appear.** Lost cells are *not* closer to an
+added stream than arm 5's floodplain as a whole (median 213 m vs 185 m; within 120 m: 26.9% vs
+35.0%; within 1 km: 100% vs 98.8%). Why that test cannot discriminate here: the added network is
+so dense that the median arm 5 floodplain cell is already 185 m from an added stream, and IDW's
+radius is 1 km, so every lost cell has added cells in its interpolation window regardless of
+distance. The test the issue proposed is a proxy; the criterion itself can be asked directly.
+
+**The direct test confirms the mechanism.** Slope is seed-independent and the distance and cost
+masks only loosen as seeds are added, so a lost cell was dropped by the flood mask or by cleanup.
+Recomputing the flood mask for both arms:
+
+| lost cells (4,880) | share |
+|---|---|
+| wet in arm 5's flood mask | 86.9% |
+| wet in arm 1's flood mask | 8.3% |
+| **dropped by arm 1's flood mask** (wet with arm 5 seeds, dry with arm 1) | **78.6%** |
+| kept by arm 1's pre-cleanup mask (slope × distance × cost × flood) | 4.8% |
+
+Over the whole grid, **13,569 flood-mask cells (1,256.5 ha)** are wet with the coho seeds and dry
+with every seed — the flood mask alone is not monotone in its seeds, by nearly 3x the floodplain
+loss (the rest are removed by other criteria in both arms anyway). Arm 5's flood depth on the lost
+cells is not marginal: median 2.16 m, upper quartile 5.41 m — these are cells well under the
+river's waterline that the blend pulls dry.
+
+Remaining ~13% of lost cells were not in arm 5's flood mask at all (added to arm 5 by cleanup,
+channel buffer or waterbodies), and ~4.8% are lost to cleanup in arm 1 — the "apart from
+waterbody and hole-filling effects" residual the issue anticipated.
+
+**Gate: proceed.** The mechanism holds; the issue's proposed *diagnostic* was the weak part. The
+issue body gets a Measured section saying so (at PR time).
+
+Flood model timings (whole MORR grid 4,431 x 4,082, single pooled IDW): arm 1 21.6 s, arm 5 8.7 s.
