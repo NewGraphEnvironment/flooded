@@ -19,7 +19,8 @@ exposes the other.
    - The bundled-tile floodplain grew by +67% (ff6) to +143% (ff2); per stream order, +52% to +101%.
    - Per-blue-line ff2 exceeds pooled ff6, so `flood_factor` nearly stops mattering.
    - The gain belongs to the tributaries (17–43 m/km), whose own waterline sits metres above
-     the Bulkley's floor. 72% of it survives with nearest-cell levels instead of IDW.
+     the Bulkley's floor (median depth 4.9 m on the gained cells, round-1 reviewer's prototype at ff6). IDW's reach is not the main
+     cause: .
 
 ## Round 2: drainage ownership (opt-in, `method = "drainage"`)
 
@@ -52,8 +53,7 @@ exposes the other.
 
 **The two rejected candidates bracket pooled from opposite sides.**
 - Max-of-IDW lets any watercourse flood the ground near it, whether or not that ground drains
-  to it. A steep tributary's own waterline, even its nearest cell's, sits metres above the
-  mainstem floor beside it.
+  to it. A steep tributary's own waterline sits metres above the mainstem floor beside it.
 - Drainage fixes *which* watercourse may flood a cell, but takes the level from the reach where
   the cell's path joins it, not from the reach beside the cell.
 

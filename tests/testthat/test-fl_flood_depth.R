@@ -158,7 +158,8 @@ test_that("drainage: a cell takes the highest waterline on its downstream path",
 test_that("drainage: a cell whose path never nears a stream gets no waterline", {
   skip_if_no_whitebox()
   # One stream on the low side of a plane tilted west: ground east of it drains
-  # through it, ground west of it drains away from it and is never flooded, however low.
+  # through it. Ground west of it drains away from it and, beyond the stream's 3x3
+  # window, is never flooded, however low (column 19 is in the window and floods).
   dem <- terra::rast(nrows = 20, ncols = 40, xmin = 0, xmax = 400,
                      ymin = 0, ymax = 200, crs = "EPSG:3005")
   col <- terra::colFromCell(dem, seq_len(terra::ncell(dem)))

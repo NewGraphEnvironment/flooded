@@ -102,12 +102,12 @@ acceptance, record a verdict. Default stays `pooled` unless every criterion pass
       `test-vignette_data` / attribute fixtures, floodplains re-run timed with flooded#67). If
       not: keep the opt-in, or revert it, as the user decides; document why
       → bounded change fails; the keep-or-revert decision goes to the user in the PR
-- [ ] Edit the #68 issue body with the measured result
+- [x] Edit the #68 issue body with the measured result
 - [x] CLAUDE.md design-decisions entry
 
 ## Validation
 
-- [ ] Tests pass
-- [ ] `/code-check` clean (each commit, or once over the branch with `/code-check branch`)
+- [x] Tests pass
+- [x] `/code-check` clean (each commit, or once over the branch with `/code-check branch`)
 - [ ] PWF checkboxes match landed work
 - [ ] `/planning-archive` on completion

@@ -310,17 +310,16 @@ Flow route 18 s at one thread; each valley run 69–73 s (pooled 71–73 s).
 | criterion | result |
 |---|---|
 | Monotone in added watercourses | **Pass.** Exact on the bundled tile (every blue line; defaults and `cost_threshold = 300`); MORR arm 1 vs arm 5: 0 ha |
-| `flood_factor` ordering and sensitivity | **Ordering passes; gaps 1.3–2.9x pooled's.** MORR 9.9/8.4% vs 6.8/5.2%; Parsnip 13.4/13.2% vs 5.6/4.6%; bundled 60/37% vs 25/24% |
+| `flood_factor` ordering and sensitivity | **Ordering passes; gaps 1.5–2.9x pooled's** (1.46–2.87x, shipped rule). MORR 9.9/8.4% vs 6.8/5.2%; Parsnip 13.4/13.2% vs 5.6/4.6%; bundled 60/37% vs 25/24% |
 | Bounded change against today | **Fails.** −25.6% MORR, −28.6% Parsnip (ff4); bundled −52% with the tile-edge loss |
 | Audit of gained and lost cells | Done (Phase 4d). The loss is ground that drains to a stream but takes a lower reach's level |
 
 **Drainage ownership is not a drop-in replacement for the pooled surface.**
-- It fixes the error it was aimed at: exactly monotone, and the 451.9 ha MORR loss becomes 0.
+- It fixes the error it was aimed at: monotone in added streams (the flood mask off the added stream's own cells; the valley output on a DEM without NA gaps), and the 451.9 ha MORR loss becomes 0.
 - But it under-floods by about a quarter on watershed DEMs. Round 1 over-flooded by +67% to +143%.
 - The two candidates bracket pooled from opposite sides.
   - Max-of-IDW lets any watercourse flood the ground near it, drained to it or not; a steep
-    tributary's own waterline sits above the mainstem floor beside it (72% of round 1's gain
-    survives with nearest-cell levels).
+    tributary's own waterline sits above the mainstem floor beside it ().
   - Drainage fixes which watercourse may flood a cell but takes the level where the cell's
     path joins it, downstream of the reach beside it. (Corrected after code-check round 3.)
 
@@ -333,3 +332,21 @@ Flow route 18 s at one thread; each valley run 69–73 s (pooled 71–73 s).
 The waterline is the max over the watercourses met. It stays monotone, because added streams
 only add candidates. A mainstem-floor cell gets the river's level beside it, not at a junction
 downstream, and a steep tributary only floods ground that drains through it.
+
+## Code-check (branch) — how the loop ended (2026-10-09)
+
+| Round | Findings | Fixed | Accepted | Inside previous fix? |
+|---|---|---|---|---|
+| 1 | 4 (testthat pin; 3 doc claims) | 4 | 0 | — |
+| 2 | 4 doc claims (+1 note) | 4 | 0 | yes ("counts stream cells as valley") |
+| 3 | 11 of 147 enumerated claims (8 false, 3 unsupported) | 11 | 0 | yes (2) |
+| 4 | 6 (3 of 36 HEAD sentences, 1 test comment, 2 in the issue body) | 6 | 0 | yes (94.7% relabel back) |
+
+No round found a code defect after round 1's testthat pin; every later finding was prose describing
+the intended rule rather than the computed one. Ended by enumeration rather than another round:
+every number in the four prose surfaces (roxygen drainage section, the CLAUDE.md paragraph, the
+research note, the issue's Round 2 section; 150 numbers) was matched against the measurement logs,
+round 1's archive and this findings file. All resolve to a source except `#65` (an issue number)
+and the rounded per-tool range 36,000–60,000 (sources 36,047–59,638). Round 4 had already checked the
+labels of the 36 sentences round 3's fixes touched; its 6 findings were fixed by copying the label
+from the log line.

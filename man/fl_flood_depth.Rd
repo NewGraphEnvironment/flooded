@@ -94,8 +94,8 @@ gap over the channel (lidar water returns).
 
 \strong{The drainage method is experimental and maps much less floodplain than the pooled
 one.} On the Parsnip watershed group (MRDEM-30) at \code{flood_factor = 4} it maps 29\%
-fewer valley cells. Almost all of the lost cells (94.7\%) have a path that passes
-within one cell of a stream, yet their waterline comes out a median 5.9 m below the
+fewer valley cells. 98.4\% of the lost cells have a path that passes within one cell
+of a stream; 94.7\% come out dry, with a drainage waterline a median 5.9 m below the
 pooled one: a cell takes the level of the reach its flow path joins, not of the
 reach beside it. \code{flood_factor} also matters about
 2.5 times as much. See flooded#68 and \code{research/flood_surface_interpolation.md}.
