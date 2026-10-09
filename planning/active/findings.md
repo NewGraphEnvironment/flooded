@@ -234,3 +234,21 @@ Re-run on the bundled tile after the conditioning change (`measure_level_rule_bu
 - **Shipped rule: rawmin.** The lowest original ground in the 3x3 window stands in for the
   channel bed under a misregistered stream line, the review's B1 concern. Its bias is low, up to
   one cell's down-path drop, pinned in the creek-fixture test (`at(29, 20) == 0`).
+
+## Phase 4c — Parsnip, rawmin (2026-10-09)
+
+`measure_level_rule_parsnip.log`: MRDEM-30 WSG clip, bull trout order 3+, precip,
+waterbodies. Each run took about 90 s at 4 threads with memfrac 0.3.
+
+| rule | ff2 | ff4 | ff6 | vs pooled (ff2 / ff4 / ff6) | gaps ff2->4 / ff4->6 |
+|---|---|---|---|---|---|
+| pooled | 417,543 | 441,054 | 461,129 | — | +5.6% / +4.6% |
+| raw | 386,939 | 408,335 | 432,073 | −7.3% / −7.4% / −6.3% | +5.5% / +5.8% |
+| **rawmin** | 277,681 | 314,772 | 356,391 | **−33.5% / −28.6% / −22.7%** | **+13.4% / +13.2%** |
+
+- On a watershed-clipped DEM, with no tile edge, the shipped rule still maps about a quarter to
+  a third less valley than pooled.
+- `flood_factor` matters about 2.5x more than under pooled, the opposite of round 1.
+- raw sits close to pooled, but it reads the stream cell's own DEM bed, which review B1
+  measured carrying noise upstream (p90 excess 7 m on Parsnip). Closeness to pooled is not
+  evidence of correctness: pooled is the method under question.
