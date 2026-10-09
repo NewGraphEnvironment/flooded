@@ -40,9 +40,9 @@ exposes the other.
 
 - **Monotone, as designed.** Adding every FWA stream to MORR's coho network loses 0 ha (pooled:
   451.9 ha). Exact for every blue line on the bundled tile.
-- **But it under-floods by about a quarter.** On Parsnip, 94.7% of the lost cells *do* drain to
-  a stream.
-  - Their waterline comes out a median 5.9 m lower than pooled's.
+- **But it under-floods by about a quarter.** On Parsnip, 98.4% of the lost cells *do* drain to
+  a stream, and 94.7% come out dry under their own waterline.
+  - On the dry ones, the waterline comes out a median 5.9 m lower than pooled's.
   - It is set a median 590 m away (straight line) against 156 m to the nearest stream: a cell
     takes the level of the reach where its path joins the network, not the reach beside it.
 - **Verdict: not a replacement for pooled.** It passes monotonicity and `flood_factor` ordering

@@ -274,7 +274,7 @@ lower bound on its distance along the path.
 | gained: distance to waterline source | 36 / 114 / 197 m | 178 / 1,730 / 6,794 m |
 | corridor cells owned / pooled-valley cells owned | 91.7% / 76.4% | 99.5% / 99.4% |
 
-- **On Parsnip, the loss is not unowned ground.** 94.7% of lost cells drain to a stream.
+- **On Parsnip, the loss is not unowned ground.** 98.4% of lost cells drain to a stream (1.6% unowned); 94.7% come out dry under their own waterline, and the rest are removed by cleanup. (Corrected after code-check round 1, which caught 94.7% labelled as the share that drains.)
   - Their drainage waterline sits a median 5.9 m below pooled's.
   - It is set by a cell a median 590 m away (straight line, so at least that far along the
     path), against a median 156 m to the nearest stream.

@@ -50,15 +50,18 @@
 #'    deepest flood depth (`flood_factor` x bankfull depth) among the stream cells in
 #'    that window. The lowest neighbour stands in for the channel bed, as in
 #'    height-above-nearest-drainage (HAND) methods, so one high stream-cell elevation
-#'    (a stream line drawn on a bank, an integer DEM) is not carried upstream. The level
-#'    can sit up to one cell's down-path drop below the stream's own.
+#'    (a stream line drawn on a bank, an integer DEM) is not carried upstream. The
+#'    level is therefore biased low: it sits below the stream's own by however much
+#'    lower that lowest neighbour is, at least one cell's drop along a sloping channel.
 #' 3. A cell's waterline is the highest candidate level on its downstream path,
 #'    the cell itself included.
 #'
 #' Because the flow paths do not depend on the streams and a maximum can only grow,
-#' adding a watercourse never lowers a waterline, so the flood mask is monotone in the
-#' streams. Through [fl_valley_confine()] the delineation is monotone too on a DEM
-#' without `NA` gaps. Gaps can break it through the cost surface and #65. A large
+#' adding a watercourse never lowers a waterline away from that watercourse's own cells.
+#' Its own cells become stream cells, with depth `0`, so the flooded mask here is
+#' monotone in the streams everywhere except on the added stream itself.
+#' [fl_valley_confine()] counts stream cells as valley, and on a DEM without `NA` gaps
+#' its delineation is monotone everywhere. Gaps can break it through the cost surface and #65. A large
 #' river's level carries up the lower reach of a tributary that drains into it, as
 #' backwater does. A tributary's level never reaches valley floor that does not drain
 #' through it.
@@ -242,7 +245,8 @@ fl_pointer_next <- function(code, nr, nc) {
 # cell's 3x3 window plus the deepest flood depth (flood_factor x bankfull depth) among the
 # stream cells in that window. The lowest neighbour stands in for the channel bed, so a
 # stream line drawn on a bank, or an integer DEM's rounding, is not carried upstream by the
-# path maximum (review B1). The ground is the original DEM, not the conditioned one:
+# path maximum (review B1). The price is a low bias of whatever that neighbour sits below
+# the stream cell. The ground is the original DEM, not the conditioned one:
 # breaching cuts trenches, and a level read from them moved the bundled tile's ff4 extent
 # from -50% to -75% of pooled with the conditioning algorithm alone.
 fl_drainage_level <- function(flood_surface, dem, route) {
