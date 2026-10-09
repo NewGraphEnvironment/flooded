@@ -82,27 +82,28 @@ acceptance, record a verdict. Default stays `pooled` unless every criterion pass
 - [x] lintr, full `devtools::test()`
 
 ### Phase 4: Measure against the acceptance criteria
-- [ ] Bundled tile: valley cells pooled vs drainage at ff2/4/6, with gaps
-- [ ] Monotone: the Phase 2 test passes (exact, every blue line)
-- [ ] Bounded change on fixed streams:
+- [x] Bundled tile: valley cells pooled vs drainage at ff2/4/6, with gaps
+- [x] Monotone: the Phase 2 test passes (exact, every blue line)
+- [x] Bounded change on fixed streams:
   - bundled tile;
   - MORR arm 5 (`~/Projects/repo/floodplains/data/morr/probe_whole_fwa/`, read-only, network
     via `fp_wf_read_network`, as in `measure_lost_cells.R`);
   - MORR arm 1 vs arm 5 loss (was 451.9 ha);
   - Parsnip A/B: `inst/vignette-data/pars_*` inputs, pooled vs drainage.
-- [ ] Gained/lost audit: for gained and lost cells, the owner (stream cell whose L is the max),
+- [x] Gained/lost audit: for gained and lost cells, the owner (stream cell whose L is the max),
       depth, and height above owner's bed (median, p90). Script in `planning/active/measure_*.R`
       with its log
-- [ ] Timing on MORR, against the pooled 8.7 s / 21.6 s
+- [x] Timing on MORR, against the pooled 8.7 s / 21.6 s
 
 ### Phase 5: Verdict and records
-- [ ] Verdict against all four criteria in findings.md and `research/flood_surface_interpolation.md`
+- [x] Verdict against all four criteria in findings.md and `research/flood_surface_interpolation.md`
       (revised in place)
-- [ ] If every criterion passes: ask the user about flipping the default (NEWS, re-pinning
+- [x] If every criterion passes: ask the user about flipping the default (NEWS, re-pinning
       `test-vignette_data` / attribute fixtures, floodplains re-run timed with flooded#67). If
       not: keep the opt-in, or revert it, as the user decides; document why
+      → bounded change fails; the keep-or-revert decision goes to the user in the PR
 - [ ] Edit the #68 issue body with the measured result
-- [ ] CLAUDE.md design-decisions entry
+- [x] CLAUDE.md design-decisions entry
 
 ## Validation
 

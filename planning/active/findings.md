@@ -287,3 +287,48 @@ lower bound on its distance along the path.
   2.8 m above pooled. That is the path maximum carrying a downstream level, such as a lake or a
   large confluence, a long way up. This is the review's backwater concern (As3) at a scale
   larger than its estimate. It is not attributed per waterbody here.
+
+## Phase 4e — MORR (2026-10-09)
+
+`measure_morr.R/.log`: floodplains#110 probe DEM (30.43 m, watershed-clipped), coho network
+(arm 5) and all FWA streams (arm 1), precip, no waterbodies, co_ff04 parameters otherwise.
+Flow route 18 s at one thread; each valley run 69–73 s (pooled 71–73 s).
+
+| | ff2 | ff4 | ff6 | gaps ff2->4 / ff4->6 |
+|---|---|---|---|---|
+| arm 5 pooled | 30,392 ha | 32,470 ha | 34,171 ha | +6.8% / +5.2% |
+| arm 5 drainage | 21,978 ha (−27.7%) | 24,145 ha (−25.6%) | 26,170 ha (−23.4%) | +9.9% / +8.4% |
+| lost / gained vs pooled | 8,994 / 580 ha | 8,847 / 522 ha | 8,483 / 481 ha | |
+
+- **Monotone on MORR:** adding every FWA stream to the coho network (arm 1 vs arm 5, ff4) loses
+  **0 ha** of valley and **0** flood-mask cells. Pooled: 451.9 ha and 13,569 cells.
+- 99.1% of arm 5's pooled-valley cells drain to a stream (99.4% of the corridor). The loss is
+  not unowned ground: tile edges were a bundled-tile artefact, as Phase 1 suspected.
+
+## Verdict against the #68 acceptance (2026-10-09)
+
+| criterion | result |
+|---|---|
+| Monotone in added watercourses | **Pass.** Exact on the bundled tile (every blue line; defaults and `cost_threshold = 300`); MORR arm 1 vs arm 5: 0 ha |
+| `flood_factor` ordering and sensitivity | **Ordering passes; gaps 1.3–2.9x pooled's.** MORR 9.9/8.4% vs 6.8/5.2%; Parsnip 13.4/13.2% vs 5.6/4.6%; bundled 60/37% vs 25/24% |
+| Bounded change against today | **Fails.** −25.6% MORR, −28.6% Parsnip (ff4); bundled −52% with the tile-edge loss |
+| Audit of gained and lost cells | Done (Phase 4d). The loss is ground that drains to a stream but takes a lower reach's level |
+
+**Drainage ownership is not a drop-in replacement for the pooled surface.**
+- It fixes the error it was aimed at: exactly monotone, and the 451.9 ha MORR loss becomes 0.
+- But it under-floods by about a quarter on watershed DEMs. Round 1 over-flooded by +67% to +143%.
+- The two candidates bracket pooled from opposite sides for the same reason: neither has a rule
+  for **which point of a watercourse** sets a cell's level.
+  - Max-of-IDW takes a tributary's level from its steep upper reach.
+  - Drainage takes the level where the cell's path joins the network, downstream of the reach
+    beside it.
+
+**A candidate for round 3 (not measured).** Combine the two halves:
+- ownership by drainage decides **which** watercourses may flood a cell, namely those on its
+  downstream path;
+- lateral proximity decides **where** along each, namely that watercourse's level at its
+  nearest point to the cell.
+
+The waterline is the max over the watercourses met. It stays monotone, because added streams
+only add candidates. A mainstem-floor cell gets the river's level beside it, not at a junction
+downstream, and a steep tributary only floods ground that drains through it.

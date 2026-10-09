@@ -64,12 +64,12 @@ itself, and adding streams to a run can remove floodplain (flooded#68).
 for what that leaves) and assigns each cell a D8 flow direction. The directions come from the
 DEM alone, not from the streams. WhiteboxTools runs single-threaded here, because
 its multi-threaded breaching is not deterministic.
-\item Each cell's candidate level is its own conditioned elevation plus the deepest flood
-depth (\code{flood_factor} x bankfull depth) among the stream cells in its 3x3 window.
-Measuring from the ground along the path, as height-above-nearest-drainage (HAND)
-methods do, keeps one high stream-cell elevation (a stream line drawn on a bank, an
-integer DEM) from being carried upstream. The cell beside a stream therefore sits
-one cell's relief above the stream's own level.
+\item Each cell's candidate level is the lowest ground in its 3x3 window plus the
+deepest flood depth (\code{flood_factor} x bankfull depth) among the stream cells in
+that window. The lowest neighbour stands in for the channel bed, as in
+height-above-nearest-drainage (HAND) methods, so one high stream-cell elevation
+(a stream line drawn on a bank, an integer DEM) is not carried upstream. The level
+can sit up to one cell's down-path drop below the stream's own.
 \item A cell's waterline is the highest candidate level on its downstream path,
 the cell itself included.
 }
@@ -87,10 +87,11 @@ ground that drains off the edge of the DEM, and ground whose path runs into an \
 gap over the channel (lidar water returns).
 
 \strong{The drainage method is experimental and maps much less floodplain than the pooled
-one.} Valley-floor ground that drains down-valley before reaching the river takes the
-river's level where it joins, not beside it. On the Parsnip watershed group at
-\code{flood_factor = 4} it maps 27\% fewer valley cells than the pooled method. See
-flooded#68 and \code{research/flood_surface_interpolation.md}.
+one.} On the Parsnip watershed group (MRDEM-30) at \code{flood_factor = 4} it maps 29\%
+fewer valley cells. Almost all of the difference is ground that does drain to a stream
+but whose waterline comes out a median 5.9 m lower: it takes the level of the reach
+its flow path joins, not of the reach beside it. \code{flood_factor} also matters about
+2.5 times as much. See flooded#68 and \code{research/flood_surface_interpolation.md}.
 }
 }
 \examples{

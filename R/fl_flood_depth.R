@@ -68,10 +68,11 @@
 #' gap over the channel (lidar water returns).
 #'
 #' **The drainage method is experimental and maps much less floodplain than the pooled
-#' one.** Valley-floor ground that drains down-valley before reaching the river takes the
-#' river's level where it joins, not beside it. On the Parsnip watershed group at
-#' `flood_factor = 4` it maps 27% fewer valley cells than the pooled method. See
-#' flooded#68 and `research/flood_surface_interpolation.md`.
+#' one.** On the Parsnip watershed group (MRDEM-30) at `flood_factor = 4` it maps 29%
+#' fewer valley cells. Almost all of the difference is ground that does drain to a stream
+#' but whose waterline comes out a median 5.9 m lower: it takes the level of the reach
+#' its flow path joins, not of the reach beside it. `flood_factor` also matters about
+#' 2.5 times as much. See flooded#68 and `research/flood_surface_interpolation.md`.
 #'
 #' @examples
 #' dem <- terra::rast(system.file("testdata/dem.tif", package = "flooded"))

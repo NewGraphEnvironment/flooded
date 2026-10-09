@@ -120,6 +120,15 @@ tests/testthat/          — unit tests for each fl_* function (17 test files, 1
   Removing the first exposes the second: per-`blue_line_key` max grew the bundled floodplain
   +67% to +143%, and ff2 exceeded pooled ff6. Do not re-try it or its per-order variant; the next
   candidate is drainage-based ownership. See `research/flood_surface_interpolation.md`.
+- **Drainage ownership is opt-in and under-floods** (#68 round 2, `flood_method = "drainage"`,
+  needs WhiteboxTools). It is exactly monotone (MORR all-FWA vs coho: 0 ha lost, pooled 451.9 ha)
+  but maps about a quarter less valley than pooled: −25.6% MORR, −28.6% Parsnip at ff4. A cell
+  takes the level where its path joins the network, a median 5.9 m below pooled's on Parsnip.
+  Read the level from the **original** DEM: a conditioned-DEM level swung −50% to −75% with the
+  pit-removal algorithm. WhiteboxTools runs single-threaded (multi-threaded breaching is not
+  deterministic), and never with least-cost `fill = TRUE` or `FillDepressions`, which panic on an
+  `Arc::try_unwrap` race. The next candidate, a nearest-point level per drained-to watercourse,
+  is in `research/flood_surface_interpolation.md`.
 
 ### Test-data traps
 
