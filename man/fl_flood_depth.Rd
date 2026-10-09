@@ -87,15 +87,17 @@ level carries up the lower reach of a tributary that drains into it, as backwate
 does. A tributary's level reaches only ground whose path passes through the
 tributary or within one cell of it, never the open valley floor beside it.
 
-A cell whose path meets no stream gets no waterline and is not flooded. That includes
+A cell whose path never comes within one cell of a stream gets no waterline and is
+not flooded. That includes
 ground that drains off the edge of the DEM, and ground whose path runs into an \code{NA}
 gap over the channel (lidar water returns).
 
 \strong{The drainage method is experimental and maps much less floodplain than the pooled
 one.} On the Parsnip watershed group (MRDEM-30) at \code{flood_factor = 4} it maps 29\%
-fewer valley cells. Almost all of the difference is ground that does drain to a stream
-but whose waterline comes out a median 5.9 m lower: it takes the level of the reach
-its flow path joins, not of the reach beside it. \code{flood_factor} also matters about
+fewer valley cells. Almost all of the lost cells (94.7\%) have a path that passes
+within one cell of a stream, yet their waterline comes out a median 5.9 m below the
+pooled one: a cell takes the level of the reach its flow path joins, not of the
+reach beside it. \code{flood_factor} also matters about
 2.5 times as much. See flooded#68 and \code{research/flood_surface_interpolation.md}.
 }
 }

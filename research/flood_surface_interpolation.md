@@ -19,7 +19,7 @@ exposes the other.
    - The bundled-tile floodplain grew by +67% (ff6) to +143% (ff2); per stream order, +52% to +101%.
    - Per-blue-line ff2 exceeds pooled ff6, so `flood_factor` nearly stops mattering.
    - The gain belongs to the tributaries (17–43 m/km), whose own waterline sits metres above
-     the Bulkley's floor.
+     the Bulkley's floor. 72% of it survives with nearest-cell levels instead of IDW.
 
 ## Round 2: drainage ownership (opt-in, `method = "drainage"`)
 
@@ -40,18 +40,22 @@ exposes the other.
 
 - **Monotone, as designed.** Adding every FWA stream to MORR's coho network loses 0 ha (pooled:
   451.9 ha). Exact for every blue line on the bundled tile.
-- **But it under-floods by about a quarter.** On Parsnip, 98.4% of the lost cells *do* drain to
-  a stream, and 94.7% come out dry under their own waterline.
-  - On the dry ones, the waterline comes out a median 5.9 m lower than pooled's.
+- **But it under-floods by about a quarter.** On Parsnip, 98.4% of the lost cells have a path
+  that passes within one cell of a stream (the audit's "owned"). 94.7% come out dry under their
+  own waterline, and the rest are removed by cleanup.
+  - On the dry ones, the drainage waterline is a median 5.9 m below pooled's; pooled had them a
+    median 2.3 m under water.
   - It is set a median 590 m away (straight line) against 156 m to the nearest stream: a cell
     takes the level of the reach where its path joins the network, not the reach beside it.
 - **Verdict: not a replacement for pooled.** It passes monotonicity and `flood_factor` ordering
   and fails "bounded change against today". The default stays `pooled`.
 
-**The two rejected candidates bracket pooled from opposite sides for one reason.** Neither has a
-rule for *which point along a watercourse* sets a cell's level:
-- max-of-IDW takes a tributary's level from its steep upper reach;
-- drainage takes it from the downstream junction.
+**The two rejected candidates bracket pooled from opposite sides.**
+- Max-of-IDW lets any watercourse flood the ground near it, whether or not that ground drains
+  to it. A steep tributary's own waterline, even its nearest cell's, sits metres above the
+  mainstem floor beside it.
+- Drainage fixes *which* watercourse may flood a cell, but takes the level from the reach where
+  the cell's path joins it, not from the reach beside the cell.
 
 **The level must not come from the conditioned DEM.** Breaching cuts trenches, and a level read
 from the conditioned surface moved the bundled ff4 extent from −50% to −75% of pooled with the

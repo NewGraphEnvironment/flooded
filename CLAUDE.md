@@ -121,10 +121,11 @@ tests/testthat/          — unit tests for each fl_* function (17 test files, 1
   +67% to +143%, and ff2 exceeded pooled ff6. Do not re-try it or its per-order variant; the next
   candidate is drainage-based ownership. See `research/flood_surface_interpolation.md`.
 - **Drainage ownership is opt-in and under-floods** (#68 round 2, `flood_method = "drainage"`,
-  needs WhiteboxTools). It is exactly monotone (MORR all-FWA vs coho: 0 ha lost, pooled 451.9 ha)
-  but maps about a quarter less valley than pooled: −25.6% MORR, −28.6% Parsnip at ff4. A cell
-  takes the level where its path joins the network: on Parsnip, the lost cells that drain to a
-  stream but come out dry sit a median 5.9 m below pooled's waterline.
+  needs WhiteboxTools). It is monotone in added streams: the flood mask off the added stream's
+  own cells, and the valley output on a DEM without NA gaps (MORR all-FWA vs coho: 0 ha lost,
+  pooled 451.9 ha), but maps about a quarter less valley than pooled: −25.6% MORR, −28.6% Parsnip at ff4. A cell
+  takes the level where its path joins the network: on Parsnip, the lost cells that come out
+  dry have a drainage waterline a median 5.9 m below pooled's.
   Read the level from the **original** DEM: a conditioned-DEM level swung −50% to −75% with the
   pit-removal algorithm. WhiteboxTools runs single-threaded (multi-threaded breaching is not
   deterministic), and never with least-cost `fill = TRUE` or `FillDepressions`, which panic on an

@@ -317,11 +317,12 @@ Flow route 18 s at one thread; each valley run 69–73 s (pooled 71–73 s).
 **Drainage ownership is not a drop-in replacement for the pooled surface.**
 - It fixes the error it was aimed at: exactly monotone, and the 451.9 ha MORR loss becomes 0.
 - But it under-floods by about a quarter on watershed DEMs. Round 1 over-flooded by +67% to +143%.
-- The two candidates bracket pooled from opposite sides for the same reason: neither has a rule
-  for **which point of a watercourse** sets a cell's level.
-  - Max-of-IDW takes a tributary's level from its steep upper reach.
-  - Drainage takes the level where the cell's path joins the network, downstream of the reach
-    beside it.
+- The two candidates bracket pooled from opposite sides.
+  - Max-of-IDW lets any watercourse flood the ground near it, drained to it or not; a steep
+    tributary's own waterline sits above the mainstem floor beside it (72% of round 1's gain
+    survives with nearest-cell levels).
+  - Drainage fixes which watercourse may flood a cell but takes the level where the cell's
+    path joins it, downstream of the reach beside it. (Corrected after code-check round 3.)
 
 **A candidate for round 3 (not measured).** Combine the two halves:
 - ownership by drainage decides **which** watercourses may flood a cell, namely those on its

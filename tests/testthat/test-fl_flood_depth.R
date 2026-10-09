@@ -84,7 +84,7 @@ test_that("method = 'drainage' names whitebox when it is unavailable", {
 
 # --- Drainage ownership (#68) --------------------------------------------------------
 # A river down the middle of a valley (column 40) and a small creek crossing the floor
-# to meet it (row 30). The floor rises 0.2 m per cell away from the river and is flat
+# toward it along row 30, stopping one cell short. The floor rises 0.2 m per cell away from the river and is flat
 # down-valley, so every cell drains straight across to the river. The river's 4 m
 # waterline reaches 20 cells out; the creek's own waterline is 0.1 m. Round 1 measured
 # that a pooled interpolation loses 46 cells of the river's floodplain when the creek is
@@ -145,7 +145,7 @@ test_that("drainage: a cell takes the highest waterline on its downstream path",
   # depth in it. Row 10, column 30 (ground 102) drains east; at column 39 the window
   # holds the river (bed 100, depth 4), so its waterline is 104.
   expect_equal(at(10, 30), 2, tolerance = 1e-6)
-  # Beside the creek the window's lowest ground is one cell down-valley, 0.2 m lower,
+  # Beside the creek the window's lowest ground is one cell toward the river, 0.2 m lower,
   # which is more than the creek's 0.1 m depth: row 29, column 20 (ground 104) gets the
   # river's 104 and is not flooded. This is the rule's stated low bias.
   expect_equal(at(29, 20), 0, tolerance = 1e-6)
@@ -155,7 +155,7 @@ test_that("drainage: a cell takes the highest waterline on its downstream path",
   expect_true(all(terra::values(d, mat = FALSE)[c(f$river, f$creek)] == 0))
 })
 
-test_that("drainage: a cell whose path meets no stream gets no waterline", {
+test_that("drainage: a cell whose path never nears a stream gets no waterline", {
   skip_if_no_whitebox()
   # One stream on the low side of a plane tilted west: ground east of it drains
   # through it, ground west of it drains away from it and is never flooded, however low.
@@ -193,7 +193,7 @@ test_that("fl_path_max takes the max over each downstream path", {
   # 1 -> 2 -> 3 (end); 4 alone; 5 -> 1
   nxt <- c(2L, 3L, 3L, 4L, 1L)
   expect_equal(fl_path_max(nxt, c(NA, 5, 1, NA, 2)), c(5, 5, 1, NA, 5))
-  # A path longer than any power of two still reaches its end.
+  # A 1,000-cell path, longer than nine doublings, still reaches its end.
   n <- 1000L
   expect_equal(fl_path_max(c(2:n, n), c(rep(NA, n - 1), 7))[1], 7)
 })

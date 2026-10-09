@@ -68,15 +68,17 @@
 #' does. A tributary's level reaches only ground whose path passes through the
 #' tributary or within one cell of it, never the open valley floor beside it.
 #'
-#' A cell whose path meets no stream gets no waterline and is not flooded. That includes
+#' A cell whose path never comes within one cell of a stream gets no waterline and is
+#' not flooded. That includes
 #' ground that drains off the edge of the DEM, and ground whose path runs into an `NA`
 #' gap over the channel (lidar water returns).
 #'
 #' **The drainage method is experimental and maps much less floodplain than the pooled
 #' one.** On the Parsnip watershed group (MRDEM-30) at `flood_factor = 4` it maps 29%
-#' fewer valley cells. Almost all of the difference is ground that does drain to a stream
-#' but whose waterline comes out a median 5.9 m lower: it takes the level of the reach
-#' its flow path joins, not of the reach beside it. `flood_factor` also matters about
+#' fewer valley cells. Almost all of the lost cells (94.7%) have a path that passes
+#' within one cell of a stream, yet their waterline comes out a median 5.9 m below the
+#' pooled one: a cell takes the level of the reach its flow path joins, not of the
+#' reach beside it. `flood_factor` also matters about
 #' 2.5 times as much. See flooded#68 and `research/flood_surface_interpolation.md`.
 #'
 #' @examples
@@ -130,9 +132,8 @@ fl_flood_depth <- function(dem, flood_surface, max_width = 2000,
   target <- terra::ifel((dist <= half_width) & !is.na(dem), 1, NA)
 
   if (method == "drainage") {
-    # Candidate level at each path cell: its conditioned elevation plus the deepest
-    # flood depth among the stream cells in its 3x3 window. Then the highest
-    # candidate on the cell's downstream path (#68).
+    # Candidate level at each cell from fl_drainage_level(); the waterline is the
+    # highest candidate on the cell's downstream path (#68).
     route <- fl_flow_route(dem)
     owned <- fl_path_max(route[["next"]], fl_drainage_level(flood_surface, dem, route))
     surface_interp <- terra::rast(dem)
@@ -192,8 +193,9 @@ fl_flow_route <- function(dem, breach_dist = 50L) {
   fl_whitebox_check()
   # Multi-threaded breaching and filling are not deterministic: two identical calls of
   # the original route on the bundled tile gave next cells differing in 60,541 and
-  # 69,960 of 518,400 cells (each tool alone: 36,047 to 59,638 elevations), so a run
-  # would not even be monotone against itself. One thread is exact. The env var outranks the
+  # 69,960 of 518,400 cells. Least-cost breaching and depression filling alone changed
+  # 36,047 to 59,638 elevations between runs; BreachDepressions and D8Pointer changed
+  # none. A run would not even be monotone against itself. One thread is exact. The env var outranks the
   # `whitebox.max_procs` option, so set it for this call only and put back what was there.
   old_procs <- Sys.getenv("R_WHITEBOX_MAX_PROCS", unset = NA)
   Sys.setenv(R_WHITEBOX_MAX_PROCS = "1")

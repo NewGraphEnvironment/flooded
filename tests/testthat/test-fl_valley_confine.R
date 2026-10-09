@@ -433,8 +433,9 @@ test_that("a waterbody inside an NA DEM gap is valley, the rest of the gap NA (#
 # --- Drainage flood surface (#68) --------------------------------------------------
 # The pooled IDW is not monotone in its seeds: on this tile, dropping the Bulkley
 # mainstem *gains* 12,220 valley cells (measured on 6498d49). Drainage ownership takes,
-# for each cell, the highest waterline among the streams on its downstream path, and
-# flow directions come from the DEM alone, so an added watercourse can only add.
+# for each cell, the highest candidate level met along its downstream path (lowest
+# ground within one cell plus the deepest stream depth within one cell), and flow
+# directions come from the DEM alone, so an added watercourse can only add.
 
 test_that("the default flood_method keeps the pooled delineation", {
   # Pinned on main before #68 (6498d49), with precipitation.
