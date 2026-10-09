@@ -4,7 +4,13 @@
 \alias{fl_flood_depth}
 \title{Interpolate flood surface and compute depth above terrain}
 \usage{
-fl_flood_depth(dem, flood_surface, max_width = 2000, streams = NULL)
+fl_flood_depth(
+  dem,
+  flood_surface,
+  max_width = 2000,
+  streams = NULL,
+  groups = NULL
+)
 }
 \arguments{
 \item{dem}{A \code{SpatRaster} of elevation.}
@@ -18,6 +24,16 @@ within which to interpolate. Default \code{2000} (1000m each side).}
 \item{streams}{A \code{SpatRaster} of rasterized streams used to define the
 interpolation corridor. If \code{NULL}, derived from non-\code{NA} cells in
 \code{flood_surface}.}
+
+\item{groups}{Which watercourse each stream cell belongs to, so that each
+watercourse's surface is interpolated from its own cells alone. Either a
+\code{SpatRaster} on the same grid holding a group id at each stream cell, or a
+list of integer vectors of cell numbers, one per group. The list form lets
+a cell belong to more than one watercourse, which is what
+\code{\link[=fl_valley_confine]{fl_valley_confine()}} builds so that a confluence cell feeds both streams.
+Stream cells in no group, or with an \code{NA} id, form one group of their own.
+Default \code{NULL} interpolates every stream cell together, as every release
+did before flooded#68.}
 }
 \value{
 A \code{SpatRaster} of flood depth (metres above terrain). Positive
@@ -39,6 +55,28 @@ results for this application.
 
 The interpolation domain is limited to cells within \code{max_width / 2} of
 the nearest stream cell to avoid extrapolating into distant terrain.
+\subsection{One surface per watercourse}{
+
+With \code{groups = NULL}, one interpolation runs over every stream cell, so a
+cell between a large river and a small creek gets a distance-weighted blend
+of a deep waterline and a shallow one. A creek crossing a river's valley
+floor then pulls the river's waterline down around itself, and adding
+streams to a run can \emph{remove} floodplain (flooded#68: 452 ha of one
+watershed group's floodplain lost when every FWA stream was seeded instead
+of a species network).
+
+With \code{groups}, each group's surface is interpolated from its own stream
+cells and the flood surface is their cell-wise maximum: a spot is as wet as
+the stream that floods it highest. Adding a group can then only raise the
+waterline. Nagel et al. (2014) set the flood height per stream segment and
+do not say how neighbouring segments' heights combine; the Python VCA pools
+every stream cell into one \code{griddata()} interpolation, as the
+\code{groups = NULL} path does. Per-watercourse maxima are this package's choice.
+
+Each group is interpolated over its own bounding box grown by
+\code{max_width / 2}, so the cost is one \code{\link[terra:interpIDW]{terra::interpIDW()}} per group on a
+small window rather than one per group on the full grid.
+}
 }
 \examples{
 dem <- terra::rast(system.file("testdata/dem.tif", package = "flooded"))

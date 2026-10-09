@@ -152,3 +152,40 @@ Flood model timings (whole MORR grid 4,431 x 4,082, single pooled IDW): arm 1 21
 - Pins taken on main (6498d49) for the opt-out path: `fl_flood_depth()` on the bundled tile,
   `upstream_area_ha` + precip, ff 6 — 32,178 non-NA, 30,571 > 0, sum 65,162.334854;
   `fl_valley_confine(precip = ...)` 28,727 valley cells.
+
+## Phase 4 — the fix over-floods (2026-10-09)
+
+Implemented as planned (`fl_flood_depth(groups =)`, `fl_valley_confine(group_field =
+"blue_line_key", groups =)`, multi-membership via `fl_stream_groups()`). Every #68 test passes,
+including the exact superset property for every blue line on the bundled tile. **But the extent it
+produces is not defensible**, first reported by the concurrent Plan review and then re-measured on
+this implementation (bundled tile, `upstream_area_ha` + precip, defaults otherwise):
+
+| flood_factor | pooled (`group_field = NULL`) | per blue line (max) | per stream order (max) |
+|---|---|---|---|
+| ff2 | 18,543 | 45,101 (+143%) | 37,209 (+101%) |
+| ff4 | 23,192 | 46,758 (+102%) | 40,610 (+75%) |
+| ff6 | 28,727 | 48,027 (+67%) | 43,764 (+52%) |
+
+- **Grouped ff2 exceeds pooled ff6**, so `flood_factor` nearly stops mattering: the extent is set
+  by where tributaries sit, not by flood height. Flood-mask gain at ff4: 25,799 cells.
+- **Reviewer's attribution of the gain (ff6, its own prototype, consistent with the above):** of
+  21,863 gained flood-mask cells, 18,651 pass slope x distance x cost, and *all* are won by the
+  three tributaries, none by the Bulkley — Cesford Cr 7,345 (surface rises 43 m/km), Robert Hatch
+  Cr 6,668 (18 m/km), Richfield Cr 4,638 (17 m/km). Median depth on gained cells 4.9 m (p90 11.6).
+  Not mainly IDW reach: with each group's *nearest-cell* level instead of IDW, 72% stay wet.
+- **Mechanism:** a tributary's own surface, interpolated from cells up its steeper reach, sits
+  well above the mainstem's valley floor beside it. The pooled blend was diluting that with the
+  mainstem's many lower cells. So the pooled blend has two errors that partly cancel: it lowers a
+  river's waterline near small streams (the #68 loss, ~1.3% on MORR) and it *suppresses* steep
+  tributaries projecting their waterline laterally onto the mainstem floor (much larger). Removing
+  the first exposes the second.
+- **Per-order grouping does not avoid it** (table above).
+- Reviewer's tried mitigation, "no flooding below the group's own bed at its nearest cell": ff6
+  gain +21% but loses 7,067 cells the blend had — not a drop-in fix.
+- **The issue's Proposal 4 premise ("every floodplain gains the ground it was losing") is wrong in
+  magnitude**: the gain is ~50-100x the loss.
+
+Full suite on the grouped default: FAIL 4 — `test-fl_valley_attribute.R:114` (pinned against the
+pooled delineation) and `test-vignette_data.R:31,41` (stac 10 m cell-count pins). Expected under the
+default change; not fixed, pending the decision.

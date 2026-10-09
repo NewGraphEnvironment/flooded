@@ -46,6 +46,17 @@
 #' @param field Deprecated. The former name of `area_field`, whose
 #'   `"channel_width"` default was wrong for the flood model (#47). Supplying it
 #'   warns and forwards to `area_field`; removal is tracked in flooded#53.
+#' @param group_field Character. Column of `streams` identifying each
+#'   watercourse. Default `"blue_line_key"` (BC Freshwater Atlas). Each
+#'   watercourse's flood surface is interpolated from its own stream cells and
+#'   the flood mask takes the highest, so a small stream never lowers a large
+#'   river's waterline (flooded#68). A missing column is an error. `NULL`
+#'   interpolates every stream cell together, as releases before flooded#68
+#'   did. For rasterized `streams` the column cannot be read: supply `groups`,
+#'   or set `group_field = NULL` to accept the pooled surface without a warning.
+#' @param groups For rasterized `streams` only: watercourse ids for the stream
+#'   cells, as a `SpatRaster` on the `dem` grid or a list of cell numbers (see
+#'   [fl_flood_depth()]). Default `NULL`.
 #'
 #' @return A `SpatRaster` with binary values: `1` = unconfined valley, `0` =
 #'   confined / hillslope. A cell is `NA` wherever `dem` is `NA`, unless the
@@ -58,7 +69,9 @@
 #' 1. **Slope mask** — cells with slope <= `slope_threshold`
 #' 2. **Distance mask** — cells within `max_width / 2` of a stream
 #' 3. **Cost distance mask** — cells with accumulated cost < `cost_threshold`
-#' 4. **Flood mask** — cells identified as flooded by bankfull regression
+#' 4. **Flood mask** — cells identified as flooded by bankfull regression,
+#'    with each watercourse's waterline interpolated separately and the highest
+#'    kept (see `group_field`)
 #'
 #' The combined mask then undergoes morphological cleanup:
 #' - Closing filter (3x3) to bridge small gaps
@@ -141,8 +154,15 @@ fl_valley_confine <- function(dem, streams,
                               channel_buffer = NULL,
                               size_threshold = 5000,
                               hole_threshold = 2500,
-                              field = NULL) {
+                              field = NULL,
+                              group_field = "blue_line_key",
+                              groups = NULL) {
   stopifnot(inherits(dem, "SpatRaster"))
+  group_field_ok <- is.null(group_field) ||
+    (is.character(group_field) && length(group_field) == 1L && !is.na(group_field))
+  if (!group_field_ok) {
+    stop("`group_field` must be a single column name (character) or NULL.", call. = FALSE)
+  }
 
   # --- Deprecated `field` spelling (#47) ---
   # `field` defaulted to "channel_width", which the flood model then read as
@@ -190,6 +210,20 @@ fl_valley_confine <- function(dem, streams,
            call. = FALSE)
     }
     stream_r <- fl_stream_rasterize(streams, dem, field = area_field)
+    if (!is.null(groups)) {
+      stop("`groups` is for rasterized `streams`; with sf streams name the ",
+           "watercourse column in `group_field` instead.", call. = FALSE)
+    }
+    if (!is.null(group_field)) {
+      if (!group_field %in% names(streams)) {
+        stop("`group_field` '", group_field, "' not found in `streams`. Each ",
+             "watercourse's flood surface is interpolated from its own cells ",
+             "(flooded#68); name the column identifying watercourses, or pass ",
+             "`group_field = NULL` to interpolate every stream together.",
+             call. = FALSE)
+      }
+      groups <- fl_stream_groups(streams, dem, group_field)
+    }
   } else if (inherits(streams, "SpatRaster")) {
     stream_r <- streams
     # A pre-rasterized layer carries #47 one call earlier, and this branch cannot
@@ -208,6 +242,12 @@ fl_valley_confine <- function(dem, streams,
       warning("`streams` is a raster of 'channel_width', which is not upstream ",
               "contributing area. The flood model reads these values as drainage ",
               "area in hectares; rasterize the area column instead.", call. = FALSE)
+    }
+    if (is.null(groups) && !is.null(group_field)) {
+      warning("Rasterized `streams` carry no watercourse ids, so the flood surface ",
+              "is interpolated from every stream cell together and small streams ",
+              "can lower a large river's floodplain (flooded#68). Pass `groups`, ",
+              "or `group_field = NULL` to accept the pooled surface.", call. = FALSE)
     }
   } else {
     stop("`streams` must be an sf object or SpatRaster.", call. = FALSE)
@@ -232,7 +272,7 @@ fl_valley_confine <- function(dem, streams,
   # --- 4. Flood mask ---
   flood <- fl_flood_model(dem, stream_r,
                           flood_factor = flood_factor, precip = precip,
-                          max_width = max_width)
+                          max_width = max_width, groups = groups)
   mask_flood <- flood[["flooded"]]
   # Include stream cells in the flood mask; convert NA to 0
   mask_flood <- terra::ifel(!is.na(stream_r), 1L, mask_flood)
@@ -309,4 +349,18 @@ fl_valley_confine <- function(dem, streams,
 
   names(valleys) <- "valley"
   valleys
+}
+
+# Stream cells of each watercourse, as a list of cell numbers on `template`.
+# `terra::cells(touches = FALSE)` returns the same cells `fl_stream_rasterize()`
+# burns, but per line, so a confluence cell belongs to every watercourse that
+# crosses it. That is what keeps the run monotone in its seeds: an added
+# watercourse never takes a cell away from another's interpolation (#68).
+fl_stream_groups <- function(streams, template, group_field) {
+  if (sf::st_crs(streams) != terra::crs(template)) {
+    streams <- sf::st_transform(streams, terra::crs(template))
+  }
+  cc <- terra::cells(template, terra::vect(streams), touches = FALSE)
+  key <- streams[[group_field]][cc[, "ID"]]
+  lapply(unname(split(cc[, "cell"], factor(key, exclude = NULL))), unique)
 }

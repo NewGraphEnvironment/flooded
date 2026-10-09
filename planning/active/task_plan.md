@@ -77,13 +77,18 @@ Exploration notes that shape the phases:
 - [x] Group raster at a confluence cell carries the larger-area segment's key
 
 ## Phase 4: Implement
-- [ ] `fl_flood_depth(..., groups = NULL)`: `groups` SpatRaster of integer ids on the stream
+
+> **Halted 2026-10-09 — awaiting user decision.** Per-watercourse max over-floods by +67% to
+> +143% on the bundled tile and flattens `flood_factor` (see findings, "Phase 4 — the fix
+> over-floods"). The on-by-default decision is disproved; options are with the user.
+
+- [x] `fl_flood_depth(..., groups = NULL)`: `groups` SpatRaster of integer ids on the stream
       cells; per group crop to bbox + `max_width / 2`, IDW from that group's cells, `pmax`-merge
       into one values vector (no per-group full-grid rasters — memory)
-- [ ] `fl_flood_model()` passes `groups` through
-- [ ] `fl_valley_confine(group_field = "blue_line_key")`, **on by default** (`NULL` = old blend):
+- [x] `fl_flood_model()` passes `groups` through
+- [x] `fl_valley_confine(group_field = "blue_line_key")`, **on by default** (`NULL` = old blend):
       rasterize group ids consistently with area (see Context); missing column errors naming it
-- [ ] Raster path: new `groups` SpatRaster argument on `fl_valley_confine()`; raster `streams`
+- [x] Raster path: new `groups` SpatRaster argument on `fl_valley_confine()`; raster `streams`
       without `groups` falls back to the single-surface blend with a warning naming #68
 - [ ] Timing on MORR arm 1 vs the 169 s delineation; if per-BLK cost is unacceptable, measure the
       per-order variant and record the monotonicity it gives up
