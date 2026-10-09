@@ -72,14 +72,14 @@ acceptance, record a verdict. Default stays `pooled` unless every criterion pass
 - [x] Drainage tests `skip_if_not()` on the whitebox binary, inside each block
 
 ### Phase 3: Implementation
-- [ ] `fl_flood_depth(method = c("pooled", "drainage"))`. The drainage branch builds L by 3×3
+- [x] `fl_flood_depth(method = c("pooled", "drainage"))`. The drainage branch builds L by 3×3
       focal max of the surface, then the path max, then corridor masking, then depth as today
       (0 on stream cells, NA where < 0)
-- [ ] Pass-through: `fl_flood_model(method =)` and `fl_valley_confine(flood_method =)`, default
+- [x] Pass-through: `fl_flood_model(method =)` and `fl_valley_confine(flood_method =)`, default
       `"pooled"`
-- [ ] roxygen `@details`: the rule, monotonicity, backwater, unowned cells, and the departure from
+- [x] roxygen `@details`: the rule, monotonicity, backwater, unowned cells, and the departure from
       the Python VCA's pooled `griddata`; `@examples` run on bundled data; `devtools::document()`
-- [ ] lintr, full `devtools::test()`
+- [x] lintr, full `devtools::test()`
 
 ### Phase 4: Measure against the acceptance criteria
 - [ ] Bundled tile: valley cells pooled vs drainage at ff2/4/6, with gaps

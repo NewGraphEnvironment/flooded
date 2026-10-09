@@ -5,9 +5,12 @@
 # Valley cells from fl_valley_confine() at ff2/4/6 against pooled, on the bundled tile and on
 # the Parsnip WSG (MRDEM-30, vignette inputs: bull trout order 3+, precip, waterbodies).
 #
-# Run: Rscript planning/active/measure_level_rule.R > planning/active/measure_level_rule.log 2>&1
+# Run: Rscript planning/active/measure_level_rule.R [sites] [rules] > planning/active/measure_level_rule_<sites>.log 2>&1
+#   sites: comma list of bundled,parsnip (default both); rules: comma list (default all)
+# measure_level_rule_lcfill.log is the first run, on least cost + fill conditioning (replaced:
+# its fill branch panics intermittently), cut off by a session end before Parsnip condmin ff6.
 pkgload::load_all(quiet = TRUE)
-terra::terraOptions(threads = 12, progress = 0)
+terra::terraOptions(threads = 4, memfrac = 0.3, progress = 0)  # two session ends from memory pressure
 ns <- asNamespace("flooded")
 
 route_cache <- new.env()
@@ -44,6 +47,9 @@ sites <- list(
          wb = sf::st_read(g, "waterbodies", quiet = TRUE))
   }
 )
+args <- commandArgs(trailingOnly = TRUE)
+if (length(args) >= 1) sites <- sites[strsplit(args[1], ",")[[1]]]
+if (length(args) >= 2) rules <- rules[strsplit(args[2], ",")[[1]]]
 res <- list()
 for (site in names(sites)) {
   s <- sites[[site]]()

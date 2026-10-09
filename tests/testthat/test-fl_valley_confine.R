@@ -506,9 +506,10 @@ test_that("drainage: monotone with the cost criterion binding", {
   # squeeze cost_threshold so the stream-dependent masks bind during the loop.
   f <- af_fixture()
   precip_r <- fl_stream_rasterize(f$streams, f$dem, field = "map_upstream")
-  run <- function(s) fl_valley_confine(f$dem, s, area_field = "upstream_area_ha",
-                                       precip = precip_r, cost_threshold = 300,
-                                       flood_method = "drainage")
+  run <- function(s) {
+    fl_valley_confine(f$dem, s, area_field = "upstream_area_ha", precip = precip_r,
+                      cost_threshold = 300, flood_method = "drainage")
+  }
   ref <- run(f$streams)
   for (b in unique(f$streams$blue_line_key)) {
     sub <- run(f$streams[f$streams$blue_line_key != b, ])

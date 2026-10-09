@@ -189,3 +189,25 @@ level rules:
   - The three rules bracket the answer, and none comes near pooled under the HAND convention.
 - Runtime: drainage ~110-225 s per Parsnip run against pooled 126-181 s (single-threaded
   WhiteboxTools route recomputed every call; an unrelated R job shared the machine).
+
+## Phase 3 — WhiteboxTools panics in its fill branch; conditioning changed (2026-10-09)
+
+The full suite hit `thread 'main' panicked at ... breach_depressions_least_cost.rs:657:27: Error
+unwrapping 'output'` (exit 101) with no second WhiteboxTools process running, so the earlier
+"two processes at once" explanation was wrong. Upstream source (v2.4.0):
+- in the fill branch, workers hold `Arc` clones of `output`;
+- the main thread calls `Arc::try_unwrap` after receiving their messages, but before they are
+  guaranteed to have dropped those clones. That is a race at any thread count.
+- `fill_depressions.rs:366` has the same pattern; `breach_depressions.rs` has none.
+
+Conditioning is now least cost with `fill = FALSE`, then `BreachDepressions` (Lindsay's hybrid
+breach-fill) for the pits it leaves. `measure_route_robust.R/.log`, bundled tile:
+- 30 sequential calls: 0 errors, all identical, median 4.5 s;
+- 0 cells whose next cell is higher; 265 fixed points;
+- 78.9% of pooled valley cells reach a stream, against 79.1% before.
+
+Upstream report drafted, not posted: `upstream_whitebox_draft.md`.
+
+Full suite after the change: `[ FAIL 0 | WARN 0 | SKIP 0 | PASS 344 ]`, with every drainage test
+run. lintr: two "unused argument" warnings on the pass-throughs come from resolving against the
+stale installed package (code-check-r, "lintr also resolves against the installed package").

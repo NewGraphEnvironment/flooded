@@ -7,7 +7,7 @@
 # Run: Rscript planning/active/measure_morr.R > planning/active/measure_morr.log 2>&1
 suppressMessages({library(sf); library(terra); library(DBI); library(RPostgres)})
 pkgload::load_all(".", quiet = TRUE)
-terra::terraOptions(threads = 12, progress = 0)
+terra::terraOptions(threads = 4, memfrac = 0.3, progress = 0)  # two session ends from memory pressure
 PROBE <- path.expand("~/Projects/repo/floodplains/data/morr/probe_whole_fwa")
 source(path.expand("~/Projects/repo/floodplains/scripts/floodplain_lcc/fp_whole_fwa.R"))
 dem <- rast(file.path(PROBE, "dem_common.tif"))

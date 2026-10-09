@@ -42,8 +42,8 @@
 #'
 #' `method = "drainage"` replaces the average with ownership by drainage:
 #'
-#' 1. WhiteboxTools breaches the DEM's depressions (least cost, filling what it cannot
-#'    breach) and assigns each cell a D8 flow direction. The directions come from the
+#' 1. WhiteboxTools breaches the DEM's depressions (least cost, then a breach-fill pass
+#'    for what that leaves) and assigns each cell a D8 flow direction. The directions come from the
 #'    DEM alone, not from the streams. WhiteboxTools runs single-threaded here, because
 #'    its multi-threaded breaching is not deterministic.
 #' 2. Each cell's candidate level is its own conditioned elevation plus the deepest flood
@@ -176,8 +176,8 @@ fl_whitebox_check <- function() {
 }
 
 # D8 flow route over the conditioned DEM (#68): `next`, the next cell on each cell's
-# path as a cell-number vector, and `z`, the breached-and-filled elevations. Whitebox breaches
-# depressions (least cost, then fills what it cannot breach) and writes an ESRI pointer:
+# path as a cell-number vector, and `z`, the conditioned elevations. Whitebox breaches
+# depressions (least cost, then a breach-fill pass for what is left) and writes an ESRI pointer:
 # 1 E, 2 SE, 4 S, 8 SW, 16 W, 32 NW, 64 N, 128 NE. Cells with no outflow (pits, flats,
 # NA, or a step off the grid) point to themselves, so every path ends at a fixed point.
 # The directions come from the DEM alone, never from the streams: that is what keeps the
@@ -196,11 +196,17 @@ fl_flow_route <- function(dem, breach_dist = 50L) {
   dir.create(wd)
   on.exit(unlink(wd, recursive = TRUE), add = TRUE)
   f_dem <- file.path(wd, "dem.tif")
+  f_lc <- file.path(wd, "dem_breached_lc.tif")
   f_cond <- file.path(wd, "dem_breached.tif")
   f_pntr <- file.path(wd, "d8_pointer.tif")
   terra::writeRaster(dem, f_dem, datatype = "FLT8S", NAflag = -32768)
-  whitebox::wbt_breach_depressions_least_cost(f_dem, f_cond, dist = breach_dist,
-                                              fill = TRUE, verbose_mode = FALSE)
+  # Least-cost breaching first (WhiteboxTools' recommended method), then a hybrid
+  # breach-fill pass for the pits it leaves. Not `fill = TRUE`: that branch of
+  # BreachDepressionsLeastCost (and FillDepressions) panics intermittently on an
+  # `Arc::try_unwrap` race in WhiteboxTools 2.4.0, whatever the thread count.
+  whitebox::wbt_breach_depressions_least_cost(f_dem, f_lc, dist = breach_dist,
+                                              fill = FALSE, verbose_mode = FALSE)
+  whitebox::wbt_breach_depressions(f_lc, f_cond, verbose_mode = FALSE)
   whitebox::wbt_d8_pointer(f_cond, f_pntr, esri_pntr = TRUE, verbose_mode = FALSE)
   if (!file.exists(f_cond) || !file.exists(f_pntr)) {
     stop("WhiteboxTools did not write its output; see its messages above.", call. = FALSE)

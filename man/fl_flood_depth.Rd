@@ -60,23 +60,37 @@ itself, and adding streams to a run can remove floodplain (flooded#68).
 
 \code{method = "drainage"} replaces the average with ownership by drainage:
 \enumerate{
-\item WhiteboxTools breaches the DEM's depressions (least cost, filling what it cannot
-breach) and assigns each cell a D8 flow direction. The directions come from the
-DEM alone, not from the streams.
-\item Each cell's candidate level is the highest flood surface among the stream cells
-in its 3x3 window, which absorbs D8 steps that cut diagonally past a stream.
+\item WhiteboxTools breaches the DEM's depressions (least cost, then a breach-fill pass
+for what that leaves) and assigns each cell a D8 flow direction. The directions come from the
+DEM alone, not from the streams. WhiteboxTools runs single-threaded here, because
+its multi-threaded breaching is not deterministic.
+\item Each cell's candidate level is its own conditioned elevation plus the deepest flood
+depth (\code{flood_factor} x bankfull depth) among the stream cells in its 3x3 window.
+Measuring from the ground along the path, as height-above-nearest-drainage (HAND)
+methods do, keeps one high stream-cell elevation (a stream line drawn on a bank, an
+integer DEM) from being carried upstream. The cell beside a stream therefore sits
+one cell's relief above the stream's own level.
 \item A cell's waterline is the highest candidate level on its downstream path,
 the cell itself included.
 }
 
 Because the flow paths do not depend on the streams and a maximum can only grow,
-adding a watercourse never lowers a waterline. A large river's level also carries
-up the lower reach of a tributary that drains into it, as backwater does. A
-tributary's level never reaches valley floor that does not drain through it, which
-is how per-watercourse maxima over-flooded the bundled tile by +67\% to +143\%.
+adding a watercourse never lowers a waterline, so the flood mask is monotone in the
+streams. Through \code{\link[=fl_valley_confine]{fl_valley_confine()}} the delineation is monotone too on a DEM
+without \code{NA} gaps. Gaps can break it through the cost surface and #65. A large
+river's level carries up the lower reach of a tributary that drains into it, as
+backwater does. A tributary's level never reaches valley floor that does not drain
+through it.
 
-A cell whose path meets no stream, for instance ground that drains off the edge of
-the DEM before reaching a seeded stream, has no waterline and is not flooded.
+A cell whose path meets no stream gets no waterline and is not flooded. That includes
+ground that drains off the edge of the DEM, and ground whose path runs into an \code{NA}
+gap over the channel (lidar water returns).
+
+\strong{The drainage method is experimental and maps much less floodplain than the pooled
+one.} Valley-floor ground that drains down-valley before reaching the river takes the
+river's level where it joins, not beside it. On the Parsnip watershed group at
+\code{flood_factor = 4} it maps 27\% fewer valley cells than the pooled method. See
+flooded#68 and \code{research/flood_surface_interpolation.md}.
 }
 }
 \examples{

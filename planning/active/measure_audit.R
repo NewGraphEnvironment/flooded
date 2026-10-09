@@ -9,7 +9,7 @@
 #
 # Run: Rscript planning/active/measure_audit.R > planning/active/measure_audit.log 2>&1
 pkgload::load_all(quiet = TRUE)
-terra::terraOptions(threads = 12, progress = 0)
+terra::terraOptions(threads = 4, memfrac = 0.3, progress = 0)  # two session ends from memory pressure
 ns <- asNamespace("flooded")
 q <- c(0.1, 0.5, 0.9)
 fmt <- function(x) paste(sprintf("%.1f", quantile(x, q, na.rm = TRUE)), collapse = " / ")
