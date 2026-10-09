@@ -1,0 +1,39 @@
+
+ 'I've reached the point in my life where I'm like, 'How long am I gonna be doing this for?' I'm starting to realize like, oh shit — let's say I stopped this year. I would feel like I missed out on certain experiences, working with certain artists, being more collaborative, making more friends out of peers, making certain memories that I feel like if I don't, I'm gonna regret it one day.' - J. Cole
+  source
+
+== bundled: 518400 cells, 50 segments
+pooled   ff2      18543 cells  (2 s)
+pooled   ff4      23192 cells  (2 s)
+pooled   ff6      28727 cells  (2 s)
+raw      ff2      10245 cells  (6 s)
+raw      ff4      14782 cells  (1 s)
+raw      ff6      19464 cells  (1 s)
+cond     ff2       4614 cells  (1 s)
+cond     ff4       5832 cells  (1 s)
+cond     ff6       7566 cells  (1 s)
+condmin  ff2       3003 cells  (1 s)
+condmin  ff4       4045 cells  (1 s)
+condmin  ff6       5373 cells  (1 s)
+
+== summary
+    site ff  method cells secs pooled vs_pooled
+ bundled  2    cond  4614  1.0  18543    -75.1%
+ bundled  4    cond  5832  0.9  23192    -74.9%
+ bundled  6    cond  7566  0.8  28727    -73.7%
+ bundled  2 condmin  3003  0.9  18543    -83.8%
+ bundled  4 condmin  4045  0.8  23192    -82.6%
+ bundled  6 condmin  5373  0.9  28727    -81.3%
+ bundled  2  pooled 18543  1.8  18543     +0.0%
+ bundled  4  pooled 23192  1.8  23192     +0.0%
+ bundled  6  pooled 28727  1.7  28727     +0.0%
+ bundled  2     raw 10245  5.6  18543    -44.8%
+ bundled  4     raw 14782  0.9  23192    -36.3%
+ bundled  6     raw 19464  0.9  28727    -32.2%
+
+== flood_factor gaps
+    site  method gap_ff4_ff2 gap_ff6_ff4
+ bundled    cond       26.4%       29.7%
+ bundled condmin       34.7%       32.8%
+ bundled  pooled       25.1%       23.9%
+ bundled     raw       44.3%       31.7%

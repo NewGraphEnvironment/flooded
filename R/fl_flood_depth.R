@@ -46,12 +46,12 @@
 #'    for what that leaves) and assigns each cell a D8 flow direction. The directions come from the
 #'    DEM alone, not from the streams. WhiteboxTools runs single-threaded here, because
 #'    its multi-threaded breaching is not deterministic.
-#' 2. Each cell's candidate level is its own conditioned elevation plus the deepest flood
-#'    depth (`flood_factor` x bankfull depth) among the stream cells in its 3x3 window.
-#'    Measuring from the ground along the path, as height-above-nearest-drainage (HAND)
-#'    methods do, keeps one high stream-cell elevation (a stream line drawn on a bank, an
-#'    integer DEM) from being carried upstream. The cell beside a stream therefore sits
-#'    one cell's relief above the stream's own level.
+#' 2. Each cell's candidate level is the lowest ground in its 3x3 window plus the
+#'    deepest flood depth (`flood_factor` x bankfull depth) among the stream cells in
+#'    that window. The lowest neighbour stands in for the channel bed, as in
+#'    height-above-nearest-drainage (HAND) methods, so one high stream-cell elevation
+#'    (a stream line drawn on a bank, an integer DEM) is not carried upstream. The level
+#'    can sit up to one cell's down-path drop below the stream's own.
 #' 3. A cell's waterline is the highest candidate level on its downstream path,
 #'    the cell itself included.
 #'
@@ -237,15 +237,17 @@ fl_pointer_next <- function(code, nr, nc) {
   nxt
 }
 
-# Candidate waterline at each cell for the drainage method (#68): the cell's conditioned
-# elevation plus the deepest flood depth (flood_factor x bankfull depth) among the stream
-# cells in its 3x3 window. Taking the bed from the conditioned DEM along the path, not
-# from the stream cell's own DEM value, follows the HAND convention and keeps one high
-# bed value (a misregistered line on a bank, integer rounding) from being carried
-# upstream by the path maximum.
+# Candidate waterline at each cell for the drainage method (#68): the lowest ground in the
+# cell's 3x3 window plus the deepest flood depth (flood_factor x bankfull depth) among the
+# stream cells in that window. The lowest neighbour stands in for the channel bed, so a
+# stream line drawn on a bank, or an integer DEM's rounding, is not carried upstream by the
+# path maximum (review B1). The ground is the original DEM, not the conditioned one:
+# breaching cuts trenches, and a level read from them moved the bundled tile's ff4 extent
+# from -50% to -75% of pooled with the conditioning algorithm alone.
 fl_drainage_level <- function(flood_surface, dem, route) {
+  bed <- terra::focal(dem, w = 3, fun = "min", na.rm = TRUE)
   depth_near <- terra::focal(flood_surface - dem, w = 3, fun = "max", na.rm = TRUE)
-  route$z + terra::values(depth_near, mat = FALSE)
+  terra::values(bed, mat = FALSE) + terra::values(depth_near, mat = FALSE)
 }
 
 # Maximum of `value` over each cell's downstream path, the cell included (#68). Pointer

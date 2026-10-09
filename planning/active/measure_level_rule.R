@@ -2,6 +2,8 @@
 #   raw      the stream cells' own flood surface (DEM bed + ff*d), 3x3 max
 #   cond     conditioned elevation of the path cell + 3x3 max of ff*d   (HAND convention)
 #   condmin  3x3 min of conditioned elevation + 3x3 max of ff*d
+#   pathraw  original DEM at the path cell + 3x3 max of ff*d (conditioning only routes)
+#   rawmin   3x3 min of the original DEM + 3x3 max of ff*d
 # Valley cells from fl_valley_confine() at ff2/4/6 against pooled, on the bundled tile and on
 # the Parsnip WSG (MRDEM-30, vignette inputs: bull trout order 3+, precip, waterbodies).
 #
@@ -23,7 +25,19 @@ cached_route <- function(dem, breach_dist = 50L) {
 rules <- list(
   raw = function(flood_surface, dem, route)
     terra::values(terra::focal(flood_surface, 3, "max", na.rm = TRUE), mat = FALSE),
-  cond = get("fl_drainage_level", ns),
+  cond = function(flood_surface, dem, route) {
+    d <- terra::values(terra::focal(flood_surface - dem, 3, "max", na.rm = TRUE), mat = FALSE)
+    route$z + d
+  },
+  pathraw = function(flood_surface, dem, route) {
+    d <- terra::values(terra::focal(flood_surface - dem, 3, "max", na.rm = TRUE), mat = FALSE)
+    terra::values(dem, mat = FALSE) + d
+  },
+  rawmin = function(flood_surface, dem, route) {
+    zmin <- terra::values(terra::focal(dem, 3, "min", na.rm = TRUE), mat = FALSE)
+    d <- terra::values(terra::focal(flood_surface - dem, 3, "max", na.rm = TRUE), mat = FALSE)
+    zmin + d
+  },
   condmin = function(flood_surface, dem, route) {
     zc <- terra::rast(dem); terra::values(zc) <- route$z
     zmin <- terra::values(terra::focal(zc, 3, "min", na.rm = TRUE), mat = FALSE)

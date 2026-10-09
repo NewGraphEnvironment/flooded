@@ -1,0 +1,32 @@
+
+ 'Even if we don't get it right, I will have lived a much more rewarding life for having tried to get it right.' - Ayana Elizabeth Johnson
+  source
+
+== bundled: 518400 cells, 50 segments
+pooled   ff2      18543 cells  (2 s)
+pooled   ff4      23192 cells  (1 s)
+pooled   ff6      28727 cells  (1 s)
+pathraw  ff2       8524 cells  (6 s)
+pathraw  ff4      12228 cells  (1 s)
+pathraw  ff6      16706 cells  (1 s)
+rawmin   ff2       6918 cells  (1 s)
+rawmin   ff4      11096 cells  (1 s)
+rawmin   ff6      15172 cells  (1 s)
+
+== summary
+    site ff  method cells secs pooled vs_pooled
+ bundled  2 pathraw  8524  5.5  18543    -54.0%
+ bundled  4 pathraw 12228  0.9  23192    -47.3%
+ bundled  6 pathraw 16706  0.8  28727    -41.8%
+ bundled  2  pooled 18543  1.6  18543     +0.0%
+ bundled  4  pooled 23192  1.4  23192     +0.0%
+ bundled  6  pooled 28727  1.3  28727     +0.0%
+ bundled  2  rawmin  6918  0.9  18543    -62.7%
+ bundled  4  rawmin 11096  0.9  23192    -52.2%
+ bundled  6  rawmin 15172  0.9  28727    -47.2%
+
+== flood_factor gaps
+    site  method gap_ff4_ff2 gap_ff6_ff4
+ bundled pathraw       43.5%       36.6%
+ bundled  pooled       25.1%       23.9%
+ bundled  rawmin       60.4%       36.7%

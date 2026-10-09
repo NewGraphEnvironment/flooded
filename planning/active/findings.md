@@ -211,3 +211,26 @@ Upstream report drafted, not posted: `upstream_whitebox_draft.md`.
 Full suite after the change: `[ FAIL 0 | WARN 0 | SKIP 0 | PASS 344 ]`, with every drainage test
 run. lintr: two "unused argument" warnings on the pass-throughs come from resolving against the
 stale installed package (code-check-r, "lintr also resolves against the installed package").
+
+## Phase 4b — The level must come from the original DEM; rule = rawmin (2026-10-09)
+
+Re-run on the bundled tile after the conditioning change (`measure_level_rule_bundled.log`,
+`measure_level_rule_bundled_rawz.log`). ff4 against pooled 23,192:
+
+| rule | least cost + fill (Phase 4a) | least cost, then BreachDepressions | gaps ff2->4 / ff4->6 (new) |
+|---|---|---|---|
+| raw (stream surface) | −43.1% | −36.3% | +44.3% / +31.7% |
+| cond (conditioned path cell) | −50.1% | **−75.0%** | +26.4% / +29.7% |
+| condmin | −53.0% | **−82.6%** | +34.7% / +32.8% |
+| pathraw (original DEM at path cell) | — | −47.3% | +43.5% / +36.6% |
+| **rawmin** (3x3 min of original DEM) | — | −52.2% | +60.4% / +36.7% |
+| pooled | — | — | +25.1% / +23.9% |
+
+- The cond rules read the conditioned DEM, so the trenches `BreachDepressions` cuts lower the
+  waterline directly. The same rule moved from −50% to −75% with the conditioning algorithm
+  alone, so cond is rejected.
+- Reading the original DEM makes conditioning a routing step only. pathraw and rawmin land where
+  cond and condmin sat under the gentler least-cost conditioning.
+- **Shipped rule: rawmin.** The lowest original ground in the 3x3 window stands in for the
+  channel bed under a misregistered stream line, the review's B1 concern. Its bias is low, up to
+  one cell's down-path drop, pinned in the creek-fixture test (`at(29, 20) == 0`).

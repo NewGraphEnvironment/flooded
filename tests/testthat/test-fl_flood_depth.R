@@ -141,15 +141,14 @@ test_that("drainage: a cell takes the highest waterline on its downstream path",
   d <- fl_flood_depth(f$dem, f$both, max_width = 600, method = "drainage")
   at <- function(r, c) terra::values(d, mat = FALSE)[terra::cellFromRowCol(f$dem, r, c)]
 
-  # Levels are measured from the path cell's own (conditioned) ground plus the deepest
-  # stream depth in its 3x3 window, so the cell beside a stream carries a level one
-  # cell's relief above the stream's own: here 0.2 m, the floor's rise per cell.
-  # Row 10, column 30 (ground 102) drains east; at column 39 (ground 100.2) the river's
-  # 4 m is in the window, so its waterline is 104.2.
-  expect_equal(at(10, 30), 2.2, tolerance = 1e-6)
-  # Row 29, column 20 (ground 104) sits beside the creek: its own level is 104 + 0.1,
-  # beaten by the 104.2 at column 39 further down its path.
-  expect_equal(at(29, 20), 0.2, tolerance = 1e-6)
+  # A path cell's level is the lowest ground in its 3x3 window plus the deepest stream
+  # depth in it. Row 10, column 30 (ground 102) drains east; at column 39 the window
+  # holds the river (bed 100, depth 4), so its waterline is 104.
+  expect_equal(at(10, 30), 2, tolerance = 1e-6)
+  # Beside the creek the window's lowest ground is one cell down-valley, 0.2 m lower,
+  # which is more than the creek's 0.1 m depth: row 29, column 20 (ground 104) gets the
+  # river's 104 and is not flooded. This is the rule's stated low bias.
+  expect_equal(at(29, 20), 0, tolerance = 1e-6)
   # Ground the river's 4 m cannot reach stays dry: column 15 is 105 m.
   expect_true(is.na(at(10, 15)))
   # Stream cells are 0, as in the pooled method.
@@ -174,8 +173,8 @@ test_that("drainage: a cell whose path meets no stream gets no waterline", {
   west <- terra::cellFromRowCol(dem, 10, 10)
   east <- terra::cellFromRowCol(dem, 10, 30)
   expect_true(is.na(d[west]))
-  # Column 21 (ground 102.1) is beside the stream: 102.1 + 5 against ground 103.
-  expect_equal(d[east], 102.1 + 5 - 103, tolerance = 1e-6)
+  # Column 21's window holds the stream (bed 102, depth 5): 107 against ground 103.
+  expect_equal(d[east], 107 - 103, tolerance = 1e-6)
 })
 
 test_that("drainage keeps NA DEM cells NA", {
