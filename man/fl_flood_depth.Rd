@@ -4,7 +4,13 @@
 \alias{fl_flood_depth}
 \title{Interpolate flood surface and compute depth above terrain}
 \usage{
-fl_flood_depth(dem, flood_surface, max_width = 2000, streams = NULL)
+fl_flood_depth(
+  dem,
+  flood_surface,
+  max_width = 2000,
+  streams = NULL,
+  method = c("pooled", "drainage")
+)
 }
 \arguments{
 \item{dem}{A \code{SpatRaster} of elevation.}
@@ -18,6 +24,12 @@ within which to interpolate. Default \code{2000} (1000m each side).}
 \item{streams}{A \code{SpatRaster} of rasterized streams used to define the
 interpolation corridor. If \code{NULL}, derived from non-\code{NA} cells in
 \code{flood_surface}.}
+
+\item{method}{Character. How the waterline is carried away from the streams.
+\code{"pooled"} (default) interpolates every stream cell's flood surface into one
+inverse-distance surface. \code{"drainage"} gives each cell the highest flood
+surface among the streams on its downstream flow path; it needs the
+\code{whitebox} package and its WhiteboxTools binary. See Details.}
 }
 \value{
 A \code{SpatRaster} of flood depth (metres above terrain). Positive
@@ -39,6 +51,33 @@ results for this application.
 
 The interpolation domain is limited to cells within \code{max_width / 2} of
 the nearest stream cell to avoid extrapolating into distant terrain.
+\subsection{\code{method = "pooled"} and \code{method = "drainage"}}{
+
+The pooled interpolation averages over every stream cell within \code{max_width / 2},
+whatever stream it belongs to, as the Python VCA's \code{griddata} does. A small creek
+crossing a river's valley floor therefore pulls the river's waterline down around
+itself, and adding streams to a run can remove floodplain (flooded#68).
+
+\code{method = "drainage"} replaces the average with ownership by drainage:
+\enumerate{
+\item WhiteboxTools breaches the DEM's depressions (least cost, filling what it cannot
+breach) and assigns each cell a D8 flow direction. The directions come from the
+DEM alone, not from the streams.
+\item Each cell's candidate level is the highest flood surface among the stream cells
+in its 3x3 window, which absorbs D8 steps that cut diagonally past a stream.
+\item A cell's waterline is the highest candidate level on its downstream path,
+the cell itself included.
+}
+
+Because the flow paths do not depend on the streams and a maximum can only grow,
+adding a watercourse never lowers a waterline. A large river's level also carries
+up the lower reach of a tributary that drains into it, as backwater does. A
+tributary's level never reaches valley floor that does not drain through it, which
+is how per-watercourse maxima over-flooded the bundled tile by +67\% to +143\%.
+
+A cell whose path meets no stream, for instance ground that drains off the edge of
+the DEM before reaching a seeded stream, has no waterline and is not flooded.
+}
 }
 \examples{
 dem <- terra::rast(system.file("testdata/dem.tif", package = "flooded"))
@@ -51,5 +90,13 @@ precip_r <- fl_stream_rasterize(streams, dem, field = "map_upstream")
 surface <- fl_flood_surface(dem, stream_r, precip = precip_r)
 depth <- fl_flood_depth(dem, surface, max_width = 2000, streams = stream_r)
 terra::plot(depth, main = "Flood depth (m)")
+
+# Drainage ownership needs WhiteboxTools
+if (requireNamespace("whitebox", quietly = TRUE) &&
+    isTRUE(whitebox::check_whitebox_binary())) {
+  depth_d <- fl_flood_depth(dem, surface, max_width = 2000, streams = stream_r,
+                            method = "drainage")
+  terra::plot(depth_d, main = "Flood depth (m), drainage ownership")
+}
 
 }

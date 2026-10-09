@@ -141,11 +141,15 @@ test_that("drainage: a cell takes the highest waterline on its downstream path",
   d <- fl_flood_depth(f$dem, f$both, max_width = 600, method = "drainage")
   at <- function(r, c) terra::values(d, mat = FALSE)[terra::cellFromRowCol(f$dem, r, c)]
 
-  # Row 10, column 30: drains east to the river, whose level is 104; ground is 102.
-  expect_equal(at(10, 30), 2, tolerance = 1e-9)
-  # Row 29, column 20 (ground 104) sits beside the creek. Its window holds creek cell
-  # (30, 19) at 104.2 + 0.1, which beats the river's 104 further down its path.
-  expect_equal(at(29, 20), 0.3, tolerance = 1e-9)
+  # Levels are measured from the path cell's own (conditioned) ground plus the deepest
+  # stream depth in its 3x3 window, so the cell beside a stream carries a level one
+  # cell's relief above the stream's own: here 0.2 m, the floor's rise per cell.
+  # Row 10, column 30 (ground 102) drains east; at column 39 (ground 100.2) the river's
+  # 4 m is in the window, so its waterline is 104.2.
+  expect_equal(at(10, 30), 2.2, tolerance = 1e-6)
+  # Row 29, column 20 (ground 104) sits beside the creek: its own level is 104 + 0.1,
+  # beaten by the 104.2 at column 39 further down its path.
+  expect_equal(at(29, 20), 0.2, tolerance = 1e-6)
   # Ground the river's 4 m cannot reach stays dry: column 15 is 105 m.
   expect_true(is.na(at(10, 15)))
   # Stream cells are 0, as in the pooled method.
@@ -170,7 +174,8 @@ test_that("drainage: a cell whose path meets no stream gets no waterline", {
   west <- terra::cellFromRowCol(dem, 10, 10)
   east <- terra::cellFromRowCol(dem, 10, 30)
   expect_true(is.na(d[west]))
-  expect_equal(d[east], 5 - 1, tolerance = 1e-9)
+  # Column 21 (ground 102.1) is beside the stream: 102.1 + 5 against ground 103.
+  expect_equal(d[east], 102.1 + 5 - 103, tolerance = 1e-6)
 })
 
 test_that("drainage keeps NA DEM cells NA", {
@@ -192,4 +197,40 @@ test_that("fl_path_max takes the max over each downstream path", {
   # A path longer than any power of two still reaches its end.
   n <- 1000L
   expect_equal(fl_path_max(c(2:n, n), c(rep(NA, n - 1), 7))[1], 7)
+})
+
+test_that("fl_pointer_next decodes every ESRI D8 code", {
+  # 3 x 3 grid, centre cell 5. ESRI: 1 E, 2 SE, 4 S, 8 SW, 16 W, 32 NW, 64 N, 128 NE,
+  # row 1 at the top. A swapped direction would still give monotone output, so pin each.
+  codes <- c(1, 2, 4, 8, 16, 32, 64, 128)
+  expected <- c(6, 9, 8, 7, 4, 1, 2, 3)
+  for (i in seq_along(codes)) {
+    code <- rep(0, 9)
+    code[5] <- codes[i]
+    expect_equal(fl_pointer_next(code, 3L, 3L)[5], expected[i], info = paste("code", codes[i]))
+  }
+  # No outflow, NA and invalid codes point to themselves.
+  expect_equal(fl_pointer_next(c(0, NA, 3, 0, 0, 0, 0, 0, 0), 3L, 3L)[1:3], 1:3)
+  # Steps off each edge point to themselves.
+  expect_equal(fl_pointer_next(rep(64, 9), 3L, 3L)[1:3], 1:3)   # north off the top
+  expect_equal(fl_pointer_next(rep(4, 9), 3L, 3L)[7:9], 7:9)    # south off the bottom
+  expect_equal(fl_pointer_next(rep(16, 9), 3L, 3L)[c(1, 4, 7)], c(1, 4, 7))  # west
+  expect_equal(fl_pointer_next(rep(1, 9), 3L, 3L)[c(3, 6, 9)], c(3, 6, 9))   # east
+})
+
+test_that("fl_path_max reports which cell supplied the max", {
+  nxt <- c(2L, 3L, 3L, 4L, 1L)
+  r <- fl_path_max(nxt, c(NA, 5, 1, NA, 2), which = TRUE)
+  expect_equal(r$max, c(5, 5, 1, NA, 5))
+  expect_equal(r$from, c(2L, 2L, 3L, NA, 2L))
+})
+
+test_that("drainage: the conditioned D8 route only ever runs downhill", {
+  skip_if_no_whitebox()
+  dem <- terra::rast(testdata_path("dem.tif"))
+  route <- fl_flow_route(dem)
+  expect_length(route[["next"]], terra::ncell(dem))
+  expect_true(all(route$z[route[["next"]]] <= route$z, na.rm = TRUE))
+  # Deterministic: multi-threaded WhiteboxTools breaching was not (#68).
+  expect_identical(fl_flow_route(dem), route)
 })

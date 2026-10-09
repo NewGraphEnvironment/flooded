@@ -1,0 +1,30 @@
+
+ 'Humans are now in charge of future climate.' - James Hansen
+  source
+
+== bundled: 518400 cells, 50 segments
+pooled   ff2      18543 cells  (2 s)
+pooled   ff4      23192 cells  (2 s)
+pooled   ff6      28727 cells  (2 s)
+raw      ff2       9462 cells  (7 s)
+raw      ff4      13185 cells  (1 s)
+raw      ff6      17650 cells  (1 s)
+cond     ff2       7672 cells  (1 s)
+cond     ff4      11565 cells  (1 s)
+cond     ff6      16071 cells  (1 s)
+condmin  ff2       6900 cells  (1 s)
+condmin  ff4      10902 cells  (1 s)
+condmin  ff6      15545 cells  (1 s)
+
+== parsnip: 20888140 cells, 8436 segments
+pooled   ff2     417543 cells  (126 s)
+pooled   ff4     441054 cells  (181 s)
+pooled   ff6     461129 cells  (180 s)
+raw      ff2     384894 cells  (218 s)
+raw      ff4     406090 cells  (198 s)
+raw      ff6     430299 cells  (225 s)
+cond     ff2     293715 cells  (213 s)
+cond     ff4     321003 cells  (109 s)
+cond     ff6     349767 cells  (114 s)
+condmin  ff2     238935 cells  (184 s)
+condmin  ff4     276208 cells  (160 s)

@@ -30,11 +30,12 @@
 #'
 #' @export
 fl_flood_model <- function(dem, streams, flood_factor = 6, precip = NULL,
-                           max_width = 2000) {
+                           max_width = 2000, method = c("pooled", "drainage")) {
+  method <- match.arg(method)
   surface <- fl_flood_surface(dem, streams,
                               flood_factor = flood_factor, precip = precip)
   depth <- fl_flood_depth(dem, surface, max_width = max_width,
-                          streams = streams)
+                          streams = streams, method = method)
 
   # Binary flooded mask: 1 where depth > 0
   flooded <- terra::ifel(depth > 0, 1L, 0L)

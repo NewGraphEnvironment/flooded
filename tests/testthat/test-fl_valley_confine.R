@@ -486,3 +486,33 @@ test_that("drainage: flood_factor still orders the extent", {
   }, numeric(1))
   expect_true(n[1] < n[2] && n[2] < n[3])
 })
+
+test_that("drainage: NA DEM cells come back NA and nothing else does (#63)", {
+  skip_if_no_whitebox()
+  # The block sits on the Bulkley channel, so WhiteboxTools sees nodata exactly where
+  # the paths are headed. The #63 contract must hold whatever it does with them.
+  f <- na_block_fixture()
+  v <- terra::values(
+    fl_valley_confine(f$dem, f$streams, area_field = "upstream_area_ha",
+                      channel_buffer = FALSE, flood_method = "drainage")
+  )[, 1]
+  expect_true(all(is.na(v[f$block])))
+  expect_false(anyNA(v[-f$block]))
+})
+
+test_that("drainage: monotone with the cost criterion binding", {
+  skip_if_no_whitebox()
+  # Package defaults leave the criteria slack on this tile (CLAUDE.md, test-data traps);
+  # squeeze cost_threshold so the stream-dependent masks bind during the loop.
+  f <- af_fixture()
+  precip_r <- fl_stream_rasterize(f$streams, f$dem, field = "map_upstream")
+  run <- function(s) fl_valley_confine(f$dem, s, area_field = "upstream_area_ha",
+                                       precip = precip_r, cost_threshold = 300,
+                                       flood_method = "drainage")
+  ref <- run(f$streams)
+  for (b in unique(f$streams$blue_line_key)) {
+    sub <- run(f$streams[f$streams$blue_line_key != b, ])
+    lost <- terra::values(sub == 1L & ref != 1L, mat = FALSE)
+    expect_equal(sum(lost, na.rm = TRUE), 0L, info = paste("without blue line", b))
+  }
+})

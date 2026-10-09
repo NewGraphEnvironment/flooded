@@ -68,6 +68,8 @@ Relates: floodplains#104, floodplains#110, flooded#67, flooded#40.
 
 | Error | Resolution |
 |-------|------------|
+| `Error unwrapping 'output'` / `Error running WhiteboxTools (BreachDepressionsLeastCost)`, twice, in test runs while the plan reviewer ran its own R probes | Not reproduced in 25 sequential calls. Likely two WhiteboxTools processes at once; measurement scripts now run one at a time |
+| Monotone test failing on fixed streams | WhiteboxTools multi-threaded breach/fill non-deterministic; pinned to 1 thread |
 
 ## Phase 1 — Can a conditioned D8 path reach the streams? (2026-10-09)
 
@@ -105,3 +107,85 @@ there in Phase 4 rather than assume it. Decision: proceed; window 3x3; breach di
 
 WBT ESRI pointer convention confirmed on synthetic planes: east-falling 1, south-falling 4,
 northeast-falling 128; NA DEM gives an NA pointer, and neighbours do not point into it.
+
+## Phase 3 — WhiteboxTools is not deterministic multi-threaded (2026-10-09)
+
+First full run of the monotone test failed for 4 of 5 blue lines. The flood mask itself gained
+55-315 cells when a line was dropped, which the path maximum cannot do on fixed flow directions.
+They were not fixed: two identical `fl_flow_next()` calls on the bundled tile differed in
+**60,541** and **69,960** of 518,400 cells. Isolated in a scratch probe:
+
+| tool (default threads) | cells differing between two identical runs |
+|---|---|
+| breach least cost (+fill) | 59,638 |
+| breach least cost (no fill) | 49,570 |
+| fill depressions (fix_flats) | 36,047 |
+| breach depressions (fast) | 0 |
+| D8 pointer on a fixed input | 0 |
+
+With `max_procs = 1` every tool is identical between runs. `fl_flow_route()` sets
+`R_WHITEBOX_MAX_PROCS=1` for its own call and restores the caller's value (the env var outranks
+the `whitebox.max_procs` option in `whitebox::wbt_max_procs()`). Bundled tile at 1 thread: 4.2 s.
+With it, the monotone test passes for every blue line.
+
+## Plan review (review-1.md) — what was taken (2026-10-09)
+
+- **B1, taken.** The path maximum takes the top of the bed-noise distribution, so the level now
+  comes from the conditioned DEM along the path plus the 3x3 max of ff x bankfull depth
+  (`fl_drainage_level()`, the HAND convention). Raw, conditioned, and conditioned-3x3-min were
+  measured side by side before pinning (`measure_level_rule.R`).
+- **B2, the gate.** The Phase 1 gate (>= 90% reach) failed at 79.1% and I proceeded on my own
+  call, not the user's. It is flagged for the user in the PR. The opt-in method changes no
+  default output, so nothing ships on the strength of the waiver. Reach is re-measured on the
+  watershed-clipped Parsnip and MORR DEMs (`measure_audit.R`, `measure_morr.R`).
+- **G1, taken.** Scope the claim: the flood mask is monotone; the delineation is monotone on
+  DEMs without NA gaps (#65 switch, `costDist` NA regions). Squeezed (`cost_threshold = 300`)
+  variant of the monotone test added.
+- **G2, partly.** The #63 contract test runs under drainage. A NA gap over the channel (lidar
+  water returns) leaves the floor beside it unowned. That is a limitation to document and
+  measure, not a test to pin.
+- **G3, taken:** explicit `NAflag`, and the grid length is asserted after read-back.
+- **G4, taken:** `fl_pointer_next()` is split out and all 8 codes, 0, NA and the 4 edges are
+  tested without whitebox. The downhill invariant on the route is tested with whitebox.
+- **G5, taken:** `fl_path_max(which = TRUE)` returns the supplying cell for the audit.
+- **Scope note, taken:** `flood_method` moved to the end of the signature, before the deprecated
+  `field`, so positional calls are unchanged.
+- **Not taken:** caching the route across calls (an optional precomputed-route argument). This
+  is a speed concern for a method still being judged; measurement scripts cache it themselves.
+
+## Phase 4a — Which level rule, and the first verdict signal (2026-10-09)
+
+`measure_level_rule.R` / `.log`. Valley cells from `fl_valley_confine()` with precip
+(Parsnip also with its waterbodies, as in the vignette build), pooled against three drainage
+level rules:
+- raw: 3x3 max of the stream flood surface;
+- cond: conditioned path-cell elevation + 3x3 max ff x d;
+- condmin: 3x3 min of conditioned elevation + 3x3 max ff x d.
+
+| site | rule | ff2 | ff4 | ff6 | ff4 vs pooled | gap ff2->4 | gap ff4->6 |
+|---|---|---|---|---|---|---|---|
+| bundled (10 m tile) | pooled | 18,543 | 23,192 | 28,727 | — | +25.1% | +23.9% |
+| | raw | 9,462 | 13,185 | 17,650 | −43.1% | +39.3% | +33.9% |
+| | cond | 7,672 | 11,565 | 16,071 | −50.1% | +50.7% | +39.0% |
+| | condmin | 6,900 | 10,902 | 15,545 | −53.0% | +58.0% | +42.6% |
+| Parsnip (MRDEM-30, WSG) | pooled | 417,543 | 441,054 | 461,129 | — | +5.6% | +4.6% |
+| | raw | 384,894 | 406,090 | 430,299 | −7.9% | +5.5% | +6.0% |
+| | cond | 293,715 | 321,003 | 349,767 | −27.2% | +9.3% | +9.0% |
+| | condmin | 238,935 | 276,208 | (run cut off by session end) | −37.4% | +15.6% | — |
+
+- **Drainage ownership under-floods under every rule**, where round 1's max of per-watercourse
+  IDW over-flooded. Parsnip has no tile edge (watershed-clipped DEM), so this is not the
+  bundled tile's off-tile drainage.
+- **`flood_factor` sensitivity is kept and strengthened**: the gaps are wider than pooled's on
+  both sites, the opposite of round 1's compression. Review B1 predicted compression from bed
+  noise under the raw rule; on Parsnip raw's gaps are about pooled's, so not observed here.
+- **Rule choice: cond** (HAND convention, review B1).
+  - raw is closest to pooled on Parsnip (−7.9%), but it is the rule the review showed takes the
+    top of the bed-noise tail. The Parsnip DEM is stored as integers (INT2S), and FWA lines sit
+    on banks. Being close to pooled is not evidence that it is right.
+  - cond has a known high bias: the cell beside a stream carries a level one cell's relief above
+    the stream's own, 0.2 m on the creek fixture. This is pinned in the tests.
+  - condmin removes that bias and biases low by one cell's down-path drop.
+  - The three rules bracket the answer, and none comes near pooled under the HAND convention.
+- Runtime: drainage ~110-225 s per Parsnip run against pooled 126-181 s (single-threaded
+  WhiteboxTools route recomputed every call; an unrelated R job shared the machine).
