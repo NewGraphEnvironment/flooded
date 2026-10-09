@@ -110,11 +110,11 @@ Not done: there is no results change to propagate. Kept for the record.
 
 ## Phase 6: Close out without code
 - [x] Revert R/, man/, tests/ to main; keep the implementation reachable at d71bbb5
-- [ ] Rewrite the #68 body: mechanism confirmed, lineage, candidate fix measured and rejected,
+- [x] Rewrite the #68 body: mechanism confirmed, lineage, candidate fix measured and rejected,
       next candidate (drainage-based ownership) with acceptance criteria
 
 ## Validation
 - [ ] Tests pass
 - [ ] `/code-check` clean (each commit, or once over the branch with `/code-check branch`)
-- [ ] PWF checkboxes match landed work
+- [x] PWF checkboxes match landed work
 - [ ] `/planning-archive` on completion

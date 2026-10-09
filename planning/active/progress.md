@@ -13,3 +13,4 @@
 - Phase 4 (d71bbb5): grouped surfaces implemented, all #68 tests pass — but the Plan review, then
   re-measurement, showed +67% to +143% extent and flattened flood_factor. Asked the user.
 - Decision (user): no code; rewrite #68. Code reverted to main; findings and Phase 1 script kept.
+- Rewrote the #68 body and title (gh issue edit); next: archive, PR
