@@ -33,9 +33,10 @@ within which to interpolate. Default \code{2000} (1000m each side).}
 
 \item{method}{Character. How the waterline is carried away from the streams.
 \code{"pooled"} (default) interpolates every stream cell's flood surface into one
-inverse-distance surface. \code{"drainage"} gives each cell the highest flood
-surface among the streams on its downstream flow path; it needs the
-\code{whitebox} package and its WhiteboxTools binary. See Details.}
+inverse-distance surface. \code{"drainage"} gives each cell the highest level
+met along its downstream flow path, where a path cell's level is the lowest
+ground beside it plus the deepest flood depth of a stream within one cell. It
+needs the \code{whitebox} package and its WhiteboxTools binary. See Details.}
 }
 \value{
 A \code{SpatRaster} with three layers:

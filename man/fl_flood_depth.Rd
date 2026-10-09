@@ -27,9 +27,10 @@ interpolation corridor. If \code{NULL}, derived from non-\code{NA} cells in
 
 \item{method}{Character. How the waterline is carried away from the streams.
 \code{"pooled"} (default) interpolates every stream cell's flood surface into one
-inverse-distance surface. \code{"drainage"} gives each cell the highest flood
-surface among the streams on its downstream flow path; it needs the
-\code{whitebox} package and its WhiteboxTools binary. See Details.}
+inverse-distance surface. \code{"drainage"} gives each cell the highest level
+met along its downstream flow path, where a path cell's level is the lowest
+ground beside it plus the deepest flood depth of a stream within one cell. It
+needs the \code{whitebox} package and its WhiteboxTools binary. See Details.}
 }
 \value{
 A \code{SpatRaster} of flood depth (metres above terrain). Positive
@@ -79,11 +80,12 @@ Because the flow paths do not depend on the streams and a maximum can only grow,
 adding a watercourse never lowers a waterline away from that watercourse's own cells.
 Its own cells become stream cells, with depth \code{0}, so the flooded mask here is
 monotone in the streams everywhere except on the added stream itself.
-\code{\link[=fl_valley_confine]{fl_valley_confine()}} counts stream cells as valley, and on a DEM without \code{NA} gaps
-its delineation is monotone everywhere. Gaps can break it through the cost surface and #65. A large
-river's level carries up the lower reach of a tributary that drains into it, as
-backwater does. A tributary's level never reaches valley floor that does not drain
-through it.
+\code{\link[=fl_valley_confine]{fl_valley_confine()}} puts every stream cell in its flood mask, and each of its other
+steps keeps the result monotone, so on a DEM without \code{NA} gaps its delineation is
+monotone. Gaps can break that through the cost surface and #65. A large river's
+level carries up the lower reach of a tributary that drains into it, as backwater
+does. A tributary's level reaches only ground whose path passes through the
+tributary or within one cell of it, never the open valley floor beside it.
 
 A cell whose path meets no stream gets no waterline and is not flooded. That includes
 ground that drains off the edge of the DEM, and ground whose path runs into an \code{NA}

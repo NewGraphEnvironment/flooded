@@ -15,9 +15,10 @@
 #'   `flood_surface`.
 #' @param method Character. How the waterline is carried away from the streams.
 #'   `"pooled"` (default) interpolates every stream cell's flood surface into one
-#'   inverse-distance surface. `"drainage"` gives each cell the highest flood
-#'   surface among the streams on its downstream flow path; it needs the
-#'   `whitebox` package and its WhiteboxTools binary. See Details.
+#'   inverse-distance surface. `"drainage"` gives each cell the highest level
+#'   met along its downstream flow path, where a path cell's level is the lowest
+#'   ground beside it plus the deepest flood depth of a stream within one cell. It
+#'   needs the `whitebox` package and its WhiteboxTools binary. See Details.
 #'
 #' @return A `SpatRaster` of flood depth (metres above terrain). Positive
 #'   values are flooded; `0` at stream cells; `NA` outside the corridor or
@@ -60,11 +61,12 @@
 #' adding a watercourse never lowers a waterline away from that watercourse's own cells.
 #' Its own cells become stream cells, with depth `0`, so the flooded mask here is
 #' monotone in the streams everywhere except on the added stream itself.
-#' [fl_valley_confine()] counts stream cells as valley, and on a DEM without `NA` gaps
-#' its delineation is monotone everywhere. Gaps can break it through the cost surface and #65. A large
-#' river's level carries up the lower reach of a tributary that drains into it, as
-#' backwater does. A tributary's level never reaches valley floor that does not drain
-#' through it.
+#' [fl_valley_confine()] puts every stream cell in its flood mask, and each of its other
+#' steps keeps the result monotone, so on a DEM without `NA` gaps its delineation is
+#' monotone. Gaps can break that through the cost surface and #65. A large river's
+#' level carries up the lower reach of a tributary that drains into it, as backwater
+#' does. A tributary's level reaches only ground whose path passes through the
+#' tributary or within one cell of it, never the open valley floor beside it.
 #'
 #' A cell whose path meets no stream gets no waterline and is not flooded. That includes
 #' ground that drains off the edge of the DEM, and ground whose path runs into an `NA`
@@ -188,9 +190,10 @@ fl_whitebox_check <- function() {
 # drainage surface monotone in added watercourses.
 fl_flow_route <- function(dem, breach_dist = 50L) {
   fl_whitebox_check()
-  # Multi-threaded breaching and filling are not deterministic: two identical calls on
-  # the bundled tile gave 36,000 to 60,000 different cells, so a run would not even be
-  # monotone against itself. One thread is exact. The env var outranks the
+  # Multi-threaded breaching and filling are not deterministic: two identical calls of
+  # the original route on the bundled tile gave next cells differing in 60,541 and
+  # 69,960 of 518,400 cells (each tool alone: 36,047 to 59,638 elevations), so a run
+  # would not even be monotone against itself. One thread is exact. The env var outranks the
   # `whitebox.max_procs` option, so set it for this call only and put back what was there.
   old_procs <- Sys.getenv("R_WHITEBOX_MAX_PROCS", unset = NA)
   Sys.setenv(R_WHITEBOX_MAX_PROCS = "1")

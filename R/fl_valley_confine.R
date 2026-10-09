@@ -46,7 +46,7 @@
 #' @param flood_method Character. How the flood model carries each stream's
 #'   waterline across the valley: `"pooled"` (default, one inverse-distance
 #'   surface over every stream cell) or `"drainage"` (each cell takes the highest
-#'   waterline among the streams on its downstream flow path; needs WhiteboxTools).
+#'   level met along its downstream flow path; needs WhiteboxTools).
 #'   Passed to [fl_flood_depth()] as `method`, where the two are described.
 #' @param field Deprecated. The former name of `area_field`, whose
 #'   `"channel_width"` default was wrong for the flood model (#47). Supplying it

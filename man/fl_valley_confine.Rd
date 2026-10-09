@@ -78,7 +78,7 @@ stream channel is floodplain but can be sub-pixel at coarse DEM resolution.}
 \item{flood_method}{Character. How the flood model carries each stream's
 waterline across the valley: \code{"pooled"} (default, one inverse-distance
 surface over every stream cell) or \code{"drainage"} (each cell takes the highest
-waterline among the streams on its downstream flow path; needs WhiteboxTools).
+level met along its downstream flow path; needs WhiteboxTools).
 Passed to \code{\link[=fl_flood_depth]{fl_flood_depth()}} as \code{method}, where the two are described.}
 
 \item{field}{Deprecated. The former name of \code{area_field}, whose
