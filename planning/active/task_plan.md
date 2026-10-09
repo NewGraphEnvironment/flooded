@@ -63,9 +63,9 @@ Exploration notes that shape the phases:
       near added streams, stop, rewrite the issue body, report — no code phases
 
 ## Phase 2: Lineage
-- [ ] Read Nagel et al. 2014 (RMRS-GTR-321) for how the VCA drapes the flood surface
+- [x] Read Nagel et al. 2014 (RMRS-GTR-321) for how the VCA drapes the flood surface
       (interpolation vs allocation; per-stream or pooled) and what the Python VCA does
-- [ ] Record verdict in `findings.md`; if the blend is the published method, the fix is a
+- [x] Record verdict in `findings.md`; if the blend is the published method, the fix is a
       documented departure (roxygen @details + `inst/notes/methodology.md`)
 
 ## Phase 3: Tests first (fail on main)

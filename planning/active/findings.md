@@ -66,3 +66,28 @@ Relates: floodplains#104, floodplains#110, flooded#67, flooded#40.
 
 | Error | Resolution |
 |-------|------------|
+
+## Phase 2 — Lineage of the pooled blend (2026-10-09)
+
+**Verdict: the blend is inherited from the Python port, not from Nagel et al. (2014). Max-of-surfaces
+departs from the Python VCA and from this package's own earlier behaviour; Nagel's text is silent on
+how the waterline is carried laterally.**
+
+- **Nagel et al. 2014 (RMRS-GTR-321), p. 19, "Variable 2—Flood factor":** *"The flood factor variable
+  is multiplied by the predicted bankfull depth to determine the flood height for each stream
+  segment. Stream segments are defined by the NHDPlus data model."* p. 20: *"the unconfined valley
+  bottom is defined by the 'flooded' area below the elevation where the flooded height intersects
+  the valley side slope."* No interpolation, allocation or pooling rule is stated anywhere in the
+  report (grep of `pdftotext` output for interpolat/allocation/Euclidean/surface: only unrelated
+  hits). The flood height is a **per-segment** quantity; how one segment's height meets another's
+  is not specified. The ArcGIS VCA toolbox itself (`VCA_Toolbox.zip`, fs.fed.us) was not read.
+  Source: Zotero attachment `TFBBPKGI`, `Nagel_et_al_2014_RMRS-GTR-321.pdf`.
+- **Python VCA** (Blue Geosimulation 2020, after `bluegeo/water.py`; carried in bcfishpass
+  `model/03_habitat_lateral/valley_confinement.py:485-500`, last change ceda0b5, 2025-01-27):
+  pools every stream cell's `DEM + flood depth` and fills the corridor with
+  `scipy.interpolate.griddata(..., "linear")` — a Delaunay-linear blend across all streams, the same
+  pooling `fl_flood_depth()` does with IDW. So the defect predates flooded; flooded inherited it
+  with the method swap (IDW for linear) noted in `fl_flood_depth()`'s @details.
+- **Consequence for docs:** state it as a departure from the Python VCA's pooled interpolation, and
+  as consistent with Nagel's per-segment flood height (each watercourse floods to its own height;
+  where two overlap, the higher wins). Do not claim Nagel prescribes the max — the text does not.
