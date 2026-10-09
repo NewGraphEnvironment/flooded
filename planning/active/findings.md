@@ -252,3 +252,38 @@ waterbodies. Each run took about 90 s at 4 threads with memfrac 0.3.
 - raw sits close to pooled, but it reads the stream cell's own DEM bed, which review B1
   measured carrying noise upstream (p90 excess 7 m on Parsnip). Closeness to pooled is not
   evidence of correctness: pooled is the method under question.
+
+## Phase 4d — Why drainage maps less: the audit (2026-10-09)
+
+`measure_audit.R/.log`, ff4, rawmin. "Lost" = valley under pooled, not under drainage. The
+straight-line distance to the cell that supplied the waterline (`fl_path_max(which = TRUE)`) is a
+lower bound on its distance along the path.
+
+| | bundled tile | Parsnip WSG |
+|---|---|---|
+| pooled / drainage valley cells | 23,192 / 11,096 | 441,054 / 314,772 |
+| lost / gained | 12,645 / 549 | 137,593 / 11,311 |
+| lost: path meets no stream | 43.2% | 1.6% |
+| lost: owned, waterline below ground | 55.5% | **94.7%** |
+| lost: wet, removed by cleanup | 1.3% | 3.7% |
+| owned-but-dry: pooled minus drainage waterline, p10/p50/p90 | 0.9 / 8.9 / 18.6 m | 1.7 / **5.9** / 23.4 m |
+| owned-but-dry: pooled depth on them | 0.1 / 1.6 / 5.5 m | 0.2 / 2.3 / 6.9 m |
+| owned-but-dry: distance to nearest stream | 50 / 406 / 730 m | 31 / **156** / 519 m |
+| owned-but-dry: straight-line distance to waterline source | 128 / 1,205 / 2,210 m | 0 / **590** / 2,765 m |
+| gained: drainage minus pooled waterline | 0.2 / 0.9 / 1.8 m | 0.8 / 2.8 / 8.4 m |
+| gained: distance to waterline source | 36 / 114 / 197 m | 178 / 1,730 / 6,794 m |
+| corridor cells owned / pooled-valley cells owned | 91.7% / 76.4% | 99.5% / 99.4% |
+
+- **On Parsnip, the loss is not unowned ground.** 94.7% of lost cells drain to a stream.
+  - Their drainage waterline sits a median 5.9 m below pooled's.
+  - It is set by a cell a median 590 m away (straight line, so at least that far along the
+    path), against a median 156 m to the nearest stream.
+  - Under pooled they stood under a median 2.3 m of water.
+  - This is the measured form of the mechanism: under drainage a valley-floor cell takes the
+    level of the reach where its path meets the network, which is lower than the reach beside
+    it.
+- **On the bundled tile**, 43% of the loss is unowned: drainage off the tile edge, Phase 1.
+- **The gained cells on Parsnip carry levels from far away**: median 1.7 km, p90 6.8 km, about
+  2.8 m above pooled. That is the path maximum carrying a downstream level, such as a lake or a
+  large confluence, a long way up. This is the review's backwater concern (As3) at a scale
+  larger than its estimate. It is not attributed per waterbody here.
