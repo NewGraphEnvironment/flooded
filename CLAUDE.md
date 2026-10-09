@@ -114,6 +114,13 @@ tests/testthat/          — unit tests for each fl_* function (17 test files, 1
   attribution orphans them. `fl_valley_attribute(complete = TRUE)` assigns those to the nearest
   group and reports the count.
 
+- **Max-of-surfaces per watercourse was tried and rejected** (#68). The pooled IDW in
+  `fl_flood_depth()` both lowers a river's waterline near small streams (MORR: 451.9 ha lost when
+  all FWA streams are seeded) *and* hides steep tributaries' waterlines on the mainstem floor.
+  Removing the first exposes the second: per-`blue_line_key` max grew the bundled floodplain
+  +67% to +143%, and ff2 exceeded pooled ff6. Do not re-try it or its per-order variant; the next
+  candidate is drainage-based ownership. See `research/flood_surface_interpolation.md`.
+
 ### Test-data traps
 
 - **`gnis_name` and `blue_line_key` are a bijection in `inst/testdata/streams.gpkg`** (5 groups
