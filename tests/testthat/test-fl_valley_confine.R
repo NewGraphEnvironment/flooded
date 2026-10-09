@@ -32,7 +32,7 @@ test_that("fl_valley_confine accepts pre-rasterized streams", {
   streams_sf <- sf::st_read(testdata_path("streams.gpkg"), quiet = TRUE)
 
   stream_r <- fl_stream_rasterize(streams_sf, dem, field = "upstream_area_ha")
-  valleys <- fl_valley_confine(dem, stream_r)
+  valleys <- fl_valley_confine(dem, stream_r, group_field = NULL)
 
   expect_s4_class(valleys, "SpatRaster")
   expect_true(sum(terra::values(valleys) == 1L, na.rm = TRUE) > 0)
@@ -91,9 +91,10 @@ test_that("channel_buffer FALSE with rasterized streams is backwards compatible"
   stream_r <- fl_stream_rasterize(streams_sf, dem, field = "upstream_area_ha")
 
   # Pre-rasterized streams: no sf object → channel_buffer auto = FALSE
-  v_raster <- fl_valley_confine(dem, stream_r)
+  v_raster <- fl_valley_confine(dem, stream_r, group_field = NULL)
   # Explicit FALSE on sf streams
-  v_sf_nobuf <- fl_valley_confine(dem, streams_sf, area_field = "upstream_area_ha", channel_buffer = FALSE)
+  v_sf_nobuf <- fl_valley_confine(dem, streams_sf, area_field = "upstream_area_ha", channel_buffer = FALSE,
+                                  group_field = NULL)
 
   n_raster <- sum(terra::values(v_raster) == 1L, na.rm = TRUE)
   n_sf_nobuf <- sum(terra::values(v_sf_nobuf) == 1L, na.rm = TRUE)
@@ -236,12 +237,12 @@ test_that("area_field is not required when streams is already rasterized", {
   # The SpatRaster branch never reaches fl_stream_rasterize(), so area_field is
   # irrelevant there and must not be demanded.
   stream_r <- fl_stream_rasterize(f$streams, f$dem, field = "upstream_area_ha")
-  valleys <- fl_valley_confine(f$dem, stream_r)
+  valleys <- fl_valley_confine(f$dem, stream_r, group_field = NULL)
 
   expect_s4_class(valleys, "SpatRaster")
   expect_true(sum(terra::values(valleys) == 1L, na.rm = TRUE) > 0)
   # ... and an area layer must not trip the wrong-column warning below.
-  expect_no_warning(fl_valley_confine(f$dem, stream_r))
+  expect_no_warning(fl_valley_confine(f$dem, stream_r, group_field = NULL))
 })
 
 test_that("a raster named channel_width warns", {
@@ -262,7 +263,8 @@ test_that("a raster named channel_width warns", {
   default_r <- fl_stream_rasterize(f$streams, f$dem, field = "channel_width")
 
   expect_equal(names(default_r), "channel_width")
-  expect_warning(fl_valley_confine(f$dem, default_r), "not upstream contributing")
+  expect_warning(fl_valley_confine(f$dem, default_r, group_field = NULL),
+                 "not upstream contributing")
 })
 
 test_that("deprecated field= warns and forwards to area_field", {
@@ -428,4 +430,78 @@ test_that("a waterbody inside an NA DEM gap is valley, the rest of the gap NA (#
   expect_gt(sum(in_lake), 0)
   expect_true(all(v[f$block][in_lake] == 1L))
   expect_true(all(is.na(v[f$block][!in_lake])))
+})
+
+# --- Per-watercourse flood surfaces (#68) ----------------------------------------
+# Before #68 the flood surface was one interpolation over every stream cell, so
+# adding a watercourse could pull another's waterline down and remove floodplain:
+# on this tile, dropping the Bulkley mainstem *gained* 12,220 valley cells.
+
+test_that("adding a watercourse never removes floodplain", {
+  f <- af_fixture()
+  for (b in unique(f$streams$blue_line_key)) {
+    sub <- fl_valley_confine(f$dem, f$streams[f$streams$blue_line_key != b, ],
+                             area_field = "upstream_area_ha")
+    lost <- terra::values(sub == 1L & f$ref != 1L, mat = FALSE)
+    expect_equal(sum(lost, na.rm = TRUE), 0L, info = paste("without blue line", b))
+  }
+})
+
+test_that("group_field = NULL keeps the pooled surface", {
+  # Pinned on main before #68 (6498d49), with precipitation.
+  f <- af_fixture()
+  precip_r <- fl_stream_rasterize(f$streams, f$dem, field = "map_upstream")
+  v <- fl_valley_confine(f$dem, f$streams, area_field = "upstream_area_ha",
+                         precip = precip_r, group_field = NULL)
+  expect_equal(sum(terra::values(v) == 1L, na.rm = TRUE), 28727L)
+})
+
+test_that("group_field must name a column of streams", {
+  f <- af_fixture()
+  no_blk <- f$streams[, setdiff(names(f$streams), "blue_line_key")]
+  expect_error(fl_valley_confine(f$dem, no_blk, area_field = "upstream_area_ha"),
+               "blue_line_key")
+  # ... and the message says how to opt out.
+  err <- tryCatch(fl_valley_confine(f$dem, no_blk, area_field = "upstream_area_ha"),
+                  error = function(e) conditionMessage(e))
+  expect_match(err, "group_field = NULL", fixed = TRUE)
+})
+
+test_that("rasterized streams without groups warn and fall back to the pooled surface", {
+  f <- af_fixture()
+  stream_r <- fl_stream_rasterize(f$streams, f$dem, field = "upstream_area_ha")
+
+  expect_warning(v <- fl_valley_confine(f$dem, stream_r), "#68")
+  quiet <- expect_no_warning(fl_valley_confine(f$dem, stream_r, group_field = NULL))
+  expect_equal(terra::values(v), terra::values(quiet))
+})
+
+test_that("rasterized streams accept a groups raster", {
+  f <- af_fixture()
+  stream_r <- fl_stream_rasterize(f$streams, f$dem, field = "upstream_area_ha")
+  groups_r <- fl_stream_rasterize(f$streams, f$dem, field = "blue_line_key")
+
+  expect_no_warning(v <- fl_valley_confine(f$dem, stream_r, groups = groups_r))
+  pooled <- fl_valley_confine(f$dem, stream_r, group_field = NULL)
+  # Output identical to the pooled run would mean `groups` was ignored.
+  expect_false(isTRUE(all.equal(terra::values(v), terra::values(pooled))))
+})
+
+test_that("groups is refused alongside sf streams", {
+  f <- af_fixture()
+  groups_r <- fl_stream_rasterize(f$streams, f$dem, field = "blue_line_key")
+  expect_error(fl_valley_confine(f$dem, f$streams, area_field = "upstream_area_ha",
+                                 groups = groups_r), "groups")
+})
+
+test_that("fl_stream_groups puts a confluence cell in every watercourse it joins", {
+  f <- af_fixture()
+  g <- fl_stream_groups(f$streams, f$dem, "blue_line_key")
+  stream_r <- fl_stream_rasterize(f$streams, f$dem, field = "upstream_area_ha")
+
+  expect_length(g, length(unique(f$streams$blue_line_key)))
+  # Same cells as the rasterized streams, no more and no fewer ...
+  expect_setequal(unique(unlist(g)), which(!is.na(terra::values(stream_r, mat = FALSE))))
+  # ... and at least one of them in two groups (four on this tile, measured).
+  expect_gt(sum(duplicated(unlist(g))), 0L)
 })

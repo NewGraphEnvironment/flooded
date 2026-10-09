@@ -69,12 +69,12 @@ Exploration notes that shape the phases:
       documented departure (roxygen @details + `inst/notes/methodology.md`)
 
 ## Phase 3: Tests first (fail on main)
-- [ ] Synthetic grid in `test-fl_flood_depth.R`: big river + small creek crossing its valley
+- [x] Synthetic grid in `test-fl_flood_depth.R`: big river + small creek crossing its valley
       floor; assert depth with both streams ≥ depth with river alone at every cell (fails today)
-- [ ] Monotonicity at `fl_valley_confine()` level on bundled data: valleys(all streams) ⊇
+- [x] Monotonicity at `fl_valley_confine()` level on bundled data: valleys(all streams) ⊇
       valleys(subset of blue lines), waterbodies off (fails or passes vacuously today — record which)
-- [ ] `groups = NULL` reproduces current `fl_flood_depth()` output exactly (backward path)
-- [ ] Group raster at a confluence cell carries the larger-area segment's key
+- [x] `groups = NULL` reproduces current `fl_flood_depth()` output exactly (backward path)
+- [x] Group raster at a confluence cell carries the larger-area segment's key
 
 ## Phase 4: Implement
 - [ ] `fl_flood_depth(..., groups = NULL)`: `groups` SpatRaster of integer ids on the stream

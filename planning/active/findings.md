@@ -134,3 +134,21 @@ waterbody and hole-filling effects" residual the issue anticipated.
 issue body gets a Measured section saying so (at PR time).
 
 Flood model timings (whole MORR grid 4,431 x 4,082, single pooled IDW): arm 1 21.6 s, arm 5 8.7 s.
+
+## Phase 3 — Tests written first (2026-10-09)
+
+- **Exact monotonicity needs multi-membership at confluences.** `terra::cells(dem, vect(lines),
+  touches = FALSE)` returns exactly the cells `rasterize(touches = FALSE)` burns (1,607 = 1,607 on
+  the bundled tile) with the line each came from; 4 cells are shared by two blue lines. Giving a
+  shared cell to *every* watercourse that crosses it keeps the run exactly monotone: an added
+  watercourse never removes a point from another's interpolation, and the shared cell's surface
+  value (from `max` area and `max` precip) can only rise. Assigning each cell to one winner would
+  let an added river steal a tributary's mouth cell.
+- **Bundled tile fails the superset property on main** (default parameters, no waterbodies):
+  dropping one blue line *gains* valley cells — 360873822 (Bulkley mainstem) 12,220;
+  360237077 1,753; 360788426 732; 360872999 67; 360765936 0. Flood-mask cells gained by the same
+  drops: 13,782 / 2,063 / 907 / 175 / 2.
+- **Synthetic creek fixture** loses 46 cells under the pooled IDW (river alone vs river + creek).
+- Pins taken on main (6498d49) for the opt-out path: `fl_flood_depth()` on the bundled tile,
+  `upstream_area_ha` + precip, ff 6 — 32,178 non-NA, 30,571 > 0, sum 65,162.334854;
+  `fl_valley_confine(precip = ...)` 28,727 valley cells.
