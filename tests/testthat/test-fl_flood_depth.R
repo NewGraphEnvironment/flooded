@@ -50,3 +50,146 @@ test_that("fl_flood_depth errors on mismatched grids", {
                     xmin = 0, xmax = 5, ymin = 0, ymax = 5)
   expect_error(fl_flood_depth(r1, r2), "same extent")
 })
+
+# --- Pooled default is unchanged (#68) ----------------------------------------------
+
+test_that("the default method keeps the pooled interpolation's output", {
+  # Pinned on main before #68 (6498d49) and re-pinned unchanged in round 2.
+  dem <- terra::rast(testdata_path("dem.tif"))
+  streams_sf <- sf::st_read(testdata_path("streams.gpkg"), quiet = TRUE)
+  stream_r <- fl_stream_rasterize(streams_sf, dem, field = "upstream_area_ha")
+  precip_r <- fl_stream_rasterize(streams_sf, dem, field = "map_upstream")
+  surface <- fl_flood_surface(dem, stream_r, flood_factor = 6, precip = precip_r)
+
+  d <- terra::values(fl_flood_depth(dem, surface, streams = stream_r), mat = FALSE)
+  expect_equal(sum(!is.na(d)), 32178L)
+  expect_equal(sum(d > 0, na.rm = TRUE), 30571L)
+  expect_equal(sum(d, na.rm = TRUE), 65162.334854, tolerance = 1e-10)
+  # ... and naming it explicitly is the same call.
+  p <- terra::values(fl_flood_depth(dem, surface, streams = stream_r, method = "pooled"),
+                     mat = FALSE)
+  expect_identical(p, d)
+})
+
+test_that("fl_flood_depth validates method", {
+  r <- terra::rast(nrows = 5, ncols = 5, vals = 100, xmin = 0, xmax = 5, ymin = 0, ymax = 5)
+  expect_error(fl_flood_depth(r, r, method = "idw"), "pooled")
+})
+
+test_that("method = 'drainage' names whitebox when it is unavailable", {
+  local_mocked_bindings(fl_has_whitebox = function() FALSE)
+  r <- terra::rast(nrows = 5, ncols = 5, vals = 100, xmin = 0, xmax = 5, ymin = 0, ymax = 5)
+  expect_error(fl_flood_depth(r, r, method = "drainage"), "whitebox")
+})
+
+# --- Drainage ownership (#68) --------------------------------------------------------
+# A river down the middle of a valley (column 40) and a small creek crossing the floor
+# to meet it (row 30). The floor rises 0.2 m per cell away from the river and is flat
+# down-valley, so every cell drains straight across to the river. The river's 4 m
+# waterline reaches 20 cells out; the creek's own waterline is 0.1 m. Round 1 measured
+# that a pooled interpolation loses 46 cells of the river's floodplain when the creek is
+# added.
+creek_fixture <- function() {
+  dem <- terra::rast(nrows = 60, ncols = 80, xmin = 0, xmax = 800,
+                     ymin = 0, ymax = 600, crs = "EPSG:3005")
+  col <- terra::colFromCell(dem, seq_len(terra::ncell(dem)))
+  terra::values(dem) <- 100 + 0.2 * abs(col - 40)
+  z <- terra::values(dem, mat = FALSE)
+
+  river <- terra::cellFromRowCol(dem, 1:60, 40)
+  creek <- terra::cellFromRowCol(dem, 30, 5:38)
+  build <- function(cells, depth) {
+    s <- terra::rast(dem)
+    v <- rep(NA_real_, terra::ncell(dem))
+    v[cells] <- z[cells] + depth
+    terra::values(s) <- v
+    s
+  }
+  list(dem = dem, z = z, river = river, creek = creek,
+       both = build(c(river, creek), c(rep(4, length(river)), rep(0.1, length(creek)))),
+       river_only = build(river, 4))
+}
+
+test_that("the creek fixture reaches the pooled blend's failure", {
+  # Without this, the monotone assertion below could pass on a fixture where the
+  # creek never touches the river's waterline.
+  f <- creek_fixture()
+  alone <- fl_flood_depth(f$dem, f$river_only, max_width = 600)
+  pooled <- fl_flood_depth(f$dem, f$both, max_width = 600)
+  lost <- !is.na(terra::values(alone)) & is.na(terra::values(pooled))
+  expect_gt(sum(lost), 20)
+})
+
+test_that("drainage: adding a creek never dries or shallows the river's floodplain", {
+  skip_if_no_whitebox()
+  f <- creek_fixture()
+  alone <- terra::values(fl_flood_depth(f$dem, f$river_only, max_width = 600,
+                                        method = "drainage"), mat = FALSE)
+  both <- terra::values(fl_flood_depth(f$dem, f$both, max_width = 600,
+                                       method = "drainage"), mat = FALSE)
+
+  # Fixture reaches the case: the river alone floods ground on both sides.
+  expect_gt(sum(alone > 0, na.rm = TRUE), 500)
+  expect_true(all(!is.na(both[!is.na(alone)])))
+  off_creek <- setdiff(which(!is.na(alone)), f$creek)
+  expect_true(all(both[off_creek] >= alone[off_creek] - 1e-9))
+})
+
+test_that("drainage: a cell takes the highest waterline on its downstream path", {
+  skip_if_no_whitebox()
+  f <- creek_fixture()
+  d <- fl_flood_depth(f$dem, f$both, max_width = 600, method = "drainage")
+  at <- function(r, c) terra::values(d, mat = FALSE)[terra::cellFromRowCol(f$dem, r, c)]
+
+  # Row 10, column 30: drains east to the river, whose level is 104; ground is 102.
+  expect_equal(at(10, 30), 2, tolerance = 1e-9)
+  # Row 29, column 20 (ground 104) sits beside the creek. Its window holds creek cell
+  # (30, 19) at 104.2 + 0.1, which beats the river's 104 further down its path.
+  expect_equal(at(29, 20), 0.3, tolerance = 1e-9)
+  # Ground the river's 4 m cannot reach stays dry: column 15 is 105 m.
+  expect_true(is.na(at(10, 15)))
+  # Stream cells are 0, as in the pooled method.
+  expect_true(all(terra::values(d, mat = FALSE)[c(f$river, f$creek)] == 0))
+})
+
+test_that("drainage: a cell whose path meets no stream gets no waterline", {
+  skip_if_no_whitebox()
+  # One stream on the low side of a plane tilted west: ground east of it drains
+  # through it, ground west of it drains away from it and is never flooded, however low.
+  dem <- terra::rast(nrows = 20, ncols = 40, xmin = 0, xmax = 400,
+                     ymin = 0, ymax = 200, crs = "EPSG:3005")
+  col <- terra::colFromCell(dem, seq_len(terra::ncell(dem)))
+  terra::values(dem) <- 100 + 0.1 * col
+  s <- terra::rast(dem)
+  v <- rep(NA_real_, terra::ncell(dem))
+  st <- terra::cellFromRowCol(dem, 1:20, 20)
+  v[st] <- terra::values(dem, mat = FALSE)[st] + 5
+  terra::values(s) <- v
+
+  d <- terra::values(fl_flood_depth(dem, s, max_width = 400, method = "drainage"), mat = FALSE)
+  west <- terra::cellFromRowCol(dem, 10, 10)
+  east <- terra::cellFromRowCol(dem, 10, 30)
+  expect_true(is.na(d[west]))
+  expect_equal(d[east], 5 - 1, tolerance = 1e-9)
+})
+
+test_that("drainage keeps NA DEM cells NA", {
+  skip_if_no_whitebox()
+  f <- creek_fixture()
+  dem <- f$dem
+  gap <- terra::cellFromRowCol(dem, 5:9, 30:34)
+  dem[gap] <- NA
+  d <- terra::values(fl_flood_depth(dem, terra::mask(f$both, dem), max_width = 600,
+                                    method = "drainage"), mat = FALSE)
+  expect_true(all(is.na(d[gap])))
+  expect_gt(sum(d > 0, na.rm = TRUE), 0)
+})
+
+test_that("fl_path_max takes the max over each downstream path", {
+  # 1 -> 2 -> 3 (end); 4 alone; 5 -> 1
+  nxt <- c(2L, 3L, 3L, 4L, 1L)
+  expect_equal(fl_path_max(nxt, c(NA, 5, 1, NA, 2)), c(5, 5, 1, NA, 5))
+  # A path longer than any power of two still reaches its end.
+  n <- 1000L
+  expect_equal(fl_path_max(c(2:n, n), c(rep(NA, n - 1), 7))[1], 7)
+})

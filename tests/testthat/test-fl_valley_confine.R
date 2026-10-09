@@ -429,3 +429,60 @@ test_that("a waterbody inside an NA DEM gap is valley, the rest of the gap NA (#
   expect_true(all(v[f$block][in_lake] == 1L))
   expect_true(all(is.na(v[f$block][!in_lake])))
 })
+
+# --- Drainage flood surface (#68) --------------------------------------------------
+# The pooled IDW is not monotone in its seeds: on this tile, dropping the Bulkley
+# mainstem *gains* 12,220 valley cells (measured on 6498d49). Drainage ownership takes,
+# for each cell, the highest waterline among the streams on its downstream path, and
+# flow directions come from the DEM alone, so an added watercourse can only add.
+
+test_that("the default flood_method keeps the pooled delineation", {
+  # Pinned on main before #68 (6498d49), with precipitation.
+  f <- af_fixture()
+  precip_r <- fl_stream_rasterize(f$streams, f$dem, field = "map_upstream")
+  v <- fl_valley_confine(f$dem, f$streams, area_field = "upstream_area_ha", precip = precip_r)
+  expect_equal(sum(terra::values(v) == 1L, na.rm = TRUE), 28727L)
+})
+
+test_that("flood_method is validated", {
+  f <- af_fixture()
+  expect_error(fl_valley_confine(f$dem, f$streams, area_field = "upstream_area_ha",
+                                 flood_method = "max"), "pooled")
+})
+
+drainage_fixture <- local({
+  cache <- NULL
+  function() {
+    if (is.null(cache)) {
+      f <- af_fixture()
+      ref <- fl_valley_confine(f$dem, f$streams, area_field = "upstream_area_ha",
+                               flood_method = "drainage")
+      cache <<- c(f, list(ref_drainage = ref))
+    }
+    cache
+  }
+})
+
+test_that("drainage: adding a watercourse never removes floodplain", {
+  skip_if_no_whitebox()
+  f <- drainage_fixture()
+  # The pooled method fails this on the same tile; see the comment above.
+  for (b in unique(f$streams$blue_line_key)) {
+    sub <- fl_valley_confine(f$dem, f$streams[f$streams$blue_line_key != b, ],
+                             area_field = "upstream_area_ha", flood_method = "drainage")
+    lost <- terra::values(sub == 1L & f$ref_drainage != 1L, mat = FALSE)
+    expect_equal(sum(lost, na.rm = TRUE), 0L, info = paste("without blue line", b))
+  }
+})
+
+test_that("drainage: flood_factor still orders the extent", {
+  skip_if_no_whitebox()
+  f <- af_fixture()
+  precip_r <- fl_stream_rasterize(f$streams, f$dem, field = "map_upstream")
+  n <- vapply(c(2, 4, 6), function(ff) {
+    v <- fl_valley_confine(f$dem, f$streams, area_field = "upstream_area_ha",
+                           precip = precip_r, flood_factor = ff, flood_method = "drainage")
+    sum(terra::values(v) == 1L, na.rm = TRUE)
+  }, numeric(1))
+  expect_true(n[1] < n[2] && n[2] < n[3])
+})

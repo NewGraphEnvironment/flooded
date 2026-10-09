@@ -59,17 +59,17 @@ acceptance, record a verdict. Default stays `pooled` unless every criterion pass
 - [x] Record in findings.md, with the raw-D8 baseline (29%) and the rejected terra options
 
 ### Phase 2: Tests first
-- [ ] `test-fl_flood_depth.R`: `method = "drainage"` on a synthetic tilted-valley fixture
+- [x] `test-fl_flood_depth.R`: `method = "drainage"` on a synthetic tilted-valley fixture
       (no pits). A cell's waterline equals the max level among the stream cells on its path.
       Plus the creek fixture from 538371c: adding the creek loses 0 cells (pooled loses 46)
-- [ ] `test-fl_valley_confine.R`: reuse the d71bbb5 "adding a watercourse never removes
+- [x] `test-fl_valley_confine.R`: reuse the d71bbb5 "adding a watercourse never removes
       floodplain" loop over `blue_line_key`, under `flood_method = "drainage"`
-- [ ] ff ordering: valley cells ff2 < ff4 < ff6 under drainage
-- [ ] Default unchanged: the pooled pin of 28,727 valley cells (precip, ff6) still holds with no
+- [x] ff ordering: valley cells ff2 < ff4 < ff6 under drainage
+- [x] Default unchanged: the pooled pin of 28,727 valley cells (precip, ff6) still holds with no
       new argument
-- [ ] Argument validation: `match.arg`, and a clear error naming whitebox when the package or
+- [x] Argument validation: `match.arg`, and a clear error naming whitebox when the package or
       its binary is missing (mocked)
-- [ ] Drainage tests `skip_if_not()` on the whitebox binary, inside each block
+- [x] Drainage tests `skip_if_not()` on the whitebox binary, inside each block
 
 ### Phase 3: Implementation
 - [ ] `fl_flood_depth(method = c("pooled", "drainage"))`. The drainage branch builds L by 3×3
