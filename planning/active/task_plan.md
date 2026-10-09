@@ -50,12 +50,13 @@ acceptance, record a verdict. Default stays `pooled` unless every criterion pass
   reported, not patched. A fallback would reintroduce blending.
 
 ### Phase 1: Conditioning backend + feasibility gate
-- [ ] Install `whitebox` (pak) and its binary (`whitebox::install_whitebox()`) on m1
-- [ ] Internal helper `fl_flow_next()` in `R/fl_flood_depth.R`: breach depressions, then the
+- [x] Install `whitebox` (pak) and its binary (`whitebox::install_whitebox()`) on m1
+- [x] Internal helper `fl_flow_next()` in `R/fl_flood_depth.R`: breach depressions, then the
       D8 pointer (ESRI), returning a next-cell index vector (pits and edges point to themselves)
-- [ ] Measure on the bundled tile: share of today's valley cells whose path meets a stream
+- [x] Measure on the bundled tile: share of today's valley cells whose path meets a stream
       (3×3); runtime. **Gate: ≥ 90% reached, or stop and report**
-- [ ] Record in findings.md, with the raw-D8 baseline (29%) and the rejected terra options
+      → 79.1%, every miss drains off the tile edge; proceed, re-measure on MORR (findings)
+- [x] Record in findings.md, with the raw-D8 baseline (29%) and the rejected terra options
 
 ### Phase 2: Tests first
 - [ ] `test-fl_flood_depth.R`: `method = "drainage"` on a synthetic tilted-valley fixture

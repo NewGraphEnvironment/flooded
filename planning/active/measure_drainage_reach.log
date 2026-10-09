@@ -1,0 +1,23 @@
+
+ 'Climate science has now been demonstrated to be skillful. It does not tell you what policies to pass, but it is a piece of useful information with associated uncertainties.' - Richard Alley
+  source
+valley cells: 28727 
+
+raw terra flowdir:
+    pits    iters   cyclic      all   valley 
+3932.000   41.000    0.085    0.087    0.292 
+raw whitebox d8 (no conditioning):
+      pits      iters     cyclic        all     valley 
+136430.000      8.000      0.000      0.052      0.178 
+breach least-cost dist=10 (+fill): 1.3 s
+   pits   iters  cyclic     all  valley 
+210.000  12.000   0.000   0.819   0.679 
+breach least-cost dist=50 (+fill): 4.2 s
+   pits   iters  cyclic     all  valley 
+203.000  12.000   0.000   0.875   0.791 
+breach least-cost dist=200 (+fill): 8.3 s
+     pits     iters    cyclic       all    valley 
+11627.000    11.000     0.000     0.814     0.680 
+fill depressions (fix_flats): 0.9 s
+   pits   iters  cyclic     all  valley 
+133.000  12.000   0.000   0.820   0.671 

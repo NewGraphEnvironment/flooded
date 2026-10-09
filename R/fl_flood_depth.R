@@ -93,3 +93,66 @@ fl_flood_depth <- function(dem, flood_surface, max_width = 2000,
   names(depth) <- "flood_depth"
   depth
 }
+
+# Next cell on each cell's D8 flow path, as a cell-number vector (#68). Whitebox breaches
+# depressions (least cost, then fills what it cannot breach) and writes an ESRI pointer:
+# 1 E, 2 SE, 4 S, 8 SW, 16 W, 32 NW, 64 N, 128 NE. Cells with no outflow (pits, flats,
+# NA, or a step off the grid) point to themselves, so every path ends at a fixed point.
+# The directions come from the DEM alone, never from the streams: that is what keeps the
+# drainage surface monotone in added watercourses.
+fl_flow_next <- function(dem, breach_dist = 50L) {
+  if (!requireNamespace("whitebox", quietly = TRUE) ||
+      !isTRUE(suppressMessages(whitebox::check_whitebox_binary()))) {
+    stop("`method = \"drainage\"` needs the whitebox package and its WhiteboxTools binary: ",
+         "install with `pak::pak(\"whitebox\")` then `whitebox::install_whitebox()`.",
+         call. = FALSE)
+  }
+  wd <- tempfile("fl_flow_")
+  dir.create(wd)
+  on.exit(unlink(wd, recursive = TRUE), add = TRUE)
+  f_dem <- file.path(wd, "dem.tif")
+  f_cond <- file.path(wd, "dem_breached.tif")
+  f_pntr <- file.path(wd, "d8_pointer.tif")
+  terra::writeRaster(dem, f_dem, datatype = "FLT8S")
+  whitebox::wbt_breach_depressions_least_cost(f_dem, f_cond, dist = breach_dist,
+                                              fill = TRUE, verbose_mode = FALSE)
+  whitebox::wbt_d8_pointer(f_cond, f_pntr, esri_pntr = TRUE, verbose_mode = FALSE)
+  if (!file.exists(f_pntr)) {
+    stop("WhiteboxTools did not write a D8 pointer raster.", call. = FALSE)
+  }
+  code <- terra::values(terra::rast(f_pntr), mat = FALSE)
+
+  nr <- terra::nrow(dem)
+  nc <- terra::ncol(dem)
+  cell <- seq_len(nr * nc)
+  row <- (cell - 1L) %/% nc + 1L
+  col <- (cell - 1L) %% nc + 1L
+  # position in the lookup = log2(code) + 1, for the eight valid codes only
+  k <- match(code, c(1, 2, 4, 8, 16, 32, 64, 128))
+  dr <- c(0L, 1L, 1L, 1L, 0L, -1L, -1L, -1L)[k]
+  dc <- c(1L, 1L, 0L, -1L, -1L, -1L, 0L, 1L)[k]
+  r2 <- row + dr
+  c2 <- col + dc
+  nxt <- (r2 - 1L) * nc + c2
+  off <- is.na(k) | r2 < 1L | r2 > nr | c2 < 1L | c2 > nc
+  nxt[off] <- cell[off]
+  nxt
+}
+
+# Maximum of `value` over each cell's downstream path, the cell included (#68). Pointer
+# jumping: after step k, `m[x]` is the max over the first 2^k cells of x's path and `nxt[x]`
+# is the cell 2^k steps on, so the loop runs log2(longest path) times. `NA` values never win;
+# a cell whose whole path is `NA` stays `NA`.
+fl_path_max <- function(nxt, value) {
+  m <- value
+  m[is.na(m)] <- -Inf
+  # A breached, filled DEM has no cycles, but cap the loop so one can never hang it.
+  for (i in seq_len(ceiling(log2(length(nxt))) + 2L)) {
+    m <- pmax(m, m[nxt])
+    nxt2 <- nxt[nxt]
+    if (identical(nxt2, nxt)) break
+    nxt <- nxt2
+  }
+  m[m == -Inf] <- NA
+  m
+}

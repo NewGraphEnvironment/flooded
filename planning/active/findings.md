@@ -68,3 +68,40 @@ Relates: floodplains#104, floodplains#110, flooded#67, flooded#40.
 
 | Error | Resolution |
 |-------|------------|
+
+## Phase 1 — Can a conditioned D8 path reach the streams? (2026-10-09)
+
+Scripts and logs: `measure_drainage_reach.R/.log`, `measure_drainage_window.R/.log` (this
+directory). Bundled tile; reference set = today's 28,727 valley cells (`upstream_area_ha` +
+precip, ff6). "Reached" = some cell on the D8 path lies in the 3x3 window of a stream cell.
+
+| conditioning | valley cells reached | time |
+|---|---|---|
+| raw `terra::terrain(v = "flowdir")` (3,932 code-0, 8.5% cyclic) | 29.2% | <1 s |
+| raw WBT D8, no conditioning | 17.8% | <1 s |
+| WBT breach least-cost, dist 10 cells (+fill) | 67.9% | 1.3 s |
+| **WBT breach least-cost, dist 50 cells (+fill)** | **79.1%** | 4.2 s |
+| WBT breach least-cost, dist 200 cells (+fill) | 68.0% (11,627 code-0 cells) | 8.3 s |
+| WBT fill depressions (fix_flats) | 67.1% | 0.9 s |
+
+Rejected without a number: `terra::flowDir()` (experimental) did not finish in 10 min on 518k
+cells; `terra::pitfiller()` (experimental PEM4PIT) was killed by a 15 min timeout. Stream burning
+(5-50 m) moved raw D8 from 29% to <=30% and would make flow directions depend on the streams,
+which breaks monotonicity.
+
+**The gate as written (>= 90%) fails at 79.1%, and the misses are not what the gate was for.** It
+was meant to catch D8 paths missing streams through misalignment or diagonal leaks. That is not
+what happens:
+- Widening the window barely moves it: 79.1% at 10 m, 79.3% at 50 m, 79.5% at 100 m.
+- **Every one** of the 5,991 missed valley cells drains off the tile edge, never within 15 m of a
+  seeded stream.
+- The missed cells are themselves a median **582 m** from a stream. Pooled IDW wets them because
+  its 1 km radius reaches across the valley.
+
+These are cells whose drainage leaves the bundled tile before meeting a seeded stream (down-valley
+swales and side drainage running parallel to the river), so the bundled tile is a worst case. On a
+watershed-clipped DEM (MORR, a WSG) every path reaches the outlet through the network. Re-measure
+there in Phase 4 rather than assume it. Decision: proceed; window 3x3; breach dist 50 cells.
+
+WBT ESRI pointer convention confirmed on synthetic planes: east-falling 1, south-falling 4,
+northeast-falling 128; NA DEM gives an NA pointer, and neighbours do not point into it.
