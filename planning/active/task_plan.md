@@ -78,9 +78,10 @@ Exploration notes that shape the phases:
 
 ## Phase 4: Implement
 
-> **Halted 2026-10-09 — awaiting user decision.** Per-watercourse max over-floods by +67% to
-> +143% on the bundled tile and flattens `flood_factor` (see findings, "Phase 4 — the fix
-> over-floods"). The on-by-default decision is disproved; options are with the user.
+> **Decision 2026-10-09 (user): no code.** Per-watercourse max over-floods by +67% to +143% on the
+> bundled tile and flattens `flood_factor` (findings, "Phase 4 — the fix over-floods"). The
+> implementation and its tests are kept in history at d71bbb5 and reverted from the branch; the PR
+> carries the measurements and the #68 rewrite only. Unticked items below were not done.
 
 - [x] `fl_flood_depth(..., groups = NULL)`: `groups` SpatRaster of integer ids on the stream
       cells; per group crop to bbox + `max_width / 2`, IDW from that group's cells, `pmax`-merge
@@ -94,7 +95,10 @@ Exploration notes that shape the phases:
       per-order variant and record the monotonicity it gives up
 - [ ] `devtools::document()`, lintr, `pkgdown::check_pkgdown()`
 
-## Phase 5: Re-measure and results change
+## Phase 5: Results change — superseded by the no-code decision
+
+Not done: there is no results change to propagate. Kept for the record.
+
 - [ ] Re-run arms 1 and 5 on MORR in scratch: lost cells (expect ~0 apart from waterbody /
       hole fill), and floodplain *gained* near tributary mouths (the over-flooding check)
 - [ ] Re-run `data-raw/stac_dem_vignette_data.R` (10 m cell counts) and update
@@ -103,6 +107,11 @@ Exploration notes that shape the phases:
 - [ ] Update roxygen @details, `methodology.md` (seeds paragraph + new section), 
       `floodplain_interpretation.md` step 4, `fl_valley_attribute.R:54`, CLAUDE.md design decision
 - [ ] NEWS entry (results change; floodplains re-runs to pick it up; pair with flooded#67)
+
+## Phase 6: Close out without code
+- [x] Revert R/, man/, tests/ to main; keep the implementation reachable at d71bbb5
+- [ ] Rewrite the #68 body: mechanism confirmed, lineage, candidate fix measured and rejected,
+      next candidate (drainage-based ownership) with acceptance criteria
 
 ## Validation
 - [ ] Tests pass

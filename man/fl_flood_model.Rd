@@ -4,14 +4,7 @@
 \alias{fl_flood_model}
 \title{Run the full flood model}
 \usage{
-fl_flood_model(
-  dem,
-  streams,
-  flood_factor = 6,
-  precip = NULL,
-  max_width = 2000,
-  groups = NULL
-)
+fl_flood_model(dem, streams, flood_factor = 6, precip = NULL, max_width = 2000)
 }
 \arguments{
 \item{dem}{A \code{SpatRaster} of elevation.}
@@ -30,16 +23,6 @@ internally. Default \code{NULL}, which drops the precipitation term.}
 
 \item{max_width}{Numeric. Maximum corridor width in map units (metres)
 within which to interpolate. Default \code{2000} (1000m each side).}
-
-\item{groups}{Which watercourse each stream cell belongs to, so that each
-watercourse's surface is interpolated from its own cells alone. Either a
-\code{SpatRaster} on the same grid holding a group id at each stream cell, or a
-list of integer vectors of cell numbers, one per group. The list form lets
-a cell belong to more than one watercourse, which is what
-\code{\link[=fl_valley_confine]{fl_valley_confine()}} builds so that a confluence cell feeds both streams.
-Stream cells in no group, or with an \code{NA} id, form one group of their own.
-Default \code{NULL} interpolates every stream cell together, as every release
-did before flooded#68.}
 }
 \value{
 A \code{SpatRaster} with three layers:

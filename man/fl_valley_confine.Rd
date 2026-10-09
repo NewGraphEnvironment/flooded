@@ -18,9 +18,7 @@ fl_valley_confine(
   channel_buffer = NULL,
   size_threshold = 5000,
   hole_threshold = 2500,
-  field = NULL,
-  group_field = "blue_line_key",
-  groups = NULL
+  field = NULL
 )
 }
 \arguments{
@@ -79,19 +77,6 @@ stream channel is floodplain but can be sub-pixel at coarse DEM resolution.}
 \item{field}{Deprecated. The former name of \code{area_field}, whose
 \code{"channel_width"} default was wrong for the flood model (#47). Supplying it
 warns and forwards to \code{area_field}; removal is tracked in flooded#53.}
-
-\item{group_field}{Character. Column of \code{streams} identifying each
-watercourse. Default \code{"blue_line_key"} (BC Freshwater Atlas). Each
-watercourse's flood surface is interpolated from its own stream cells and
-the flood mask takes the highest, so a small stream never lowers a large
-river's waterline (flooded#68). A missing column is an error. \code{NULL}
-interpolates every stream cell together, as releases before flooded#68
-did. For rasterized \code{streams} the column cannot be read: supply \code{groups},
-or set \code{group_field = NULL} to accept the pooled surface without a warning.}
-
-\item{groups}{For rasterized \code{streams} only: watercourse ids for the stream
-cells, as a \code{SpatRaster} on the \code{dem} grid or a list of cell numbers (see
-\code{\link[=fl_flood_depth]{fl_flood_depth()}}). Default \code{NULL}.}
 }
 \value{
 A \code{SpatRaster} with binary values: \code{1} = unconfined valley, \code{0} =
@@ -111,9 +96,7 @@ The algorithm combines four criteria via intersection (AND):
 \item \strong{Slope mask} — cells with slope <= \code{slope_threshold}
 \item \strong{Distance mask} — cells within \code{max_width / 2} of a stream
 \item \strong{Cost distance mask} — cells with accumulated cost < \code{cost_threshold}
-\item \strong{Flood mask} — cells identified as flooded by bankfull regression,
-with each watercourse's waterline interpolated separately and the highest
-kept (see \code{group_field})
+\item \strong{Flood mask} — cells identified as flooded by bankfull regression
 }
 
 The combined mask then undergoes morphological cleanup:
