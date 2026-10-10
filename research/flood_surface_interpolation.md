@@ -1,10 +1,10 @@
 # Flood surface interpolation: pooled blend, per-watercourse maxima, drainage ownership
 
-**Verified:** 2026-10-09 · **Issues:** flooded#68 (open), floodplains#110 · **Produced by:**
+**Verified:** 2026-10-10 · **Issues:** flooded#68 (open, parked), floodplains#110, floodplains#104 · **Produced by:**
 round 1 `planning/archive/2026-10-issue-68-flood-surface-blend/measure_lost_cells.R` (MORR) and
 that archive's `findings.md`, rejected implementation at commit d71bbb5; round 2
 `planning/archive/2026-10-issue-68-drainage-ownership/measure_*.R` with their logs
-(bundled tile, Parsnip WSG, MORR).
+(bundled tile, Parsnip WSG, MORR), implementation at commit f30ad65, not merged.
 
 `fl_flood_depth()` carries the waterline sideways with one IDW over every stream cell (the
 default, `method = "pooled"`). That blend has **two errors that partly cancel**, and fixing one
@@ -22,7 +22,7 @@ exposes the other.
      the Bulkley's floor (median depth 4.9 m on the gained cells, round-1 reviewer's prototype at ff6). IDW's reach is not the main
      cause: .
 
-## Round 2: drainage ownership (opt-in, `method = "drainage"`)
+## Round 2: drainage ownership (built, measured, not shipped)
 
 **The rule.**
 - WhiteboxTools conditions the DEM: least-cost breaching, then `BreachDepressions`, single thread.
@@ -63,11 +63,14 @@ pit-removal algorithm alone. A level read from the stream cell's own DEM value (
 Parsnip) carries bed noise upstream through the path maximum: the plan review measured a p90
 downstream excess of 7 m on Parsnip.
 
-**WhiteboxTools 2.4.0 traps:**
-- multi-threaded `BreachDepressionsLeastCost` and `FillDepressions` are not deterministic:
-  36,000–60,000 of 518,400 cells differ between identical runs;
-- their fill branch panics intermittently ("Error unwrapping 'output'", an `Arc::try_unwrap`
-  race).
+**WhiteboxTools 2.4.0 traps**, for any later use of it:
+- multi-threaded `BreachDepressionsLeastCost` and `FillDepressions` are not deterministic on DEMs
+  with tied elevations, such as integer DEMs (the bundled one has 409 distinct values): 36,000–60,000
+  of 518,400 cells differ between identical runs. One thread is exact. A standalone reprex is
+  `upstream_whitebox_reprex.R` in the round 2 archive;
+- `BreachDepressionsLeastCost --fill` and `FillDepressions` panicked a few times ("Error
+  unwrapping 'output'"). Not reproduced on demand.
+- WhiteboxTools' own repo is legacy; development moved to `jblindsay/whitebox_next_gen`.
 
 ## Lineage
 

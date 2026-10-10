@@ -43,11 +43,6 @@
 #'   stream channel is floodplain but can be sub-pixel at coarse DEM resolution.
 #' @param size_threshold Numeric. Minimum valley patch area (m²). Default `5000`.
 #' @param hole_threshold Numeric. Maximum hole area to fill (m²). Default `2500`.
-#' @param flood_method Character. How the flood model carries each stream's
-#'   waterline across the valley: `"pooled"` (default, one inverse-distance
-#'   surface over every stream cell) or `"drainage"` (each cell takes the highest
-#'   level met along its downstream flow path; needs WhiteboxTools).
-#'   Passed to [fl_flood_depth()] as `method`, where the two are described.
 #' @param field Deprecated. The former name of `area_field`, whose
 #'   `"channel_width"` default was wrong for the flood model (#47). Supplying it
 #'   warns and forwards to `area_field`; removal is tracked in flooded#53.
@@ -63,8 +58,7 @@
 #' 1. **Slope mask** — cells with slope <= `slope_threshold`
 #' 2. **Distance mask** — cells within `max_width / 2` of a stream
 #' 3. **Cost distance mask** — cells with accumulated cost < `cost_threshold`
-#' 4. **Flood mask** — cells identified as flooded by bankfull regression, with
-#'    the waterline carried across the valley by `flood_method`
+#' 4. **Flood mask** — cells identified as flooded by bankfull regression
 #'
 #' The combined mask then undergoes morphological cleanup:
 #' - Closing filter (3x3) to bridge small gaps
@@ -147,10 +141,8 @@ fl_valley_confine <- function(dem, streams,
                               channel_buffer = NULL,
                               size_threshold = 5000,
                               hole_threshold = 2500,
-                              flood_method = c("pooled", "drainage"),
                               field = NULL) {
   stopifnot(inherits(dem, "SpatRaster"))
-  flood_method <- match.arg(flood_method)
 
   # --- Deprecated `field` spelling (#47) ---
   # `field` defaulted to "channel_width", which the flood model then read as
@@ -240,7 +232,7 @@ fl_valley_confine <- function(dem, streams,
   # --- 4. Flood mask ---
   flood <- fl_flood_model(dem, stream_r,
                           flood_factor = flood_factor, precip = precip,
-                          max_width = max_width, method = flood_method)
+                          max_width = max_width)
   mask_flood <- flood[["flooded"]]
   # Include stream cells in the flood mask; convert NA to 0
   mask_flood <- terra::ifel(!is.na(stream_r), 1L, mask_flood)

@@ -120,17 +120,15 @@ tests/testthat/          — unit tests for each fl_* function (17 test files, 1
   Removing the first exposes the second: per-`blue_line_key` max grew the bundled floodplain
   +67% to +143%, and ff2 exceeded pooled ff6. Do not re-try it or its per-order variant; the next
   candidate is drainage-based ownership. See `research/flood_surface_interpolation.md`.
-- **Drainage ownership is opt-in and under-floods** (#68 round 2, `flood_method = "drainage"`,
-  needs WhiteboxTools). It is monotone in added streams: the flood mask off the added stream's
-  own cells, and the valley output on a DEM without NA gaps (MORR all-FWA vs coho: 0 ha lost,
-  pooled 451.9 ha), but maps about a quarter less valley than pooled: −25.6% MORR, −28.6% Parsnip at ff4. A cell
-  takes the level where its path joins the network: on Parsnip, the lost cells that come out
-  dry have a drainage waterline a median 5.9 m below pooled's.
-  Read the level from the **original** DEM: a conditioned-DEM level swung −50% to −75% with the
-  pit-removal algorithm. WhiteboxTools runs single-threaded (multi-threaded breaching is not
-  deterministic), and never with least-cost `fill = TRUE` or `FillDepressions`, which panic on an
-  `Arc::try_unwrap` race. The next candidate, a nearest-point level per drained-to watercourse,
-  is in `research/flood_surface_interpolation.md`.
+- **Drainage ownership was tried and not shipped** (#68 round 2; implementation at f30ad65).
+  Each cell takes the highest level on its downstream D8 path. It is monotone in added streams
+  (MORR all-FWA vs coho: 0 ha lost, pooled 451.9 ha) but maps about a quarter less valley than
+  pooled (−25.6% MORR, −28.6% Parsnip at ff4), because a cell takes the level where its path
+  joins the network, not the reach beside it. There is no reference to say which is closer to the
+  truth, so #68 is parked. Attribution for habitat linking does not depend on it: delineate once,
+  `fl_valley_attribute()` by key, join habitat afterwards (floodplains#104). If WhiteboxTools is
+  ever used, run it single-threaded and read levels from the original DEM, not the conditioned
+  one; details in `research/flood_surface_interpolation.md`.
 
 ### Test-data traps
 

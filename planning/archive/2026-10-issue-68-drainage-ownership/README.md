@@ -54,4 +54,9 @@ Durable verdict: [`research/flood_surface_interpolation.md`](../../../research/f
 conditioning, cut off by a session end. `review-1.md` and `review-round*.md` are the plan review
 and the four code-check rounds; `findings.md` has the tables.
 
-Closed by: PR for #68 (issue stays open for the round 3 candidate)
+**Not shipped.** The opt-in code was reverted before merge (2026-10-10): the method fails its
+acceptance, there is no reference to judge accuracy against, and floodplains#104's
+attribute-then-join path does not need it. The implementation stays at commit f30ad65.
+#68 is parked.
+
+Closed by: flooded#70 (write-up only; #68 stays open, parked)

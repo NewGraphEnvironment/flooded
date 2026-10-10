@@ -18,7 +18,6 @@ fl_valley_confine(
   channel_buffer = NULL,
   size_threshold = 5000,
   hole_threshold = 2500,
-  flood_method = c("pooled", "drainage"),
   field = NULL
 )
 }
@@ -75,12 +74,6 @@ stream channel is floodplain but can be sub-pixel at coarse DEM resolution.}
 
 \item{hole_threshold}{Numeric. Maximum hole area to fill (m²). Default \code{2500}.}
 
-\item{flood_method}{Character. How the flood model carries each stream's
-waterline across the valley: \code{"pooled"} (default, one inverse-distance
-surface over every stream cell) or \code{"drainage"} (each cell takes the highest
-level met along its downstream flow path; needs WhiteboxTools).
-Passed to \code{\link[=fl_flood_depth]{fl_flood_depth()}} as \code{method}, where the two are described.}
-
 \item{field}{Deprecated. The former name of \code{area_field}, whose
 \code{"channel_width"} default was wrong for the flood model (#47). Supplying it
 warns and forwards to \code{area_field}; removal is tracked in flooded#53.}
@@ -103,8 +96,7 @@ The algorithm combines four criteria via intersection (AND):
 \item \strong{Slope mask} — cells with slope <= \code{slope_threshold}
 \item \strong{Distance mask} — cells within \code{max_width / 2} of a stream
 \item \strong{Cost distance mask} — cells with accumulated cost < \code{cost_threshold}
-\item \strong{Flood mask} — cells identified as flooded by bankfull regression, with
-the waterline carried across the valley by \code{flood_method}
+\item \strong{Flood mask} — cells identified as flooded by bankfull regression
 }
 
 The combined mask then undergoes morphological cleanup:

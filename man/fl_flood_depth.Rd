@@ -4,13 +4,7 @@
 \alias{fl_flood_depth}
 \title{Interpolate flood surface and compute depth above terrain}
 \usage{
-fl_flood_depth(
-  dem,
-  flood_surface,
-  max_width = 2000,
-  streams = NULL,
-  method = c("pooled", "drainage")
-)
+fl_flood_depth(dem, flood_surface, max_width = 2000, streams = NULL)
 }
 \arguments{
 \item{dem}{A \code{SpatRaster} of elevation.}
@@ -24,13 +18,6 @@ within which to interpolate. Default \code{2000} (1000m each side).}
 \item{streams}{A \code{SpatRaster} of rasterized streams used to define the
 interpolation corridor. If \code{NULL}, derived from non-\code{NA} cells in
 \code{flood_surface}.}
-
-\item{method}{Character. How the waterline is carried away from the streams.
-\code{"pooled"} (default) interpolates every stream cell's flood surface into one
-inverse-distance surface. \code{"drainage"} gives each cell the highest level
-met along its downstream flow path, where a path cell's level is the lowest
-ground beside it plus the deepest flood depth of a stream within one cell. It
-needs the \code{whitebox} package and its WhiteboxTools binary. See Details.}
 }
 \value{
 A \code{SpatRaster} of flood depth (metres above terrain). Positive
@@ -52,54 +39,6 @@ results for this application.
 
 The interpolation domain is limited to cells within \code{max_width / 2} of
 the nearest stream cell to avoid extrapolating into distant terrain.
-\subsection{\code{method = "pooled"} and \code{method = "drainage"}}{
-
-The pooled interpolation averages over every stream cell within \code{max_width / 2},
-whatever stream it belongs to, as the Python VCA's \code{griddata} does. A small creek
-crossing a river's valley floor therefore pulls the river's waterline down around
-itself, and adding streams to a run can remove floodplain (flooded#68).
-
-\code{method = "drainage"} replaces the average with ownership by drainage:
-\enumerate{
-\item WhiteboxTools breaches the DEM's depressions (least cost, then a breach-fill pass
-for what that leaves) and assigns each cell a D8 flow direction. The directions come from the
-DEM alone, not from the streams. WhiteboxTools runs single-threaded here, because
-its multi-threaded breaching is not deterministic.
-\item Each cell's candidate level is the lowest ground in its 3x3 window plus the
-deepest flood depth (\code{flood_factor} x bankfull depth) among the stream cells in
-that window. The lowest neighbour stands in for the channel bed, as in
-height-above-nearest-drainage (HAND) methods, so one high stream-cell elevation
-(a stream line drawn on a bank, an integer DEM) is not carried upstream. The
-level is therefore biased low: it sits below the stream's own by however much
-lower that lowest neighbour is, at least one cell's drop along a sloping channel.
-\item A cell's waterline is the highest candidate level on its downstream path,
-the cell itself included.
-}
-
-Because the flow paths do not depend on the streams and a maximum can only grow,
-adding a watercourse never lowers a waterline away from that watercourse's own cells.
-Its own cells become stream cells, with depth \code{0}, so the flooded mask here is
-monotone in the streams everywhere except on the added stream itself.
-\code{\link[=fl_valley_confine]{fl_valley_confine()}} puts every stream cell in its flood mask, and each of its other
-steps keeps the result monotone, so on a DEM without \code{NA} gaps its delineation is
-monotone. Gaps can break that through the cost surface and #65. A large river's
-level carries up the lower reach of a tributary that drains into it, as backwater
-does. A tributary's level reaches only ground whose path passes through the
-tributary or within one cell of it, never the open valley floor beside it.
-
-A cell whose path never comes within one cell of a stream gets no waterline and is
-not flooded. That includes
-ground that drains off the edge of the DEM, and ground whose path runs into an \code{NA}
-gap over the channel (lidar water returns).
-
-\strong{The drainage method is experimental and maps much less floodplain than the pooled
-one.} On the Parsnip watershed group (MRDEM-30) at \code{flood_factor = 4} it maps 29\%
-fewer valley cells. 98.4\% of the lost cells have a path that passes within one cell
-of a stream; 94.7\% come out dry, with a drainage waterline a median 5.9 m below the
-pooled one: a cell takes the level of the reach its flow path joins, not of the
-reach beside it. \code{flood_factor} also matters about
-2.5 times as much. See flooded#68 and \code{research/flood_surface_interpolation.md}.
-}
 }
 \examples{
 dem <- terra::rast(system.file("testdata/dem.tif", package = "flooded"))
@@ -112,13 +51,5 @@ precip_r <- fl_stream_rasterize(streams, dem, field = "map_upstream")
 surface <- fl_flood_surface(dem, stream_r, precip = precip_r)
 depth <- fl_flood_depth(dem, surface, max_width = 2000, streams = stream_r)
 terra::plot(depth, main = "Flood depth (m)")
-
-# Drainage ownership needs WhiteboxTools
-if (requireNamespace("whitebox", quietly = TRUE) &&
-    isTRUE(whitebox::check_whitebox_binary())) {
-  depth_d <- fl_flood_depth(dem, surface, max_width = 2000, streams = stream_r,
-                            method = "drainage")
-  terra::plot(depth_d, main = "Flood depth (m), drainage ownership")
-}
 
 }
