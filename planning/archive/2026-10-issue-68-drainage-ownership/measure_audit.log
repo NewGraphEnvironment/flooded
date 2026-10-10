@@ -1,0 +1,32 @@
+
+ 'It's natural. If you sit there and think about it too much, your shit probably whack.' - Madlib
+  source
+
+== bundled ff4: pooled 23192, drainage 11096 valley cells; lost 12645, gained 549
+lost: unowned 43.2% | owned but dry 55.5% | wet, removed by cleanup 1.3%
+owned-but-dry lost cells, p10 / p50 / p90:
+  straight-line distance to waterline source (m): 128.4 / 1205.1 / 2209.5 
+  pooled waterline - drainage waterline (m):      0.9 / 8.9 / 18.6 
+  pooled depth on them (m):                       0.1 / 1.6 / 5.5 
+  distance to nearest stream (m):                 50.0 / 406.1 / 730.0 
+gained cells, p10 / p50 / p90:
+  drainage depth (m):                              0.2 / 0.2 / 1.2 
+  drainage waterline - pooled waterline (m):       0.2 / 0.9 / 1.8 
+  straight-line distance to waterline source (m):  36.1 / 114.0 / 197.2 
+  owned 100.0%
+corridor cells owned: 91.7%; pooled-valley cells owned: 76.4%
+
+== parsnip ff4: pooled 441054, drainage 314772 valley cells; lost 137593, gained 11311
+lost: unowned 1.6% | owned but dry 94.7% | wet, removed by cleanup 3.7%
+owned-but-dry lost cells, p10 / p50 / p90:
+  straight-line distance to waterline source (m): 0.0 / 589.9 / 2764.7 
+  pooled waterline - drainage waterline (m):      1.7 / 5.9 / 23.4 
+  pooled depth on them (m):                       0.2 / 2.3 / 6.9 
+  distance to nearest stream (m):                 30.5 / 155.7 / 519.2 
+gained cells, p10 / p50 / p90:
+  drainage depth (m):                              -0.2 / 1.0 / 4.7 
+  drainage waterline - pooled waterline (m):       0.8 / 2.8 / 8.4 
+  straight-line distance to waterline source (m):  178.1 / 1729.9 / 6793.9 
+  owned 100.0%
+corridor cells owned: 99.5%; pooled-valley cells owned: 99.4%
+EXIT 0

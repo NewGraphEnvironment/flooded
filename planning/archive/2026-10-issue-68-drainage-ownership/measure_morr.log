@@ -1,0 +1,26 @@
+
+ 'Being a scientist means I believe in miracles. I live on one. We are improbable life on a perfect planet.' - Kate Marvel
+  source
+dem 4082 x 4431 (30.43 m); arm1 58613, arm5 4877 segments
+flow route (WhiteboxTools, 1 thread): 18 s
+
+== arm 5, pooled vs drainage
+pooled   ff2      30392 ha  (73 s)
+drainage ff2      21978 ha  (69 s)
+pooled   ff4      32470 ha  (72 s)
+drainage ff4      24145 ha  (70 s)
+pooled   ff6      34171 ha  (71 s)
+drainage ff6      26170 ha  (72 s)
+ff2: drainage -27.7% | lost 8994 ha, gained 580 ha
+ff4: drainage -25.6% | lost 8847 ha, gained 522 ha
+ff6: drainage -23.4% | lost 8483 ha, gained 481 ha
+pooled   gaps: ff4/ff2 +6.8%, ff6/ff4 +5.2%
+drainage gaps: ff4/ff2 +9.9%, ff6/ff4 +8.4%
+
+== arm 1 vs arm 5 at ff4, drainage
+arm1 34280 ha, arm5 24145 ha; valley lost adding streams: 0 cells (0.0 ha)  [pooled: 451.9 ha]
+flood-mask cells wet with arm5, dry with arm1: 0  [pooled: 13,569]
+
+== reach
+arm5 corridor cells owned: 99.4%; arm5 pooled-valley cells owned: 99.1%
+EXIT 0

@@ -1,0 +1,33 @@
+
+ 'In prison, you have nothing but your mind. There's so many limitations to what you can do. Prison was the first time that I used that part of my brain: I made a plan to be a rapper, mapped it out and then actually executed it.' - IDK
+  source
+
+== parsnip: 20888140 cells, 8436 segments
+pooled   ff2     417543 cells  (95 s)
+pooled   ff4     441054 cells  (90 s)
+pooled   ff6     461129 cells  (89 s)
+raw      ff2     386939 cells  (110 s)
+raw      ff4     408335 cells  (92 s)
+raw      ff6     432073 cells  (91 s)
+rawmin   ff2     277681 cells  (92 s)
+rawmin   ff4     314772 cells  (91 s)
+rawmin   ff6     356391 cells  (91 s)
+
+== summary
+    site ff method  cells  secs pooled vs_pooled
+ parsnip  2 pooled 417543  94.5 417543     +0.0%
+ parsnip  4 pooled 441054  90.3 441054     +0.0%
+ parsnip  6 pooled 461129  88.4 461129     +0.0%
+ parsnip  2    raw 386939 109.6 417543     -7.3%
+ parsnip  4    raw 408335  92.4 441054     -7.4%
+ parsnip  6    raw 432073  91.0 461129     -6.3%
+ parsnip  2 rawmin 277681  92.1 417543    -33.5%
+ parsnip  4 rawmin 314772  91.2 441054    -28.6%
+ parsnip  6 rawmin 356391  90.9 461129    -22.7%
+
+== flood_factor gaps
+    site method gap_ff4_ff2 gap_ff6_ff4
+ parsnip pooled        5.6%        4.6%
+ parsnip    raw        5.5%        5.8%
+ parsnip rawmin       13.4%       13.2%
+EXIT 0

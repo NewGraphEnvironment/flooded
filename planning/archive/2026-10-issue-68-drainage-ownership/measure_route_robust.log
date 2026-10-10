@@ -1,0 +1,6 @@
+
+ 'Even if we don't get it right, I will have lived a much more rewarding life for having tried to get it right.' - Ayana Elizabeth Johnson
+  source
+30 calls: 0 errors, 0 differ from the first; median 4.5 s
+downhill violations: 0  fixed points (pits, edges, NA): 265 
+pooled valley cells whose path meets a stream (3x3): 78.9%  [least cost + fill: 79.1%]
