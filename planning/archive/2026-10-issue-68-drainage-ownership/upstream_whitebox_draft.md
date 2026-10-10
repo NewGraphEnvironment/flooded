@@ -1,35 +1,41 @@
 # DRAFT, not posted: issue for jblindsay/whitebox-tools
 
-Revised after a repro attempt. Post only the determinism issue. The panic is held back because
-it did not reproduce in 800 runs, and its input was never identified (details at the end).
+Revised after a repro attempt. Post only the determinism issue, with the reprex. The panic is
+held back because it did not reproduce in 800 runs, and its input was never identified (details
+at the end).
 
 ---
 
-**Title:** BreachDepressionsLeastCost and FillDepressions give different output on identical runs when multi-threaded
+**Title:** BreachDepressionsLeastCost and FillDepressions are not deterministic when multi-threaded on DEMs with tied elevations
 
 **Version:** WhiteboxTools v2.4.0 (via the R `whitebox` 2.4.3 package), macOS arm64.
 
-**What happens.** Running the same tool twice on the same 648 x 800 DEM with the default thread
-count gives different output rasters. Count of cells (of 518,400) that differ between two
-consecutive identical runs:
+**What happens.** On a DEM whose elevations contain ties, such as an integer-valued DEM, running the
+same tool twice with the default thread count gives different outputs. With `--max_procs=1` the
+output is identical every time. On a DEM with continuous elevations (no ties), both settings are
+identical.
 
-| tool | cells differing |
-|---|---|
-| `BreachDepressionsLeastCost --dist=50 --fill` | 59,638 |
-| `BreachDepressionsLeastCost --dist=50` (no fill) | 49,570 |
-| `FillDepressions --fix_flats` | 36,047 |
-| `BreachDepressions` | 0 |
-| `D8Pointer` (fixed input) | 0 |
+**Reprex** (R, needs only `whitebox` and `terra`): a synthetic 800 x 800 tilted surface with
+noise, rounded to whole metres. It is `upstream_whitebox_reprex.R` beside this draft and is pasted
+below when posting. Cells (of 640,000) that differ between two consecutive identical runs:
 
-With `--max_procs=1`, all five are identical between runs.
+| tool | default threads | `--max_procs=1` |
+|---|---|---|
+| `BreachDepressionsLeastCost --dist=50 --fill` | 77,352 | 0 |
+| `BreachDepressionsLeastCost --dist=50` | 58,060 | 0 |
+| `FillDepressions --fix_flats` | 95,467 | 0 |
+| `BreachDepressions` | 0 | 0 |
 
-**Why it matters.** Any workflow that compares two runs (before/after, with/without a change)
-picks up tens of thousands of spurious differences. Ours is a check that adding streams never
-removes floodplain, and it failed on fixed flow directions until we pinned one thread.
+The same surface without the rounding gives 0 for every tool at both settings, so the variation
+is in tie-breaking. A real integer DEM (648 x 800, 409 distinct elevations) gave 36,047–59,638
+differing cells.
 
-**Ask.** If the variation is expected tie-breaking across threads, a note in these tools' docs
-would help, perhaps with a recommendation to use `--max_procs=1` for reproducible output. If it is
-not expected, the repro is: run either tool twice on any DEM with depressions and diff the outputs.
+**Why it matters.** Integer DEMs are common (SRTM, many national products). Any workflow that
+compares two runs picks up tens of thousands of spurious differences. Ours checks that adding
+streams never removes floodplain, and it failed on fixed inputs until we pinned one thread.
+
+**Ask.** Make tie-breaking independent of thread scheduling. Failing that, note in these tools'
+docs that multi-threaded output is not reproducible on tied elevations and that `--max_procs=1` is.
 
 ---
 
