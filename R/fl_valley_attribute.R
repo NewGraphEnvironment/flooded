@@ -255,7 +255,7 @@ fl_valley_attribute <- function(valleys, streams, group,
     return(out)
   }
 
-  out <- fl_check_out(do.call(rbind, parts), group)
+  out <- fl_check_out(fl_rbind_pairwise(parts), group)
   attr(out, "fl_fallback_cells") <- length(uncovered)
   out
 }
@@ -277,6 +277,28 @@ fl_check_out <- function(out, group) {
          call. = FALSE)
   }
   out
+}
+
+#' Row-bind a list of `sf` objects in pairs
+#'
+#' `do.call(rbind, x)` over one `sf` per group grows with the square of the
+#' group count: 21.2 s for MORR's 1,633 order >= 2 groups and 52.9 s for BULK's
+#' 2,391 (#72). Binding in pairs, then pairs of pairs, gives an `identical()`
+#' result in 2.3 s on MORR.
+#'
+#' @param x A non-empty list of `sf` objects with the same columns.
+#'
+#' @return One `sf` object, rows in the order of `x`.
+#' @noRd
+fl_rbind_pairwise <- function(x) {
+  # rbind() of a single sf still reorders its columns (geometry last), so one part is not
+  # returned as is.
+  if (length(x) == 1L) return(rbind(x[[1L]]))
+  while (length(x) > 1L) {
+    first <- seq(1L, length(x), by = 2L)
+    x <- lapply(first, function(i) if (i < length(x)) rbind(x[[i]], x[[i + 1L]]) else x[[i]])
+  }
+  x[[1L]]
 }
 
 #' Cell indices a single stream group reaches

@@ -175,6 +175,53 @@ test_that("corridor cropping does not change the answer", {
   expect_equal(got, ref_cells)
 })
 
+test_that("every group's membership equals its uncropped full-grid oracle", {
+  # The one-group oracle above, for every group and at a binding threshold as well as
+  # the default: any change to how a group's crop is cut or indexed (#72) must leave
+  # every cell of every group where it was. At the defaults the criteria are slack on
+  # this tile, so cost_threshold = 300 is what puts cells on a crop-sensitive boundary.
+  f <- attr_fixture()
+  streams <- f$streams
+  slope <- tan(terra::terrain(f$dem, "slope", unit = "degrees") * pi / 180) * 100
+  keys <- streams$gnis_name
+  levels_grp <- c(sort(unique(keys[!is.na(keys)])), NA)
+
+  # Non-vacuity: a 2 km margin clamps most crops to this 8 x 6.5 km tile's edges, where a
+  # local -> global offset is zero and an off-by-one in it cannot show. At least one group's
+  # crop must start inside the tile on both axes.
+  interior <- vapply(levels_grp, function(g) {
+    rows <- if (is.na(g)) is.na(keys) else !is.na(keys) & keys == g
+    e <- terra::intersect(terra::extend(terra::ext(terra::vect(streams[rows, ])), 2000),
+                          terra::ext(f$valleys))
+    c0 <- terra::crop(f$valleys, e, snap = "out")
+    terra::rowFromY(f$valleys, terra::ymax(c0) - terra::res(c0)[2] / 2) > 1 &&
+      terra::colFromX(f$valleys, terra::xmin(c0) + terra::res(c0)[1] / 2) > 1
+  }, logical(1))
+  expect_true(any(interior))
+
+  for (thr in c(2500, 300)) {
+    out <- fl_valley_attribute(f$valleys, streams, group = "gnis_name", slope = slope,
+                               cost_threshold = thr, complete = FALSE)
+    for (g in levels_grp) {
+      rows <- if (is.na(g)) is.na(keys) else !is.na(keys) & keys == g
+      sub <- streams[rows, ]
+      sub$seed <- 1
+      seeds <- fl_stream_rasterize(sub, f$valleys, field = "seed")
+      ref <- f$valleys *
+        fl_mask_distance(seeds, threshold = 2000 / 2) *
+        fl_mask(fl_cost_distance(slope, seeds), threshold = thr, operator = "<")
+      ref_cells <- as.vector(terra::values(ref)) == 1L
+      ref_cells[is.na(ref_cells)] <- FALSE
+
+      out_rows <- if (is.na(g)) is.na(out$gnis_name) else
+        !is.na(out$gnis_name) & out$gnis_name == g
+      got <- if (any(out_rows)) cells_of(out[out_rows, ], f$valleys) else
+        rep(FALSE, terra::ncell(f$valleys))
+      expect_equal(got, ref_cells, info = paste0(format(g), " at cost_threshold = ", thr))
+    }
+  }
+})
+
 test_that("waterbody cells beyond every group's thresholds are still covered", {
   # fl_valley_confine() ORs waterbody polygons into the output with no spatial
   # filter (the waterbodies branch of fl_valley_confine()), so a lake can sit outside every
@@ -454,4 +501,19 @@ test_that("the coverage fallback matches the full-grid nearest-stream assignment
   gap <- vapply(differ, function(k) abs(d_to(uncovered[k], got[k]) - d_to(uncovered[k], oracle[k])),
                 numeric(1))
   expect_true(all(gap < 1e-6))
+})
+
+test_that("pairwise rbind returns exactly what do.call(rbind) returns", {
+  # fl_rbind_pairwise() replaced do.call(rbind, parts) for speed (#72); the output must not move.
+  # Odd and even counts, and one, exercise the carried-over last element.
+  f <- attr_fixture()
+  cells <- which(valley_cells(f$valleys))
+  parts <- lapply(1:7, function(i) {
+    p <- fl_cells_poly(cells[seq(i, length(cells), by = 997L)], f$valleys)
+    p$gnis_name <- paste("Creek", i)
+    p
+  })
+  for (n in c(1L, 2L, 3L, 7L)) {
+    expect_identical(fl_rbind_pairwise(parts[seq_len(n)]), do.call(rbind, parts[seq_len(n)]))
+  }
 })
