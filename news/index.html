@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">flooded</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -34,9 +34,14 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/NewGraphEnvironment/flooded/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/NewGraphEnvironment/flooded/blob/v0.6.4/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.6.4" id="flooded-064">flooded 0.6.4<a class="anchor" aria-label="anchor" href="#flooded-064"></a></h2>
+<ul><li>
+<code>fl_valley_attribute(complete = TRUE)</code> no longer computes distance over the whole grid to place the valley cells no group reaches (<a href="https://github.com/NewGraphEnvironment/flooded/issues/71" class="external-link">#71</a>). It finds the nearest burned stream cell for those cells only. That is the same rule as before, so assignments change only where two groups’ stream cells are exactly equally near. On the Morice (MORR) coho network, 340 blue lines on an 18.1-million-cell grid, attribution went from 855.8 s to 37.8 s. The step itself went from 805.6 s to 0.4 s, and all 14,170 cells it placed went to the same groups as before.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.6.3" id="flooded-063">flooded 0.6.3<a class="anchor" aria-label="anchor" href="#flooded-063"></a></h2>
 <ul><li>
