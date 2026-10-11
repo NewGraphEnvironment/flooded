@@ -1,5 +1,22 @@
 # Changelog
 
+## flooded 0.6.5
+
+- [`fl_valley_attribute()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_attribute.md)
+  now binds its per-group polygons in pairs instead of in one
+  `do.call(rbind)`
+  ([\#72](https://github.com/NewGraphEnvironment/flooded/issues/72)). On
+  the Bulkley (BULK) stream order \>= 2 network, 2,550 blue lines on a
+  38.3-million-cell grid, binding went from 52.8 s to 5.0 s and the
+  whole attribution from 332.9 s to 238-240 s (CPU). Every group’s cells
+  are unchanged on the bundled tile and on four watershed networks. The
+  Performance section of
+  [`?fl_valley_attribute`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_attribute.md)
+  now gives measured times for those four networks. The 5x per-group
+  slowdown from the Morice (MORR) to BULK first reported for 0.6.0 was
+  mostly the full-grid fallback fixed in 0.6.4
+  ([\#71](https://github.com/NewGraphEnvironment/flooded/issues/71)).
+
 ## flooded 0.6.4
 
 - `fl_valley_attribute(complete = TRUE)` no longer computes distance

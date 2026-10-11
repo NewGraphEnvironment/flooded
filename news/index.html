@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">flooded</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -34,9 +34,14 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/NewGraphEnvironment/flooded/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/NewGraphEnvironment/flooded/blob/v0.6.5/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.6.5" id="flooded-065">flooded 0.6.5<a class="anchor" aria-label="anchor" href="#flooded-065"></a></h2>
+<ul><li>
+<code><a href="../reference/fl_valley_attribute.html">fl_valley_attribute()</a></code> now binds its per-group polygons in pairs instead of in one <code>do.call(rbind)</code> (<a href="https://github.com/NewGraphEnvironment/flooded/issues/72" class="external-link">#72</a>). On the Bulkley (BULK) stream order &gt;= 2 network, 2,550 blue lines on a 38.3-million-cell grid, binding went from 52.8 s to 5.0 s and the whole attribution from 332.9 s to 238-240 s (CPU). Every group’s cells are unchanged on the bundled tile and on four watershed networks. The Performance section of <code><a href="../reference/fl_valley_attribute.html">?fl_valley_attribute</a></code> now gives measured times for those four networks. The 5x per-group slowdown from the Morice (MORR) to BULK first reported for 0.6.0 was mostly the full-grid fallback fixed in 0.6.4 (<a href="https://github.com/NewGraphEnvironment/flooded/issues/71" class="external-link">#71</a>).</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.6.4" id="flooded-064">flooded 0.6.4<a class="anchor" aria-label="anchor" href="#flooded-064"></a></h2>
 <ul><li>
