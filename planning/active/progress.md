@@ -11,3 +11,7 @@
 - Phase 2: `fl_nearest_group()` replaces the full-grid pass; `devtools::test()` FAIL 0 | PASS 308;
   0 lints in the changed files (145 pre-existing package-wide, same count without the change)
 - MORR "before" on main b701391: 855.8 s, 339 rows, 14,170 fallback cells, 1 warning (360652838)
+- `/code-check branch`: rounds 1 and 2 Clean; round 3 found that `@param complete` still described
+  the nearest stream *line* rule, which disagrees with the shipped rule on 10 of 9,904 cells
+  at ct = 300. Fixed. Other prose ("nearest group", "nearest watercourse") states no rule and
+  was left alone.

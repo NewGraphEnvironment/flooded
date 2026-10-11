@@ -22,9 +22,9 @@
 #'   group's bounding box before its cost distance is computed. Default
 #'   `max_width`. See Details.
 #' @param complete Logical. If `TRUE` (default), valley cells that no group
-#'   reaches within the thresholds are assigned to the group whose streams are
-#'   nearest, so every valley cell is attributed. If `FALSE`, they are left
-#'   unattributed. See Details.
+#'   reaches within the thresholds are assigned to the group of the nearest
+#'   burned stream cell, so every valley cell is attributed. If `FALSE`, they
+#'   are left unattributed. See Details.
 #'
 #' @return An `sf` polygon object with one row per group: a `valley` column and
 #'   a column named after `group`. Rows overlap where ground is shared between

@@ -42,9 +42,9 @@ group's bounding box before its cost distance is computed. Default
 \code{max_width}. See Details.}
 
 \item{complete}{Logical. If \code{TRUE} (default), valley cells that no group
-reaches within the thresholds are assigned to the group whose streams are
-nearest, so every valley cell is attributed. If \code{FALSE}, they are left
-unattributed. See Details.}
+reaches within the thresholds are assigned to the group of the nearest
+burned stream cell, so every valley cell is attributed. If \code{FALSE}, they
+are left unattributed. See Details.}
 }
 \value{
 An \code{sf} polygon object with one row per group: a \code{valley} column and
