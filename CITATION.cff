@@ -8,7 +8,7 @@ message: 'To cite package "flooded" in publications use:'
 type: software
 license: MIT
 title: 'flooded: Portable Floodplain Delineation from DEM and Stream Network'
-version: 0.6.4
+version: 0.6.5
 abstract: Delineate floodplains from digital elevation models and stream networks
   using the Valley Confinement Algorithm (VCA). Combines slope thresholding, cost-distance
   analysis, and flood surface modelling to identify unconfined valleys. Ported from
