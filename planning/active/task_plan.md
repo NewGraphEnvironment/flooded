@@ -49,15 +49,15 @@ needed it for 2,218 to 4,440 cells (`fallback_cells` in the arms' `timing.json`)
 - [x] `devtools::test()`, `lintr::lint_package()`, `devtools::document()` clean.
 
 ## Phase 3: Measure on MORR
-- [ ] `planning/active/bench_fallback.R <floodplains_data_dir> <source_tree>`: loads the given
+- [x] `planning/active/bench_fallback.R <floodplains_data_dir> <source_tree>`: loads the given
       tree with `pkgload::load_all()`, reads the cached MORR inputs (no absolute paths in the
       script), asserts `fallback_cells == 14170` and 339 rows, and writes timing JSON.
-- [ ] Helper-level comparison in one process: time the old full-grid pass and the new helper on
+- [x] Helper-level comparison in one process: time the old full-grid pass and the new helper on
       the same uncovered set; count differing cells and check each is a tie.
-- [ ] End-to-end: time `fl_valley_attribute(group = "blue_line_key")` with the new code, and with
+- [x] End-to-end: time `fl_valley_attribute(group = "blue_line_key")` with the new code, and with
       `main` from a frozen `git worktree` (same machine, same threads, so before/after are both
       measured, not taken from the 0.6.0 probe). Run in the background; edit nothing it reads.
-- [ ] Record the numbers, versions and threads in `findings.md` and the `.log`.
+- [x] Record the numbers, versions and threads in `findings.md` and the `.log`.
 
 ## Phase 4: Docs
 - [ ] Rewrite the `## Performance` section of `fl_valley_attribute()` with the measured MORR

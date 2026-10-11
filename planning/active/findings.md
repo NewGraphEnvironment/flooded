@@ -89,6 +89,27 @@ What exploration found:
   order. Neither can diverge between old and new, because both read the same `idx_r` and
   `uncovered` comes out of `setdiff()` in ascending order.
 
+## Phase 3: MORR measurement (2026-10-11, host m1, 12 terra threads, GEOS 3.13.0)
+
+Inputs: floodplains `data/morr/` cache (arm 5, coho network, co_ff04). Each run asserted the
+probe's 14,170 fallback cells, 339 rows and the single warning naming 360652838. Runs were
+sequential with nothing else running. The first "before" run overlapped the plan reviewer's
+probes, so it was killed and re-run. Evidence: `bench_fallback.log`.
+
+| run | tree | time |
+|---|---|---|
+| attribution, `complete = TRUE`, before | main b701391 | 855.8 s (probe at 0.6.0: 829.9 s) |
+| attribution, `complete = TRUE`, after | 493c88f | **37.8 s** |
+| attribution, `complete = FALSE` | 493c88f | 35.2 s |
+| old full-grid `terra::distance()` pass alone | — | 805.6 s |
+| new `fl_nearest_group()` alone (42,615 burned cells, 14,170 queries) | — | **0.4 s** |
+| rasterizing `idx_r` (kept) | — | 0.3 s |
+
+- The two methods assigned the same group to every one of the 14,170 cells: 0 differing cells,
+  and 0 of 339 groups differ in cell count between before and after.
+- The issue's ~790 s intercept is gone. The fallback now costs about 2.6 s over
+  `complete = FALSE` (37.8 vs 35.2), including the rasterize.
+
 ## Errors Encountered
 
 | Error | Resolution |

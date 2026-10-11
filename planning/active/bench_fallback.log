@@ -1,0 +1,64 @@
+# bench_fallback.R on MORR arm 5 (coho network, 340 blue lines, co_ff04), host m1, 12 terra threads
+# Runs were sequential, with nothing else running: before 17:36Z, after e2e 17:58Z, helper 17:59Z (2026-10-11).
+
+## e2e_main
+{
+  "mode": "e2e",
+  "tree_sha": "b701391",
+  "flooded": "0.6.3",
+  "terra": "1.9.50",
+  "sf": "1.1.2",
+  "terra_gdal": "3.13.0",
+  "geos": "3.13.0",
+  "threads": 12,
+  "host": "m1",
+  "started_utc": "2026-10-11 17:36:17 UTC",
+  "t_attr_s": 855.8,
+  "rows": 339,
+  "fallback_cells": 14170,
+  "warnings": 1,
+  "first_warning": "No valley cells attributed to 1 group, omitted from the output: 360652838 (no valley cells within the thresholds)"
+}
+
+## e2e_new
+{
+  "mode": "e2e",
+  "tree_sha": "493c88f",
+  "flooded": "0.6.3",
+  "terra": "1.9.50",
+  "sf": "1.1.2",
+  "terra_gdal": "3.13.0",
+  "geos": "3.13.0",
+  "threads": 12,
+  "host": "m1",
+  "started_utc": "2026-10-11 17:58:22 UTC",
+  "t_attr_s": 37.8,
+  "rows": 339,
+  "fallback_cells": 14170,
+  "warnings": 1,
+  "first_warning": "No valley cells attributed to 1 group, omitted from the output: 360652838 (no valley cells within the thresholds)"
+}
+
+## helper_new
+{
+  "mode": "helper",
+  "tree_sha": "493c88f",
+  "flooded": "0.6.3",
+  "terra": "1.9.50",
+  "sf": "1.1.2",
+  "terra_gdal": "3.13.0",
+  "geos": "3.13.0",
+  "threads": 12,
+  "host": "m1",
+  "started_utc": "2026-10-11 17:59:03 UTC",
+  "t_strict_s": 35.2,
+  "uncovered": 14170,
+  "burned_cells": 42615,
+  "t_rasterize_s": 0.3,
+  "t_old_distance_s": 805.6,
+  "t_new_nearest_s": 0.4,
+  "cells_differing": 0,
+  "max_distance_gap_m": 0
+}
+
+## per-group cell counts, before vs after: 339 groups, 0 differing
