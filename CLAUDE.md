@@ -112,7 +112,11 @@ tests/testthat/          — unit tests for each fl_* function (17 test files, 1
 - **Coverage needs a fallback** — `fl_valley_confine()` adds cells after intersecting its masks
   (cleanup, channel buffer, and waterbodies, the last with no spatial filter), so criteria-based
   attribution orphans them. `fl_valley_attribute(complete = TRUE)` assigns those to the nearest
-  group and reports the count.
+  group and reports the count. "Nearest" is the nearest burned stream cell, found only for the
+  uncovered cells (`fl_nearest_group()`, #71). The full-grid `terra::distance()` it replaced was
+  805.6 s of MORR's 855.8 s attribution. To time attribution offline, use
+  `planning/archive/2026-10-issue-71-fallback-nearest-cell/bench_fallback.R` against floodplains'
+  cached MORR inputs; that is the harness for #72.
 
 - **Max-of-surfaces per watercourse was tried and rejected** (#68). The pooled IDW in
   `fl_flood_depth()` both lowers a river's waterline near small streams (MORR: 451.9 ha lost when
