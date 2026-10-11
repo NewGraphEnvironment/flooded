@@ -1,0 +1,11 @@
+"section","wall_s","cpu_s"
+"start",0,0
+"slope",0.63,0.66
+"crs",0.04,0.04
+"valley_cells",0.25,0.25
+"groups",26.52,26.5
+"covered",0.03,0.03
+"fallback",0.99,0.99
+"empty_check",0,0
+"polygonize",9.02,8.97
+"rbind",2.01,1.84
