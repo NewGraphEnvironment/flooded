@@ -54,11 +54,11 @@ The database is reachable, so floodplains' `fp_wf_read_network()` + `fp_wf_keep(
 the order >= 2 networks: BULK 31,631 segments / 2,550 blue lines, MORR 20,812 / 1,711.
 
 ## Phase 1: Profile harness and baseline
-- [ ] Extract the arm 2 (order >= 2) networks for BULK and MORR once from the DB, using floodplains'
+- [x] Extract the arm 2 (order >= 2) networks for BULK and MORR once from the DB, using floodplains'
       own `fp_wf_read_network()` / `fp_wf_keep()`. Write them to
       `floodplains/data/<area>/probe_whole_fwa/arm2_streams.gpkg` (gitignored). Assert the segment
       and blue-line counts above.
-- [ ] `planning/active/bench_attribution.R`, modelled on #71's `bench_fallback.R`, with three modes:
+- [x] `planning/active/bench_attribution.R`, modelled on #71's `bench_fallback.R`, with three modes:
       - `e2e`: total time plus per-group cell counts (CSV) for a two-tree comparison.
       - `cells`: per-group cell indices (rds), for the per-cell membership check.
       - `profile`: a timed replica of each `fl_group_cells()` step (crop slope, crop valleys,
