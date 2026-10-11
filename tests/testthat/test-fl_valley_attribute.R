@@ -381,3 +381,77 @@ test_that("group = 'geometry' is rejected rather than clobbering the geometry co
     "geometry"
   )
 })
+
+test_that("the coverage fallback matches the full-grid nearest-stream assignment", {
+  # Oracle: the full-grid terra::distance(values = TRUE) pass the fallback used through
+  # 0.6.x, built from the exported primitives. The fallback now measures only the uncovered
+  # cells (#71); it must assign each to the same group, or to a group whose nearest burned
+  # cell is exactly as close. cost_threshold = 300, because the defaults leave nothing for
+  # the fallback to place on this tile.
+  f <- attr_fixture()
+  streams <- f$streams
+  thr <- 300
+
+  strict <- fl_valley_attribute(f$valleys, streams, group = "gnis_name", dem = f$dem,
+                                cost_threshold = thr, complete = FALSE)
+  msgs <- testthat::capture_messages(
+    full <- fl_valley_attribute(f$valleys, streams, group = "gnis_name", dem = f$dem,
+                                cost_threshold = thr)
+  )
+
+  covered <- rep(FALSE, terra::ncell(f$valleys))
+  for (i in seq_len(nrow(strict))) covered <- covered | cells_of(strict[i, ], f$valleys)
+  uncovered <- which(valley_cells(f$valleys) & !covered)
+  expect_gt(length(uncovered), 0)
+  n <- length(uncovered)
+  expect_equal(attr(full, "fl_fallback_cells"), n)
+  # The message reports the same count, and every one of those cells is placed.
+  expect_gt(length(msgs), 0)
+  expect_match(msgs, paste0(n, " valley cells outside every group"), fixed = TRUE, all = FALSE)
+  expect_match(msgs, paste0(n, " assigned to the nearest group"), fixed = TRUE, all = FALSE)
+
+  # Group order as fl_valley_attribute() builds it: sorted names, NA last.
+  keys <- streams$gnis_name
+  levels_grp <- c(sort(unique(keys[!is.na(keys)])), NA)
+  streams$idx <- match(keys, levels_grp)
+  idx_r <- fl_stream_rasterize(streams, f$valleys, field = "idx")
+  oracle <- terra::values(terra::distance(idx_r, target = NA, values = TRUE),
+                          mat = FALSE)[uncovered]
+
+  # Distance from a cell to the nearest burned cell of group g.
+  iv <- terra::values(idx_r, mat = FALSE)
+  burned <- which(!is.na(iv))
+  bxy <- terra::xyFromCell(idx_r, burned)
+  d_to <- function(cell, g) {
+    p <- terra::xyFromCell(idx_r, cell)
+    b <- bxy[iv[burned] == g, , drop = FALSE]
+    min(sqrt((b[, 1] - p[1])^2 + (b[, 2] - p[2])^2))
+  }
+
+  # Each group's output must be its strict cells plus the uncovered cells assigned to it.
+  got <- integer(length(uncovered))
+  hits <- integer(length(uncovered))
+  for (i in seq_along(levels_grp)) {
+    rows <- if (is.na(levels_grp[i])) is.na(full$gnis_name) else
+      !is.na(full$gnis_name) & full$gnis_name == levels_grp[i]
+    rows_s <- if (is.na(levels_grp[i])) is.na(strict$gnis_name) else
+      !is.na(strict$gnis_name) & strict$gnis_name == levels_grp[i]
+    in_full <- if (any(rows)) cells_of(full[rows, ], f$valleys) else
+      rep(FALSE, terra::ncell(f$valleys))
+    in_strict <- if (any(rows_s)) cells_of(strict[rows_s, ], f$valleys) else
+      rep(FALSE, terra::ncell(f$valleys))
+    # The fallback only adds; it never moves a cell a group already reached.
+    expect_true(all(in_full[in_strict]))
+    added <- which(in_full & !in_strict)
+    expect_true(all(added %in% uncovered))
+    got[match(added, uncovered)] <- i
+    hits[match(added, uncovered)] <- hits[match(added, uncovered)] + 1L
+  }
+
+  # Every uncovered cell went to exactly one group.
+  expect_true(all(hits == 1L))
+  differ <- which(got != oracle)
+  gap <- vapply(differ, function(k) abs(d_to(uncovered[k], got[k]) - d_to(uncovered[k], oracle[k])),
+                numeric(1))
+  expect_true(all(gap < 1e-6))
+})
