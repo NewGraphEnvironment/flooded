@@ -131,8 +131,10 @@ cell) identical main vs branch on all six inputs (`*_cells.rds`, not committed â
 | MORR order >= 2 | 1,711 | 190.7 | 123.4 / 40.1 / 24.5 | 155.1 | 114.1 / 36.1 / 2.4 |
 | BULK order >= 2 | 2,550 | 332.9 | 215.9 / 59.3 / 52.8 | 240.2, 238.2 | 178.2, 174.0 / 52.9, 55.2 / 5.0, 5.0 |
 
-- **The issue's premise does not survive at 0.6.4.** Per group, BULK and MORR cost the same
-  (groups pass 0.070 vs 0.067 s on order >= 2, 0.082 vs 0.079 s on coho). The 0.6.0 figures
+- **The issue's premise does not survive at 0.6.4.** Per group, BULK and MORR are within 20%, not
+  5x. The groups pass is unchanged between the trees; per group it took 0.085 vs 0.072 s (order
+  >= 2) and 0.084-0.091 vs 0.078-0.082 s (coho) in the 0.6.4 runs, 0.068-0.070 vs 0.067 s and
+  0.082 vs 0.079 s in the branch runs (`bench/figures.csv`). The 0.6.0 figures
   (MORR order >= 2 33 min, BULK 170 min) were the old full-grid fallback, which grew with network
   size (BULK coho alone: ~2,790 s), plus contention on the BULK runs.
 - **BULK order >= 2 against the 60 min per-scenario bound:** DEM 37.2 + delineation 5.9 (probe,
@@ -140,8 +142,12 @@ cell) identical main vs branch on all six inputs (`*_cells.rds`, not committed â
   this; the gate for Phase 3 (over ~17 min) is not reached.
 - **The one superlinear term left was `do.call(rbind, parts)`:** 24.5 s at 1,633 rows -> 52.8 s at
   2,391 (1.46x rows, 2.16x time). Pairwise binding: 2.4 / 5.0 s, `identical()` output.
-- The groups pass moved 216 -> 174-178 s on BULK order >= 2 with no change to it: load (main ran at
-  1-min load 7.6, the branch at 4.3-7.7). Only the rbind delta is attributable to the change.
+- The groups pass, unchanged between the trees, took 215.9 s CPU in the one 0.6.4 run on BULK
+  order >= 2 and 178.2 / 174.0 s in the two branch runs (which agree within 2.4%). The 1-min load
+  does not explain it (7.64 at the 0.6.4 start, 7.66 at the faster branch repeat); the 5- and
+  15-min loads were higher during the 0.6.4 run (8.06 / 16.83 against 4.93-5.97 / 7.80-8.19), which
+  fits contention but does not prove it. Only the rbind delta (52.8 -> 5.0 s) is credited to the
+  change.
 - Rows and fallback counts match the floodplains probe's own (BULK order >= 2: 2,391 rows,
   2,218 fallback cells; MORR: 1,633 / 6,988).
 
@@ -152,9 +158,27 @@ cell) identical main vs branch on all six inputs (`*_cells.rds`, not committed â
   arm 1 (all FWA, 6,753 blue lines; ~8 min at 0.07 s/group) or a larger group ever needs it.
 - **Buffer-shaped crop (#44 option 1):** the per-group pass is per-group overhead, not crop size,
   on these networks; no measured payoff.
-- **Cell-table output:** polygonizing is 21-23% of the total on all four watershed networks (18% on the bundled tile at
-  `cost_threshold = 300`); not worth an
-  interface addition on these numbers.
+- **Cell-table output:** on the branch, polygonizing is 21-23% of the total on all four watershed
+  networks (18-23% in the 0.6.4 runs, where rbind took up to 16%; 18% on the bundled tile at
+  `cost_threshold = 300`); not worth an interface addition on these numbers.
+
+## Claims audit (code-check round 2 enumeration)
+
+Round 2 found defects inside round 1's fixes, both from one mechanism: a number quoted without the
+tree or run it came from, or a subset generalised to "every". Every figure in each prose surface
+written on this branch, checked against `bench/figures.csv`, the run jsons, the #71 archive and the
+floodplains probe logs:
+
+| surface | figures | verdict |
+|---|---|---|
+| roxygen Performance | bundled 0.9 s / 1.4 s (wall; delineation re-timed 1.32-1.47 s); table 38 / 155 / 50 / 240 s and 18.1 M / 38.3 M cells; 70-75%; 0.07 / 0.08 s per group; 805.6 / 855.8 / 0.4 s (#71); 52.8 -> 5.0 s; cells unchanged | all branch-run or #71 records; 0.7 s corrected to 0.9 s |
+| `fl_rbind_pairwise()` note | 24.5 / 52.8 / 2.4 / 5.0 s; 1,633 / 2,391 groups | section CSVs (CPU) |
+| CLAUDE.md | 805.6 / 855.8 s; about 55 -> 324 s wall; 216 vs 174-178 s | #71 archive; clean runs 52.7-57.7 s vs planning probe 323.7 s; figures.csv |
+| issue body, quote | 0.085 vs 0.072, 0.068-0.070 vs 0.067; coho 0.084-0.091 vs 0.078-0.082, 0.082 vs 0.079; 2,790 of 2,842 s; 10,574 / 8,528 s | figures.csv per_group; arm5 0.6.0 2,842.4 - 52.1; probe log 2 |
+| issue body, Outcome | table (0.6.4 39.3-40.0 / 190.7 / 52.1-54.7 / 332.9; branch 38.2 / 155.1 / 49.5 / 238.2-240.2); 47.1 and 48.7 min; 70-75% / 21-23% branch, 65-71% / 18-23% at 0.6.4, rbind up to 16%; 4.0 min | figures.csv; probe dem/delineation 37.2 / 5.9 min |
+| findings.md results | as above, each now labelled 0.6.4 run or branch run | figures.csv |
+
+Nothing left that names a figure without its run.
 
 ## Errors Encountered
 

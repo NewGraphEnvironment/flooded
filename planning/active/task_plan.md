@@ -26,6 +26,9 @@ per-scenario bound: on BULK the order >= 2 floodplain takes 213 min per scenario
 
 ## Planning probes (context)
 
+> **Superseded.** These probes ran under heavy contention (load 7 / 24 / 31 on 10 cores). Clean
+> runs show BULK and MORR within 20% per group, not 6.5x, and no 130 s gap; see findings.md.
+
 The issue fitted a per-blue-line attribution cost of 0.66 s (MORR) against 3.5 s (BULK) from
 **flooded 0.6.0** timings. Those runs still carried the #71 full-grid fallback, so the fit mixes the
 two costs. Probes during planning (read-only, current main = 0.6.4, #71 in, 12 threads, BULK
@@ -71,7 +74,8 @@ the order >= 2 networks: BULK 31,631 segments / 2,550 blue lines, MORR 20,812 / 
 - [x] Record findings. Edit the issue body if the premise or the magnitude has changed.
 
 ## Phase 2: Remove per-group overhead the profile names (no interface change)
-- [x] Fix each full-grid or fixed-cost operation repeated per group that the profile names, one
+- [x] (As built: the profile named no full-grid or fixed-cost step repeated per group. The one
+      superlinear term was `do.call(rbind, parts)`, once per call, now pairwise.) Fix each full-grid or fixed-cost operation repeated per group that the profile names, one
       commit each with its measured saving. Candidates to test first: cropping the in-memory
       full-grid `slope`/`valleys` per group (pre-index or file-back once), per-call
       CRS checks and `sf` subsetting in the loop, and terra's per-op overhead at 12 threads on tiny
@@ -100,7 +104,8 @@ the order >= 2 networks: BULK 31,631 segments / 2,550 blue lines, MORR 20,812 / 
 - [x] Revise the Performance section of `fl_valley_attribute()` with the measured BULK and MORR
       figures, and `devtools::document()`.
 - [x] CLAUDE.md design note: point at the new bench harness, as #71's line does.
-- [x] Out of scope unless the profile reverses it: the buffer-shaped crop (#44 option 1) and a
+- [x] (As built: the numbers behind this decision are the clean ones in findings.md "Out of scope",
+      not the contended 37 of 277 s below; parallel was not built.) Out of scope unless the profile reverses it: the buffer-shaped crop (#44 option 1) and a
       cell-table output. Polygonizing is 37 of 277 s, and the mainstem's 18 s is far below the
       budget once groups run in parallel. Record the decision and the numbers behind it in
       findings, and in the issue body.

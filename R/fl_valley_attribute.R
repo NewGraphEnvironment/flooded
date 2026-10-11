@@ -84,7 +84,7 @@
 #' ## Performance
 #'
 #' Attributing the bundled tile by `gnis_name` (5 groups, 518,400 cells) takes
-#' about 0.7 s against 1.4 s for the delineation itself. That saving comes from
+#' about 0.9 s against 1.4 s for the delineation itself. That saving comes from
 #' the crop, so it shrinks as a group's bounding box approaches the full grid —
 #' a long sinuous mainstem is the worst case. Supplying `slope` avoids
 #' re-deriving it from `dem`.
