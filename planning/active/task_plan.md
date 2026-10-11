@@ -22,18 +22,20 @@ fallback. On BULK (38.3 M cells), the same two-point fit gives an intercept of a
 needed it for 2,218 to 4,440 cells (`fallback_cells` in the arms' `timing.json`).
 
 ## Phase 1: Tests first
-- [ ] `test-fl_valley_attribute.R`: oracle test at `cost_threshold = 300` on the bundled tile.
+- [x] `test-fl_valley_attribute.R`: oracle test at `cost_threshold = 300` on the bundled tile.
       Recompute today's assignment with the primitives (`fl_stream_rasterize()` of the group
       index + `terra::distance(values = TRUE)`) and compare with the new helper cell by cell; any
       cell that differs must be a tie (equal distance to both groups' nearest burned cells, within
       float tolerance). Assert the fallback fires (> 0 cells) so the test is not vacuous.
-- [ ] Same test asserts the end-to-end output is unchanged: per-group cell sets from
-      `fl_valley_attribute()` equal the oracle's (covered cells + fallback assignment).
-- [ ] Guard the existing contract: `fl_fallback_cells` value and the "assigned to the nearest
+- [x] Same test asserts the end-to-end output is unchanged: per-group cell sets from
+      `fl_valley_attribute()` equal the oracle's (covered cells + fallback assignment), except
+      cells that are measured ties (review finding 1: one such cell on the tile).
+- [x] Guard the existing contract: `fl_fallback_cells` value and the "assigned to the nearest
       group" message text unchanged (existing tests at lines 118 and 178 cover the count; add a
       message check with `expect_message()`, matching on a fixed fragment, not an end anchor).
-- [ ] Restore-the-bug check: break the helper (e.g. return group 1 for every cell) and confirm
-      the new test goes red; record it in `findings.md`.
+- [x] Restore-the-bug check: swap the helper to the tempting wrong rule, nearest stream
+      *line* instead of nearest burned cell (review finding 5), and confirm the new test goes
+      red; record it in `findings.md`.
 
 ## Phase 2: Implementation
 - [ ] Add internal `fl_nearest_group(idx_r, cells)` (`@noRd`, in `R/fl_valley_attribute.R`

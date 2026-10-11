@@ -65,6 +65,30 @@ What exploration found:
   carries `measure_lost_cells.R` + `.log`, archived with the PWF.
 
 
+## Design (2026-10-11)
+
+- `fl_nearest_group(idx_r, cells)`: burned cells are `which(!is.na(values(idx_r)))`; both sets
+  become `sf` points at cell centres in `idx_r`'s CRS and `sf::st_nearest_feature()` picks the
+  nearest burned centre. Same seed set and same max-of-overlap index as the old pass, because
+  `idx_r` is unchanged. Ties (two groups' burned cells equidistant) may resolve differently.
+- The old pass's only output the caller used was `values(nearest)[uncovered]`, so the helper
+  returns exactly that vector and the assignment loop, count, message and attribute are untouched.
+- Timing hygiene: the MORR "before" run (main, frozen worktree) and the "after" run are timed
+  with nothing else running on the machine, since both use 12 terra threads.
+
+## Phase 1 results (2026-10-11)
+
+- The new test (`the coverage fallback matches the full-grid nearest-stream assignment`)
+  passes against `main`'s code (the test file was copied into a worktree of b701391) and against
+  the new helper: 20 tests in the file, 0 failed, 0 errors, 0 skipped, under `NOT_CRAN=true`.
+- Restore-the-bug: in a copy of the tree, assigning each uncovered cell to the nearest stream
+  *line* (`st_nearest_feature(pts, streams)`) instead of the nearest burned cell fails exactly
+  that test (1 failed, 0 errors). The reviewer measured that this rule differs in 10 of 9,904
+  cells at ct = 300, all of them non-ties.
+- Not testable on this tile (review finding 4): the max-of-overlap index in `idx_r`, and cell
+  order. Neither can diverge between old and new, because both read the same `idx_r` and
+  `uncovered` comes out of `setdiff()` in ascending order.
+
 ## Errors Encountered
 
 | Error | Resolution |
