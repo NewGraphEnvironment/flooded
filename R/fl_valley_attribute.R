@@ -193,10 +193,9 @@ fl_valley_attribute <- function(valleys, streams, group,
       idx_streams <- streams
       idx_streams$fl_group_idx <- match(keys, levels_grp)
       idx_r <- fl_stream_rasterize(idx_streams, valleys, field = "fl_group_idx")
-      # No burned cells means nothing to measure distance from.
-      if (!all(is.na(terra::values(idx_r, mat = FALSE)))) {
-        nearest <- terra::distance(idx_r, target = NA, values = TRUE)
-        assigned <- terra::values(nearest, mat = FALSE)[uncovered]
+      assigned <- fl_nearest_group(idx_r, uncovered)
+      # All NA means no burned cells, so nothing to measure distance from.
+      if (!all(is.na(assigned))) {
         for (i in seq_along(levels_grp)) {
           add <- uncovered[!is.na(assigned) & assigned == i]
           if (length(add) > 0L) {
@@ -320,6 +319,38 @@ fl_group_cells <- function(streams_g, valleys, slope, max_width, cost_threshold,
 
   list(cells = terra::cellFromXY(valleys, terra::xyFromCell(member, local_cells)),
        reason = NA_character_)
+}
+
+#' Group of the nearest burned stream cell, for a set of cells
+#'
+#' The same rule as `terra::distance(idx_r, target = NA, values = TRUE)`, measured
+#' only for `cells` rather than for every cell of the grid: each cell takes the
+#' value of the burned cell whose centre is nearest its own. Where two burned
+#' cells of different groups are equally near, either group may be returned, and
+#' not necessarily the one terra would pick.
+#'
+#' Distances are planar in map units, the package's working assumption. On a
+#' lon/lat grid `sf::st_nearest_feature()` measures on the sphere only when
+#' `sf::sf_use_s2()` is on.
+#'
+#' @param idx_r A `SpatRaster` of group indices on stream cells, `NA` elsewhere.
+#' @param cells Integer cell indices into `idx_r` to assign.
+#'
+#' @return Integer vector, one group index per element of `cells`; all `NA` when
+#'   `idx_r` has no burned cells.
+#' @noRd
+fl_nearest_group <- function(idx_r, cells) {
+  iv <- terra::values(idx_r, mat = FALSE)
+  burned <- which(!is.na(iv))
+  if (length(burned) == 0L || length(cells) == 0L) {
+    return(rep(NA_integer_, length(cells)))
+  }
+  crs <- sf::st_crs(terra::crs(idx_r))
+  to <- sf::st_as_sf(as.data.frame(terra::xyFromCell(idx_r, burned)),
+                     coords = c("x", "y"), crs = crs)
+  from <- sf::st_as_sf(as.data.frame(terra::xyFromCell(idx_r, cells)),
+                       coords = c("x", "y"), crs = crs)
+  as.integer(iv[burned[sf::st_nearest_feature(from, to)]])
 }
 
 #' Polygonize a set of cell indices

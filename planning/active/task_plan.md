@@ -38,15 +38,15 @@ needed it for 2,218 to 4,440 cells (`fallback_cells` in the arms' `timing.json`)
       red; record it in `findings.md`.
 
 ## Phase 2: Implementation
-- [ ] Add internal `fl_nearest_group(idx_r, cells)` (`@noRd`, in `R/fl_valley_attribute.R`
+- [x] Add internal `fl_nearest_group(idx_r, cells)` (`@noRd`, in `R/fl_valley_attribute.R`
       below the other helpers): burned cells = `which(!is.na(values(idx_r)))`; centres via
       `terra::xyFromCell()`; `sf::st_nearest_feature()` from the uncovered centres to the burned
       centres; return the burned cells' group index. Empty burned set returns all `NA`.
-- [ ] Replace the `terra::distance()` block with the helper; keep the `usable` guard,
+- [x] Replace the `terra::distance()` block with the helper; keep the `usable` guard,
       the assignment loop, `n_assigned`, the message and the attribute untouched.
-- [ ] Note in a comment that this is the same nearest-burned-cell rule, with ties possibly
+- [x] Note in a comment that this is the same nearest-burned-cell rule, with ties possibly
       resolved differently.
-- [ ] `devtools::test()`, `lintr::lint_package()`, `devtools::document()` clean.
+- [x] `devtools::test()`, `lintr::lint_package()`, `devtools::document()` clean.
 
 ## Phase 3: Measure on MORR
 - [ ] `planning/active/bench_fallback.R <floodplains_data_dir> <source_tree>`: loads the given
