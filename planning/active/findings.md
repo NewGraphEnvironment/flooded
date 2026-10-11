@@ -64,13 +64,13 @@ per-scenario bound: on BULK the order >= 2 floodplain takes 213 min per scenario
 
 ## Run-to-run variation: the planning probes are not usable, and their cause is not established
 
-The planning probes on BULK coho (main, file-backed valleys) took 323.7 s wall (`complete =
-TRUE`, slope supplied) and, in a later Rprof run, 338.1 s. Later runs of the same configuration
-took 52.7-57.7 s wall (`bench/main_filebacked_bulk_co_r*.json`). **Neither slow run has a committed
-record** (session output only; the Rprof run's files were discarded), and the load averages do not
-separate the slow runs from the fast ones: about 7 / 24 / 31 (1/5/15 min) during the planning
-probes against 6.2-7.7 / 15.6-17.0 / 25.8-27.0 at the start of the fast ones. Other sessions do run
-R jobs on this machine, so contention is a candidate, not a finding. What follows from it either
+Unrecorded (session output only; the Rprof run's files were discarded): the planning probe on
+BULK coho at main, file-backed valleys, slope supplied, took 323.7 s wall (`complete = TRUE`), and
+a later Rprof run with `dem` supplied took 338.1 s, at load averages of about 7 / 24 / 31
+(1/5/15 min). Recorded: two later runs with file-backed valleys and `dem` supplied took 57.7 and
+54.9 s wall (`bench/main_filebacked_bulk_co_r*.json`), starting at 6.2-7.7 / 15.6-17.0 /
+25.8-27.0. The slow runs' 5- and 15-min loads were higher than every fast run's, which is
+consistent with contention (other sessions run R jobs here) but does not establish it. What follows from it either
 way: the planning-time split (108 s group work + 37 s polygonize + "130 s unexplained") came from
 three different slow runs and is discarded, and the bench records CPU time and load averages and
 repeats runs.
@@ -98,7 +98,8 @@ Recorded here so their use is visible; none of them carries a decision on its ow
   count does not set the per-group cost.
 - The slow Rprof run put 28% of its CPU samples under terra's `spatOptions()` (built on every terra
   call). Not repeated on a quiet run, so not a finding.
-- Bundled delineation re-timed at 1.32-1.47 s wall (6 s CPU), for the roxygen's 1.4 s.
+- Bundled delineation re-timed at 1.32-1.47 s wall (6 s CPU); superseded by the recorded
+  `bench/bundled_delineation.log` (1.20-1.34 s wall, 6.1 s CPU).
 
 ## Plan review
 
@@ -128,8 +129,9 @@ cell) identical main vs branch on all six inputs (`*_cells.rds`, not committed â
   0.082 vs 0.079 s in the branch runs (`bench/figures.csv`). The 0.6.0 figures
   (MORR order >= 2 33 min, BULK 170 min) were the old full-grid fallback, which grew with network
   size, plus contention on the BULK arm 2 and 3 runs. On one grid (MORR) attribution fell 1,791 s
-  from 0.6.0 to 0.6.4 on order >= 2 (1,981.9 -> 190.7 s) against ~791 s on coho (829.9 -> 39.3-40.0 s),
-  with the per-group pass about equal per group, so the old pass cost about 2.3x more on the larger
+  from 0.6.0 to 0.6.4 on order >= 2 (1,981.9 -> 190.7 s) against about 790 s on coho
+  (829.9 -> 39.3-40.0 s). Only #71's commits touched `R/fl_valley_attribute.R` between v0.6.0 and
+  1077e17, so each drop is the old pass's cost, and it was about 2.3x higher on the larger
   network. BULK coho: 2,842.4 -> 52.1-54.7 s, ~2,790 s. (0.6.0 figures: the probe's
   `arm*_timing.json` `t_attr_blk_s`.)
 - **BULK order >= 2 against the 60 min per-scenario bound:** DEM 37.2 + delineation 5.9 (probe,
@@ -162,23 +164,13 @@ cell) identical main vs branch on all six inputs (`*_cells.rds`, not committed â
   networks (18-23% in the 0.6.4 runs, where rbind took up to 16%; 18% on the bundled tile at
   `cost_threshold = 300`); not worth an interface addition on these numbers.
 
-## Claims audit (code-check round 2 enumeration)
+## Claims audit
 
-Round 2 found defects inside round 1's fixes, both from one mechanism: a number quoted without the
-tree or run it came from, or a subset generalised to "every". Every figure in each prose surface
-written on this branch, checked against `bench/figures.csv`, the run jsons, the #71 archive and the
-floodplains probe logs:
-
-| surface | figures | verdict |
-|---|---|---|
-| roxygen Performance | bundled 0.9 s / 1.4 s (wall; delineation re-timed 1.32-1.47 s); table 38 / 155 / 50 / 240 s and 18.1 M / 38.3 M cells; 70-75%; 0.07 / 0.08 s per group; 805.6 / 855.8 / 0.4 s (#71); 52.8 -> 5.0 s; cells unchanged | all branch-run or #71 records; 0.7 s corrected to 0.9 s |
-| `fl_rbind_pairwise()` note | 24.5 / 52.8 / 2.4 / 5.0 s; 1,633 / 2,391 groups | section CSVs (CPU) |
-| CLAUDE.md | 805.6 / 855.8 s; about 55 -> 324 s wall; 216 vs 174-178 s | #71 archive; clean runs 52.7-57.7 s vs planning probe 323.7 s; figures.csv |
-| issue body, quote | 0.085 vs 0.072, 0.068-0.070 vs 0.067; coho 0.084-0.091 vs 0.078-0.082, 0.082 vs 0.079; 2,790 of 2,842 s; 10,574 / 8,528 s | figures.csv per_group; arm5 0.6.0 2,842.4 - 52.1; probe log 2 |
-| issue body, Outcome | table (0.6.4 39.3-40.0 / 190.7 / 52.1-54.7 / 332.9; branch 38.2 / 155.1 / 49.5 / 238.2-240.2); 47.1 and 48.7 min; 70-75% / 21-23% branch, 65-71% / 18-23% at 0.6.4, rbind up to 16%; 4.0 min | figures.csv; probe dem/delineation 37.2 / 5.9 min |
-| findings.md results | as above, each now labelled 0.6.4 run or branch run | figures.csv |
-
-Nothing left that names a figure without its run.
+Round 2's audit checked only that each number traced to a record, so it approved claims whose
+record did not support their cause, scope or run (round 3). Round 4 enumerated every claim on
+the four surfaces (roxygen, CLAUDE.md lines, the issue's quote block and Outcome, findings from
+"Run-to-run variation" on): 94 claims, 11 not supported, all fixed in the commit after it. The
+table, with the record behind each verdict, is `review-round4.md`.
 
 ## Errors Encountered
 

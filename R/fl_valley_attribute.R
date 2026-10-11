@@ -84,7 +84,7 @@
 #' ## Performance
 #'
 #' Attributing the bundled tile by `gnis_name` (5 groups, 518,400 cells) takes
-#' about 0.9 s against 1.4 s for the delineation itself. That saving comes from
+#' about 0.9 s against 1.3 s for the delineation itself. That saving comes from
 #' the crop, so it shrinks as a group's bounding box approaches the full grid —
 #' a long sinuous mainstem is the worst case. Supplying `slope` avoids
 #' re-deriving it from `dem`.
@@ -104,7 +104,7 @@
 #' 0.08 s on both coho networks, so time follows the number of groups more than the size of the
 #' grid. Polygonizing the groups is about a fifth.
 #'
-#' Two earlier steps cost more. Through 0.6.3, placing the cells left uncovered
+#' Two steps cost more in earlier versions. Through 0.6.3, placing the cells left uncovered
 #' measured distance over the whole grid: 805.6 s of MORR coho's 855.8 s (#71),
 #' against 0.4 s now. Through 0.6.4, binding the per-group polygons took 52.8 s
 #' on BULK order >= 2, against 5.0 s now, with every group's cells unchanged on
