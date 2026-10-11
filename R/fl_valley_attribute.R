@@ -89,13 +89,27 @@
 #' a long sinuous mainstem is the worst case. Supplying `slope` avoids
 #' re-deriving it from `dem`.
 #'
-#' At watershed scale, attributing the Morice (MORR) floodplain on an
-#' 18.1-million-cell 30 m grid by `blue_line_key` (340 blue lines, 385,021
-#' valley cells) took 37.8 s, against 35.2 s with `complete = FALSE`. Placing
-#' the 14,170 cells left uncovered took 0.4 s. Through 0.6.3 that step took
-#' 805.6 s, because it measured distance over the whole grid, and the whole
-#' attribution took 855.8 s. The cells were assigned identically. Measured
-#' with 12 terra threads (#71).
+#' At watershed scale, by `blue_line_key` on 30 m grids, with 12 terra threads
+#' (CPU seconds, `complete = TRUE`, #72):
+#'
+#' | network | grid cells | blue lines | attribution |
+#' |---|---|---|---|
+#' | Morice (MORR), coho | 18.1 M | 340 | 38 s |
+#' | MORR, stream order >= 2 | 18.1 M | 1,711 | 155 s |
+#' | Bulkley (BULK), coho | 38.3 M | 428 | 50 s |
+#' | BULK, stream order >= 2 | 38.3 M | 2,550 | 240 s |
+#'
+#' Between 70% and 75% of that is the per-group pass (crop, distance and cost
+#' distance), which averages 0.07 s per group on both order >= 2 networks and
+#' 0.08 s on both coho networks, so time follows the number of groups more than the size of the
+#' grid. Polygonizing the groups is about a fifth.
+#'
+#' Two earlier steps grew faster than that. Through 0.6.3, placing the cells left
+#' uncovered measured distance over the whole grid: 805.6 s of MORR coho's
+#' 855.8 s (#71), against 0.4 s now. Through 0.6.4, binding the per-group
+#' polygons grew with the square of the group count: 52.8 s on BULK order >= 2,
+#' against 5.0 s now, with every group's cells unchanged on all four networks
+#' (#72).
 #'
 #' @seealso [fl_valley_confine()], [fl_valley_poly()], [fl_cost_distance()],
 #'   [fl_mask_distance()]

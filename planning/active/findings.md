@@ -117,9 +117,49 @@ were file-backed LZW one-row strips; production attributes the in-memory raster 
 `fl_valley_attribute()` at its top-level statements), M1 (bundled crops mostly clamp to tile
 edges — oracle test carries a non-vacuity check).
 
+## Baselines and result (in-memory valleys, 12 threads, CPU s, `complete = TRUE`)
+
+Per-section CPU s from the e2e checkpoints (`bench/*_sections.csv`). Membership (per group, per
+cell) identical main vs branch on all six inputs (`*_cells.rds`, not committed — 20 MB).
+
+| input | groups | main total | main: groups / polygonize / rbind | branch total | branch: groups / polygonize / rbind |
+|---|---|---|---|---|---|
+| bundled | 5 | 0.91 | 0.62 / 0.21 / 0.00 | 0.91 | 0.64 / 0.19 / 0.01 |
+| bundled_300 | 5 | 0.94, 1.05 | — | 0.96 | 0.65 / 0.17 / 0.01 |
+| MORR coho | 340 | 40.0, 39.3 | 27.8 / 8.6 / 1.7 | 38.2 | 26.8 / 8.5 / 0.9 |
+| BULK coho | 428 | 52.1, 54.7 | 35.8 / 10.7 / 2.5 | 49.5 | 35.1 / 10.5 / 0.9 |
+| MORR order >= 2 | 1,711 | 190.7 | 123.4 / 40.1 / 24.5 | 155.1 | 114.1 / 36.1 / 2.4 |
+| BULK order >= 2 | 2,550 | 332.9 | 215.9 / 59.3 / 52.8 | 240.2, 238.2 | 178.2, 174.0 / 52.9, 55.2 / 5.0, 5.0 |
+
+- **The issue's premise does not survive at 0.6.4.** Per group, BULK and MORR cost the same
+  (groups pass 0.070 vs 0.067 s on order >= 2, 0.082 vs 0.079 s on coho). The 0.6.0 figures
+  (MORR order >= 2 33 min, BULK 170 min) were the old full-grid fallback, which grew with network
+  size (BULK coho alone: ~2,790 s), plus contention on the BULK runs.
+- **BULK order >= 2 against the 60 min per-scenario bound:** DEM 37.2 + delineation 5.9 (probe,
+  0.6.0) + attribution 4.0 (branch) = **47.1 min**. Main was already 48.7 min, so #71 did most of
+  this; the gate for Phase 3 (over ~17 min) is not reached.
+- **The one superlinear term left was `do.call(rbind, parts)`:** 24.5 s at 1,633 rows -> 52.8 s at
+  2,391 (1.46x rows, 2.16x time). Pairwise binding: 2.4 / 5.0 s, `identical()` output.
+- The groups pass moved 216 -> 174-178 s on BULK order >= 2 with no change to it: load (main ran at
+  1-min load 7.6, the branch at 4.3-7.7). Only the rbind delta is attributable to the change.
+- Rows and fallback counts match the floodplains probe's own (BULK order >= 2: 2,391 rows,
+  2,218 fallback cells; MORR: 1,633 / 6,988).
+
+## Out of scope, with the numbers behind it
+
+- **Parallel groups (`workers`):** not built. BULK order >= 2 is 4.0 min serial against ~17 min of
+  budget. The design (PSOCK, B1's installed-package trap, review P1-P7) is in `review-plan.md` if
+  arm 1 (all FWA, 6,753 blue lines; ~8 min at 0.07 s/group) or a larger group ever needs it.
+- **Buffer-shaped crop (#44 option 1):** the per-group pass is per-group overhead, not crop size,
+  on these networks; no measured payoff.
+- **Cell-table output:** polygonizing is 21-23% of the total on every input; not worth an
+  interface addition on these numbers.
+
 ## Errors Encountered
 
 | Error | Resolution |
 |-------|------------|
 | `identical(cells, real)` failed in `steps` | empty groups: `integer(0)` vs `numeric(0)`; compare `as.numeric()` |
+| issue body posted with backticked code missing | an unquoted heredoc ran the backticks as command substitutions; build bodies from a quoted-heredoc script, grep the file, then post |
+| bench section marker failed on the branch | it matched the `do.call(rbind` line the fix removed; marker matches either form |
 | only the last section checkpoint fired | a second `trace()` replaces the first; one call with an ordered counter |

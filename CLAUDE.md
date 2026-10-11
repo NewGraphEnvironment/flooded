@@ -114,9 +114,13 @@ tests/testthat/          — unit tests for each fl_* function (17 test files, 1
   attribution orphans them. `fl_valley_attribute(complete = TRUE)` assigns those to the nearest
   group and reports the count. "Nearest" is the nearest burned stream cell, found only for the
   uncovered cells (`fl_nearest_group()`, #71). The full-grid `terra::distance()` it replaced was
-  805.6 s of MORR's 855.8 s attribution. To time attribution offline, use
-  `planning/archive/2026-10-issue-71-fallback-nearest-cell/bench_fallback.R` against floodplains'
-  cached MORR inputs; that is the harness for #72.
+  805.6 s of MORR's 855.8 s attribution, and it grew with network size, so 0.6.0 timings across
+  networks of different size read it as a per-group cost (#72).
+- **Time attribution with CPU time, not wall time** — other jobs share the bench machine, and one
+  input's wall time moved 5x with load while its CPU time held (#72). The harness is
+  `planning/archive/2026-10-issue-72-attribution-scale/bench_attribution.R`. It runs against
+  floodplains' cached MORR and BULK probe inputs (coho and order >= 2), records CPU time, load
+  averages and per-section times, and writes per-group cell tables for comparing two trees.
 
 - **Max-of-surfaces per watercourse was tried and rejected** (#68). The pooled IDW in
   `fl_flood_depth()` both lowers a river's waterline near small streams (MORR: 451.9 ha lost when

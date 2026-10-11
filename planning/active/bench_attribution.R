@@ -77,7 +77,7 @@ marks <- data.frame(label = character(0), t = numeric(0), cpu = numeric(0))
 sections <- c(slope = "^if \\(is.null\\(slope\\)\\)", crs = "^if \\(sf::st_crs\\(streams\\)",
               valley_cells = "^valley_cells <-", groups = "^cells_by_group <-",
               covered = "^covered <-", fallback = "^n_assigned <-", empty_check = "^empty_grp <-",
-              polygonize = "^parts <- list\\(\\)", rbind = "^out <- fl_check_out\\(do.call")
+              polygonize = "^parts <- list\\(\\)", rbind = "^out <- fl_check_out\\((do.call|fl_rbind_pairwise)")
 ns <- asNamespace("flooded")
 stmts <- vapply(as.list(body(get("fl_valley_attribute", envir = ns)))[-1],
                 function(e) paste(deparse(e, width.cutoff = 500L)[1], collapse = ""), character(1))

@@ -65,42 +65,42 @@ the order >= 2 networks: BULK 31,631 segments / 2,550 blue lines, MORR 20,812 / 
         rasterize, `terra::distance`, `costDist`, masks, `values`, `cellFromXY`) and of
         `fl_cells_poly()`, recorded per group against crop cells, plus the loop's own share. The
         replica asserts the real `fl_group_cells()` cells for each group it times.
-- [ ] Profile BULK arm 2: the 50 largest groups by crop plus a random 100 of the rest. Add an
+- [x] (Replaced, per plan review G1/G4: section checkpoints inside one timed call on every input, CPU time and load recorded; `steps` mode kept in the harness.) Profile BULK arm 2: the 50 largest groups by crop plus a random 100 of the rest. Add an
       `Rprof` pass over 200 small groups, to name the fixed per-group overhead and the 130 s gap.
-- [ ] Baseline `e2e` and `cells` at main on BULK arm 2, MORR arm 2, MORR coho and the bundled tile.
-- [ ] Record findings. Edit the issue body if the premise or the magnitude has changed.
+- [x] Baseline `e2e` and `cells` at main on BULK arm 2, MORR arm 2, MORR coho and the bundled tile.
+- [x] Record findings. Edit the issue body if the premise or the magnitude has changed.
 
 ## Phase 2: Remove per-group overhead the profile names (no interface change)
-- [ ] Fix each full-grid or fixed-cost operation repeated per group that the profile names, one
+- [x] Fix each full-grid or fixed-cost operation repeated per group that the profile names, one
       commit each with its measured saving. Candidates to test first: cropping the in-memory
       full-grid `slope`/`valleys` per group (pre-index or file-back once), per-call
       CRS checks and `sf` subsetting in the loop, and terra's per-op overhead at 12 threads on tiny
       crops.
-- [ ] Tests: everything in `test-fl_valley_attribute.R` stays green. Add a test that pins per-group
+- [x] Tests: everything in `test-fl_valley_attribute.R` stays green. Add a test that pins per-group
       membership to a pre-change snapshot on the bundled tile, taken at both the package defaults
       and a binding `cost_threshold = 300` (see the test-data traps).
 
 ## Phase 3: Groups in parallel (only if Phase 2 leaves BULK order >= 2 over ~17 min)
-- [ ] New argument `workers = 1L` (decided at the plan gate: 1 is today's serial path; callers opt in). Use PSOCK workers via base `parallel`, never forks
+- [-] NOT NEEDED (gate not reached: BULK order >= 2 is 4.0 min against ~17 min). New argument `workers = 1L` (decided at the plan gate: 1 is today's serial path; callers opt in). Use PSOCK workers via base `parallel`, never forks
       (macOS + GDAL). Write `slope` and `valleys` to FLT8S tempfiles once and have workers open them
       by path; FLT8S keeps slope bit-identical, where FLT4S would change membership. Assemble
       results in group order, so output is identical to serial. Clean up workers and tempfiles
       with `on.exit`.
-- [ ] Tests: parallel output equals serial for every group on the bundled tile, and invalid
+- [-] Not needed. Tests: parallel output equals serial for every group on the bundled tile, and invalid
       `workers` is rejected.
 
 ## Phase 4: Measure and verify
-- [ ] Re-run `e2e` and `cells` at the branch on BULK arm 2, MORR arm 2, MORR coho and the bundled
+- [x] Re-run `e2e` and `cells` at the branch on BULK arm 2, MORR arm 2, MORR coho and the bundled
       tile. Require identical per-group, per-cell membership, or measure any difference and state it.
-- [ ] Measure BULK order >= 2 attribution, with #71 in, against the 60 min per-scenario bound
+- [x] Measure BULK order >= 2 attribution, with #71 in, against the 60 min per-scenario bound
       (DEM and delineation included).
-- [ ] Profile and bench logs committed next to the bench script in `planning/active/`.
+- [x] Profile and bench logs committed next to the bench script in `planning/active/`.
 
 ## Phase 5: Docs
-- [ ] Revise the Performance section of `fl_valley_attribute()` with the measured BULK and MORR
+- [x] Revise the Performance section of `fl_valley_attribute()` with the measured BULK and MORR
       figures, and `devtools::document()`.
-- [ ] CLAUDE.md design note: point at the new bench harness, as #71's line does.
-- [ ] Out of scope unless the profile reverses it: the buffer-shaped crop (#44 option 1) and a
+- [x] CLAUDE.md design note: point at the new bench harness, as #71's line does.
+- [x] Out of scope unless the profile reverses it: the buffer-shaped crop (#44 option 1) and a
       cell-table output. Polygonizing is 37 of 277 s, and the mainstem's 18 s is far below the
       budget once groups run in parallel. Record the decision and the numbers behind it in
       findings, and in the issue body.
