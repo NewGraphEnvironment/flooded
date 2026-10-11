@@ -1,0 +1,4 @@
+MORR order >= 2 parts (captured at 1077e17 just before its rbind): n = 1633
+do.call(rbind) 20.1 s wall, fl_rbind_pairwise() (2c6a148) 2.1 s wall
+identical(): TRUE
+run 2026-10-11 20:26:40 UTC, load { 4.97 5.13 5.80 }

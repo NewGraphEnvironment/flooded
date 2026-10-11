@@ -26,8 +26,9 @@ per-scenario bound: on BULK the order >= 2 floodplain takes 213 min per scenario
 
 ## Planning probes (context)
 
-> **Superseded.** These probes ran under heavy contention (load 7 / 24 / 31 on 10 cores). Clean
-> runs show BULK and MORR within 20% per group, not 6.5x, and no 130 s gap; see findings.md.
+> **Superseded.** These probes ran about 5x slower than later runs of the same configuration
+> (cause not established; see findings.md). The later runs show BULK and MORR within 20% per
+> group, not 6.5x, and no 130 s gap.
 
 The issue fitted a per-blue-line attribution cost of 0.66 s (MORR) against 3.5 s (BULK) from
 **flooded 0.6.0** timings. Those runs still carried the #71 full-grid fallback, so the fit mixes the
@@ -75,7 +76,7 @@ the order >= 2 networks: BULK 31,631 segments / 2,550 blue lines, MORR 20,812 / 
 
 ## Phase 2: Remove per-group overhead the profile names (no interface change)
 - [x] (As built: the profile named no full-grid or fixed-cost step repeated per group. The one
-      superlinear term was `do.call(rbind, parts)`, once per call, now pairwise.) Fix each full-grid or fixed-cost operation repeated per group that the profile names, one
+      step worth changing was `do.call(rbind, parts)`, once per call, now pairwise.) Fix each full-grid or fixed-cost operation repeated per group that the profile names, one
       commit each with its measured saving. Candidates to test first: cropping the in-memory
       full-grid `slope`/`valleys` per group (pre-index or file-back once), per-call
       CRS checks and `sf` subsetting in the loop, and terra's per-op overhead at 12 threads on tiny
@@ -98,7 +99,8 @@ the order >= 2 networks: BULK 31,631 segments / 2,550 blue lines, MORR 20,812 / 
       tile. Require identical per-group, per-cell membership, or measure any difference and state it.
 - [x] Measure BULK order >= 2 attribution, with #71 in, against the 60 min per-scenario bound
       (DEM and delineation included).
-- [x] Profile and bench logs committed next to the bench script in `planning/active/`.
+- [x] (As built: e2e jsons, section CSVs, figures.csv and the rbind identity log are committed; the
+      slow planning/Rprof runs were not kept, and `steps` never ran on a quiet machine.) Profile and bench logs committed next to the bench script in `planning/active/`.
 
 ## Phase 5: Docs
 - [x] Revise the Performance section of `fl_valley_attribute()` with the measured BULK and MORR

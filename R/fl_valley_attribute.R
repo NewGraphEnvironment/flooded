@@ -104,12 +104,11 @@
 #' 0.08 s on both coho networks, so time follows the number of groups more than the size of the
 #' grid. Polygonizing the groups is about a fifth.
 #'
-#' Two earlier steps grew faster than that. Through 0.6.3, placing the cells left
-#' uncovered measured distance over the whole grid: 805.6 s of MORR coho's
-#' 855.8 s (#71), against 0.4 s now. Through 0.6.4, binding the per-group
-#' polygons grew with the square of the group count: 52.8 s on BULK order >= 2,
-#' against 5.0 s now, with every group's cells unchanged on all four networks
-#' (#72).
+#' Two earlier steps cost more. Through 0.6.3, placing the cells left uncovered
+#' measured distance over the whole grid: 805.6 s of MORR coho's 855.8 s (#71),
+#' against 0.4 s now. Through 0.6.4, binding the per-group polygons took 52.8 s
+#' on BULK order >= 2, against 5.0 s now, with every group's cells unchanged on
+#' all four networks (#72).
 #'
 #' @seealso [fl_valley_confine()], [fl_valley_poly()], [fl_cost_distance()],
 #'   [fl_mask_distance()]
@@ -295,10 +294,10 @@ fl_check_out <- function(out, group) {
 
 #' Row-bind a list of `sf` objects in pairs
 #'
-#' `do.call(rbind, x)` over one `sf` per group grows with the square of the
-#' group count: 24.5 s for MORR's 1,633 order >= 2 groups and 52.8 s for BULK's
-#' 2,391 (CPU, #72). Binding in pairs, then pairs of pairs, gives an
-#' `identical()` result in 2.4 s and 5.0 s.
+#' `do.call(rbind, x)` over one `sf` per group took 24.5 s for MORR's 1,633
+#' order >= 2 groups and 52.8 s for BULK's 2,391 (CPU, #72). Binding in pairs,
+#' then pairs of pairs, took 2.4 s and 5.0 s, and on MORR's parts its result is
+#' `identical()` to `do.call(rbind, x)`.
 #'
 #' @param x A non-empty list of `sf` objects with the same columns.
 #'

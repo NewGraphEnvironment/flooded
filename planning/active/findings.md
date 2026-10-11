@@ -62,24 +62,21 @@ per-scenario bound: on BULK the order >= 2 floodplain takes 213 min per scenario
   small.
 - #71: the `complete = TRUE` fallback, the fixed half of the cost.
 
-## Contention: the planning probes and the 0.6.0 BULK arm 2 run were measured on a busy machine
+## Run-to-run variation: the planning probes are not usable, and their cause is not established
 
-Other sessions run R jobs on this machine, and a VM and `mediaanalysisd` hold about two cores
-steadily. Load averages during the planning probes were 7 / 24 / 31 (1/5/15 min) on 10 cores. Wall
-time on one input moved 5x with it:
+The planning probes on BULK coho (main, file-backed valleys) took 323.7 s wall (`complete =
+TRUE`, slope supplied) and, in a later Rprof run, 338.1 s. Later runs of the same configuration
+took 52.7-57.7 s wall (`bench/main_filebacked_bulk_co_r*.json`). **Neither slow run has a committed
+record** (session output only; the Rprof run's files were discarded), and the load averages do not
+separate the slow runs from the fast ones: about 7 / 24 / 31 (1/5/15 min) during the planning
+probes against 6.2-7.7 / 15.6-17.0 / 25.8-27.0 at the start of the fast ones. Other sessions do run
+R jobs on this machine, so contention is a candidate, not a finding. What follows from it either
+way: the planning-time split (108 s group work + 37 s polygonize + "130 s unexplained") came from
+three different slow runs and is discarded, and the bench records CPU time and load averages and
+repeats runs.
 
-| BULK coho, main (0.6.4), `complete = TRUE` | wall s | CPU s |
-|---|---|---|
-| planning probe (slope supplied) | 323.7 | — |
-| contended Rprof run | 338.1 | 101 sampled |
-| clean, file-backed valleys, r1 / r2 | 57.7 / 54.9 | 56.5 / 54.9 |
-
-So the planning-time split (108 s group work + 37 s polygonize + "130 s unexplained") came from
-three different contended runs and is an artefact. The bench now records CPU time and the load
-average at start and end of every run, and repeats the e2e runs.
-
-floodplains' own probe shows the same for the 0.6.0 BULK arm 2 run behind the issue's 170 min
-(`/usr/bin/time -l` in `data/<area>/probe_whole_fwa/logs/<arm>.log`):
+floodplains' probe logs (`/usr/bin/time -l` in `data/<area>/probe_whole_fwa/logs/<arm>.log`) do
+carry a direct sign of contention for two of the 0.6.0 BULK runs, wall well above CPU:
 
 | run | real s | user s | involuntary ctx switches |
 |---|---|---|---|
@@ -89,25 +86,19 @@ floodplains' own probe shows the same for the 0.6.0 BULK arm 2 run behind the is
 | BULK arm 3 | 4,857.5 | 4,549.3 | 1,867,073 |
 | BULK arm 2 | 10,573.9 | 8,527.8 | 4,820,490 |
 
-BULK arm 2 lost ~2,000 s of wall to contention; its 8,528 s of CPU is still real work (DEM
-excluded — it was a separate mode; delineation ~356 s).
+BULK arm 2 spent ~2,000 s more wall than CPU; its 8,528 s of CPU is still real work (the DEM was a
+separate mode; delineation ~356 s). BULK coho was not contended.
 
-## Per group, BULK coho is not 5x MORR coho at 0.6.4
+## Session probes not kept as records
 
-Clean, main, `complete = TRUE`, file-backed valleys: MORR coho 38.75 / 38.63 s for 340 blue lines
-(0.11 s/group), BULK coho 57.7 / 54.9 s for 428 (0.13 s/group). The 0.6.0 BULK coho run was
-2,842 s, so the old full-grid fallback cost ~2,790 s on BULK against 805.6 s on MORR (#71). Whether
-the arm 2 gap is the same story — the old fallback growing with burned stream cells, which the
-issue's cross-arm fit read as a per-blue-line slope — is what the arm 2 baselines answer.
+Recorded here so their use is visible; none of them carries a decision on its own.
 
-## Per-group cost is R-level overhead, not crop work or threads (BULK coho, 80 small groups)
-
-80 small groups through the real `fl_group_cells()`: 11.8 s wall / 9.5 s CPU at 12 threads,
-10.2 / 9.9 at 1 thread, 8.9 / 8.9 at 12 threads with memfrac 0.8 (load ~7). No temp files written
-(`mem_info`: slope 0.29 GB needed, fits in memory). So ~0.12 s per small group, CPU-bound in one
-thread. The contended Rprof (`by.total`, discarded for wall time but its proportions are CPU) put
-28% under terra's `spatOptions()` — terra builds an options object (incl. a `tempfile()` name) on
-every call, and a group makes ~35 terra calls.
+- 80 small BULK coho groups through `fl_group_cells()` at main: 11.8 s wall / 9.5 s CPU at 12
+  threads, 10.2 / 9.9 at 1 thread, 8.9 / 8.9 at memfrac 0.8; no temp files written. Read as: thread
+  count does not set the per-group cost.
+- The slow Rprof run put 28% of its CPU samples under terra's `spatOptions()` (built on every terra
+  call). Not repeated on a quiet run, so not a finding.
+- Bundled delineation re-timed at 1.32-1.47 s wall (6 s CPU), for the roxygen's 1.4 s.
 
 ## Plan review
 
@@ -136,12 +127,19 @@ cell) identical main vs branch on all six inputs (`*_cells.rds`, not committed �
   >= 2) and 0.084-0.091 vs 0.078-0.082 s (coho) in the 0.6.4 runs, 0.068-0.070 vs 0.067 s and
   0.082 vs 0.079 s in the branch runs (`bench/figures.csv`). The 0.6.0 figures
   (MORR order >= 2 33 min, BULK 170 min) were the old full-grid fallback, which grew with network
-  size (BULK coho alone: ~2,790 s), plus contention on the BULK runs.
+  size, plus contention on the BULK arm 2 and 3 runs. On one grid (MORR) attribution fell 1,791 s
+  from 0.6.0 to 0.6.4 on order >= 2 (1,981.9 -> 190.7 s) against ~791 s on coho (829.9 -> 39.3-40.0 s),
+  with the per-group pass about equal per group, so the old pass cost about 2.3x more on the larger
+  network. BULK coho: 2,842.4 -> 52.1-54.7 s, ~2,790 s. (0.6.0 figures: the probe's
+  `arm*_timing.json` `t_attr_blk_s`.)
 - **BULK order >= 2 against the 60 min per-scenario bound:** DEM 37.2 + delineation 5.9 (probe,
   0.6.0) + attribution 4.0 (branch) = **47.1 min**. Main was already 48.7 min, so #71 did most of
   this; the gate for Phase 3 (over ~17 min) is not reached.
-- **The one superlinear term left was `do.call(rbind, parts)`:** 24.5 s at 1,633 rows -> 52.8 s at
-  2,391 (1.46x rows, 2.16x time). Pairwise binding: 2.4 / 5.0 s, `identical()` output.
+- **`do.call(rbind, parts)` was the one step worth changing:** 24.5 s at 1,633 rows, 52.8 s at
+  2,391; pairwise binding 2.4 / 5.0 s. The pairwise bind also grows 2.1x between the two, so these
+  data do not isolate a growth law in the group count; the 10x is what is claimed. `identical()`
+  to `do.call(rbind)` on MORR order >= 2's 1,633 captured parts (`bench/rbind_identity_morr_a2.log`)
+  and in the unit test; on BULK only membership was compared.
 - The groups pass, unchanged between the trees, took 215.9 s CPU in the one 0.6.4 run on BULK
   order >= 2 and 178.2 / 174.0 s in the two branch runs (which agree within 2.4%). The 1-min load
   does not explain it (7.64 at the 0.6.4 start, 7.66 at the faster branch repeat); the 5- and
@@ -155,9 +153,11 @@ cell) identical main vs branch on all six inputs (`*_cells.rds`, not committed �
 
 - **Parallel groups (`workers`):** not built. BULK order >= 2 is 4.0 min serial against ~17 min of
   budget. The design (PSOCK, B1's installed-package trap, review P1-P7) is in `review-plan.md` if
-  arm 1 (all FWA, 6,753 blue lines; ~8 min at 0.07 s/group) or a larger group ever needs it.
-- **Buffer-shaped crop (#44 option 1):** the per-group pass is per-group overhead, not crop size,
-  on these networks; no measured payoff.
+  arm 1 (all FWA, 6,753 blue lines) ever needs it; extrapolating order >= 2's 0.07 s/group at
+  73% of the total gives roughly 11 min, unmeasured.
+- **Buffer-shaped crop (#44 option 1):** nothing here isolates crop size, and the issue estimated
+  similar mean crops on both grids (~42 k vs ~46 k cells). With the bound met at 47.1 min there is
+  no case for a change that risks membership.
 - **Cell-table output:** on the branch, polygonizing is 21-23% of the total on all four watershed
   networks (18-23% in the 0.6.4 runs, where rbind took up to 16%; 18% on the bundled tile at
   `cost_threshold = 300`); not worth an interface addition on these numbers.
