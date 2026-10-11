@@ -113,9 +113,9 @@ the order >= 2 networks: BULK 31,631 segments / 2,550 blue lines, MORR 20,812 / 
       findings, and in the issue body.
 
 ## Validation
-- [ ] Tests pass (`devtools::test()`), lintr clean
-- [ ] `/code-check` clean (once over the branch with `/code-check branch`)
-- [ ] PWF checkboxes match landed work
+- [x] Tests pass (`devtools::test()`), lintr clean
+- [x] `/code-check` clean (once over the branch with `/code-check branch`)
+- [x] PWF checkboxes match landed work
 - [ ] `/planning-archive` on completion
 
 ## Verification (how)
