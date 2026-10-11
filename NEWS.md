@@ -1,3 +1,12 @@
+# flooded 0.6.4
+
+* `fl_valley_attribute(complete = TRUE)` no longer computes distance over the whole grid to place
+  the valley cells no group reaches (#71). It finds the nearest burned stream cell for those cells
+  only. That is the same rule as before, so assignments change only where two groups' stream cells
+  are exactly equally near. On the Morice (MORR) coho network, 340 blue lines on an
+  18.1-million-cell grid, attribution went from 855.8 s to 37.8 s. The step itself went from
+  805.6 s to 0.4 s, and all 14,170 cells it placed went to the same groups as before.
+
 # flooded 0.6.3
 
 * `fl_valley_confine()` now returns `NA` where the DEM is `NA`, as its documentation already
