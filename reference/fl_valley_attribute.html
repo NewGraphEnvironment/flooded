@@ -112,9 +112,9 @@ group's bounding box before its cost distance is computed. Default
 
 <dt id="arg-complete">complete<a class="anchor" aria-label="anchor" href="#arg-complete"></a></dt>
 <dd><p>Logical. If <code>TRUE</code> (default), valley cells that no group
-reaches within the thresholds are assigned to the group whose streams are
-nearest, so every valley cell is attributed. If <code>FALSE</code>, they are left
-unattributed. See Details.</p></dd>
+reaches within the thresholds are assigned to the group of the nearest
+burned stream cell, so every valley cell is attributed. If <code>FALSE</code>, they
+are left unattributed. See Details.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -150,9 +150,11 @@ this river" independent of whatever else was in the run.</p><div class="section"
 <p><code><a href="fl_valley_confine.html">fl_valley_confine()</a></code> adds cells after intersecting its masks — morphological
 closing, hole filling, the channel buffer, and waterbody polygons, which get
 no spatial filter at all. Those cells can fall outside every group's distance
-and cost thresholds. With <code>complete = TRUE</code> they are assigned to the group
-with the nearest streams so the attribution covers the delineation exactly;
-the count is reported and available as <code>attr(x, "fl_fallback_cells")</code>. Use
+and cost thresholds. With <code>complete = TRUE</code> each is assigned to the group of
+the nearest burned stream cell (centre to centre, the cells
+<code><a href="fl_stream_rasterize.html">fl_stream_rasterize()</a></code> burns), so the attribution covers the delineation
+exactly. Where two groups' stream cells are equally near, either may win. The
+count is reported and available as <code>attr(x, "fl_fallback_cells")</code>. Use
 <code>complete = FALSE</code> to see only cost-reachable ground.</p>
 </div>
 
@@ -179,9 +181,15 @@ Widen it if group corridors are unusually convoluted.</p>
 <p>Attributing the bundled tile by <code>gnis_name</code> (5 groups, 518,400 cells) takes
 about 0.7 s against 1.4 s for the delineation itself. That saving comes from
 the crop, so it shrinks as a group's bounding box approaches the full grid —
-a long sinuous mainstem is the worst case, and a run with hundreds of groups
-on a multi-million-cell raster has not been measured. Supplying <code>slope</code>
-avoids re-deriving it from <code>dem</code>.</p>
+a long sinuous mainstem is the worst case. Supplying <code>slope</code> avoids
+re-deriving it from <code>dem</code>.</p>
+<p>At watershed scale, attributing the Morice (MORR) floodplain on an
+18.1-million-cell 30 m grid by <code>blue_line_key</code> (340 blue lines, 385,021
+valley cells) took 37.8 s, against 35.2 s with <code>complete = FALSE</code>. Placing
+the 14,170 cells left uncovered took 0.4 s. Through 0.6.3 that step took
+805.6 s, because it measured distance over the whole grid, and the whole
+attribution took 855.8 s. The cells were assigned identically. Measured
+with 12 terra threads (#71).</p>
 </div>
 
     </div>
