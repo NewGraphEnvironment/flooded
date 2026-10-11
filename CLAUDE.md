@@ -1047,6 +1047,9 @@ Write `${1}` whenever the text after a backreference starts with a digit: Perl r
 ### `for x in $(cmd | grep … || true)` hides a failing `cmd`
 Assign the command on its own line under `set -e` (`out=$(cmd)`), then filter `out` with `|| true`.
 
+### A sed/awk range can run to EOF
+Never pipe a `sed`/`awk` range extract into an interpreter.
+
 # Code Check — Spatial
 terra, sf, bcdata, GDAL/OGR CLIs.
 
@@ -1294,6 +1297,9 @@ Re-set the item's self href after `add_item()`, and call `collection.set_root(co
 
 ### `pdist::pdist()` loses centimetres at projected coordinates
 Subtract a local origin before `pdist::pdist()`: at BC Albers magnitudes it returns 0 for points up to 7 cm apart.
+
+### FWA `upstream_route_measure` misses the next segment's start
+Take a segment's top from the next segment's `downstream_route_measure`, and compare measures from different sources within 1 mm.
 
 # Code Check Conventions
 Structured checklist for reviewing diffs before commit.
