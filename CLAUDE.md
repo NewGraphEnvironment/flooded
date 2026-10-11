@@ -524,6 +524,11 @@ With `cancel-in-progress: false`, GitHub keeps one running and one pending run p
 
 *1 line of evidence for this rule is in `conventions/ci-monitoring.md`, which `/code-check` reads in full.*
 
+## A deploy commit on `gh-pages` is not yet a served page
+Before telling anyone a Pages URL is live, fetch it and compare the bytes with the source: the deploy commit lands on `gh-pages` before the `pages-build-deployment` run publishes it, and until that run finishes the URL still answers 404.
+
+*1 line of evidence for this rule is in `conventions/ci-monitoring.md`, which `/code-check` reads in full.*
+
 # Code Check — R
 Traps in R: the language and base/utils behaviour, package internals (`R CMD build`, `.Rbuildignore`, roxygen, lintr, `data-raw/`, testthat, pak), and the DBI/duckdb/arrow data layer.
 
@@ -564,6 +569,9 @@ A lint warning of `no visible binding` for a constant added on this branch is us
 
 ### Tests that silently do not run
 `expect_snapshot()` **skips on CRAN**, and `testthat` treats a non-interactive run as CRAN by default.
+
+### testthat counts an uncaught error under `error`, not `failed`
+Count `r$failed > 0 | r$error` over `r <- as.data.frame(testthat::test_file(f))`, never `failed` alone: a restored defect that raises instead of failing an expectation scores zero failures, so a guard that fired reads as one that never did.
 
 ### A `skip_if_not()` skips only its own `test_that()` block
 Before blaming a failure, or its absence, on a skip, find the `test_that()` block the skip sits in.
@@ -746,13 +754,13 @@ testthat 3e writes `tests/testthat/_problems/*.R` and `tests/testthat/testthat-p
 `DISTINCT ON (k) … ORDER BY k, a, b` is deterministic only if `(a, b)` is unique within each `k`.
 
 ### `sprintf("%g", x)` writes `Inf` and `NA` into SQL as bare words, which Postgres reads as column names
-A numeric formatter such as `sprintf("%.10g", x)` has no SQL form for non-finite values, so an open-ended range (`c(min, Inf)`, typically a blank `max` filled with `Inf` by a params loader) produces `x <= Inf`, and Postgres fails with `column "inf" does not exist`.
+A numeric formatter such as `sprintf("%.10g", x)` has no SQL form for non-finite values.
 
 ### An `information_schema` lookup by the literal table name misses what Postgres resolves
-`WHERE table_schema = 's' AND table_name = 'T'` compares the text you passed, but Postgres folds unquoted identifiers to lower case, puts temp tables in `pg_temp_N`, and resolves unqualified names through `search_path`.
+`WHERE table_schema = 's' AND table_name = 'T'` compares the text you passed.
 
 ### Rscript reads a script as it runs, so never edit a script while a run of it is in flight
-Copy the script and run the copy (`cp scripts/x.R "$TMPDIR/x_frozen.R" && Rscript "$TMPDIR/x_frozen.R"`) for anything long-running, or leave the file alone until the run exits.
+Copy the script and run the copy (`cp scripts/x.R "${TMPDIR:-/tmp}/x_frozen.R" && Rscript "${TMPDIR:-/tmp}/x_frozen.R"`) for anything long-running, or leave the file alone until the run exits.
 
 ### A range total taken as the difference of two large running totals loses the small ranges
 Sum a range directly (segment tree, per-range `sum()`, or grouped sums) rather than as `cumsum[hi] - cumsum[lo]` when ranges are small relative to the running total.
@@ -761,7 +769,7 @@ Sum a range directly (segment tree, per-range `sum()`, or grouped sums) rather t
 `R CMD check` warns "'::' or ':::' import not declared from" for any package a test reaches with `::` that `DESCRIPTION` does not list, and under `error-on: "warning"` that reddens every runner.
 
 ### Inside a dplyr verb, a column named like a local variable wins
-Inject a local value into a data-masked verb with `!!x` or `.env$x`, never a bare `x`: `transmute(d, aoi_id = id)` inside `for (id in ids)` reads the frame's own `id` column whenever one exists, with no warning, and the result is well-typed and plausible.
+Inject a local value into a data-masked verb with `!!x` or `.env$x`, never a bare `x`.
 
 ### `earthdatalogin`'s search and download calls overwrite the netrc when they find no Earthdata entry
 Call NASA's CMR search with `curl` and download with `curl` given the netrc directly (`netrc = 1, netrc_file = <path>, cookiefile = ""` follows the URS redirect), or check `earthdatalogin:::has_edl_netrc()` yourself first.
@@ -776,7 +784,7 @@ Assign inside the call, `expect_message(h <- f(x), "msg")`, never `h <- expect_m
 Put a Date first when `c()` combines an optional piece with Dates: `c(NULL, <Date>)` takes the default method and returns a bare day count.
 
 ### `bind_rows()` of all-`NULL` is a 0 x 0 tibble, and a typed template must take its types from the rows' source
-Bind per-group results under a zero-row template so an all-dropped result keeps its columns, and build that template's key columns from the same object the rows are built from (`combos$variable[0]`, not `character()`).
+Bind per-group results under a zero-row template so an all-dropped result keeps its columns.
 
 ### `sample.int(prob =)` without replacement is not a probability-proportional draw, so weighting its result again double-counts
 Draw a subsample to be design-weighted **uniformly** (`sample.int(n, k)`), or keep every unit.
@@ -785,7 +793,7 @@ Draw a subsample to be design-weighted **uniformly** (`sample.int(n, k)`), or ke
 Read the exit status off the result: `st <- attr(out, "status")`, which is `NULL` on success.
 
 ### Forked `parallel::mclapply()` workers segfault in `glm.fit` under macOS Accelerate BLAS
-Fit models in parallel on socket workers (`parallel::makeCluster()` with `parLapply()`), not forks: with R linked to Accelerate's vecLib, `mclapply` children segfault inside `glm.fit` (`address 0x110, cause 'invalid permissions'`), and `mclapply` returns try-errors with a warning rather than stopping.
+Fit models in parallel on socket workers (`parallel::makeCluster()` with `parLapply()`), not forks.
 
 ### `c(name = x)` keeps `x`'s own name, so a value from a named vector becomes `name.X`
 Strip the name before you label it: `c(axis = unname(v[1]))` or `c(axis = v[[1]])`.
@@ -827,10 +835,19 @@ Record the condition in the handler (`hit <<- TRUE`) and raise after `tryCatch()
 Move a directory into place with `base::file.rename()` and check its return value, which is FALSE where the target is a non-empty directory, a symlink or a file.
 
 ### Base `file.info()` has no inode column, so `file.info(x)$ino` is NULL and any comparison of it passes
-Read an inode with `fs::file_info(x)$inode`: base `file.info()` returns size, mode, times and owners only, so `identical(file.info(a)$ino, file.info(b)$ino)` is `identical(NULL, NULL)`, TRUE for any two files.
+Read an inode with `fs::file_info(x)$inode`.
 
 ### `cffr::cff_create()` writes a CRAN DOI for any package that shares a name with a CRAN package
 Drop the generated DOI (`x$doi <- NULL`) unless it is your own, and supply your own through `keys = list(doi = ...)`, because cffr assigns `10.32614/CRAN.package.<name>` whenever CRAN carries a package of that name, whatever your package is.
+
+### A `{python}` chunk needs reticulate even with `eval = FALSE`
+Set `python.reticulate = FALSE` on a Python chunk that only displays code, or declare reticulate.
+
+### `readBin(size = 4)` returns NA for exactly 2^31, so it cannot read an unsigned 32-bit field
+Sum the bytes as doubles (`sum(as.numeric(raw[i + 1:4]) * 256^(0:3))`) to read a u32 or u64 from a binary header.
+
+### ajv honours keywords beside a `$ref`; Python's jsonschema ignores them
+Keep every `$ref` alone in a draft-07 schema tested with jsonvalidate and read by pystac.
 
 # Code Check — Shell
 Tool-level traps in bash, sed, git and `gh`, and in the host toolchain those commands depend on.
@@ -920,6 +937,9 @@ An assertion around something that might hang can only pass or hang, never fail 
 
 ### `aws s3 cp` cannot tell a missing key from a missing bucket
 `aws s3 cp` gives one exit 1 and 404 text for a missing key and a missing bucket, so probe `s3api head-bucket` then `head-object`: only a 404 from a reachable bucket means absent; a 403 is permissions.
+
+### An S3 multipart ETag depends on the uploader's part size, so try every size that gives its part count
+Verify an upload by comparing each object's ETag with its file, and for a multipart ETag (`<md5 of the part md5s>-N`) try every part size whose `ceiling(size / part) == N`: the size is the uploading machine's `multipart_chunksize`, which differs between machines.
 
 ### A verification command can be shadowed by a shell function or alias
 - The shell is initialized from the user's profile, so `diff`, `grep`, `ls`, `cat` and friends may resolve to a wrapper rather than the binary you assume.
@@ -1017,6 +1037,12 @@ Remove only your own registration: `git worktree remove --force "$wt"`, and on f
 ### `git push --porcelain` ends with `Done` on a rejection, so `tail -1` names no reason
 Take the reason from the `!` row's third tab field, falling back to the last line that is not `Done`: `awk -F'\t' '$1 == "!" { print $3; exit }'`.
 
+### In a Perl replacement, `$1` followed by a digit is a different group
+Write `${1}` whenever the text after a backreference starts with a digit: Perl reads `$1281399` as group 1281399, which does not exist, so the replacement is empty and the run exits 0.
+
+### `for x in $(cmd | grep … || true)` hides a failing `cmd`
+Assign the command on its own line under `set -e` (`out=$(cmd)`), then filter `out` with `|| true`.
+
 # Code Check — Spatial
 terra, sf, bcdata, GDAL/OGR CLIs.
 
@@ -1108,6 +1134,9 @@ Two contracts inside `terra::app()` that read as the opposite of what they are, 
 
 ### terra `metags()`: the empty case is `NULL`, and the sidecar is half the artefact
 Three measured facts about raster **container** metadata, all of which fail quietly (floodplains#83, 2026-09-05, terra 1.9.34 / GDAL 3.8.5).
+
+### terra `metags<-` merges into the tags a raster already has, and its setters work only from 1.8-54
+To replace a raster's dataset tags, clear them first (`metags(x) <- NULL`, only when there are any) and then set, and require `terra (>= 1.8-54)`: `metags<-` merges, so a stale tag read from a published file survives a write that sets new ones.
 
 ### `ggmap`: a fixed `zoom` silently crops points off the basemap, and `calc_zoom()` does not fix it
 `ggmap::get_map()` fetches ONE fixed-size image at whatever `zoom` it is given.
@@ -1249,6 +1278,18 @@ Pad a label slice by half a cell (`sel(latitude=slice(60.05, 47.95))`, not `slic
 
 ### `terra::cells(r, lines, touches = FALSE)` gives each line's own cells, so a shared cell can belong to both
 Take per-feature cell membership from `terra::cells(r, terra::vect(x), touches = FALSE)`, which returns an `ID` (row of `x`) and `cell` for exactly the cells `rasterize(touches = FALSE)` burns.
+
+### A Freshwater Atlas main stem's downstream end lies on the receiving river's centreline, not at the confluence
+Do not use the `DOWNSTREAM_ROUTE_MEASURE = 0` point of a tributary's main stem as its mouth on the ground: the atlas routes the stem through the receiving river's polygon to that river's centreline, so the point sits mid-river.
+
+### `terra::project()` given only a CRS lets GDAL choose the grid, and GDAL versions choose differently
+Pass `terra::project()` a template grid, not just a CRS, when the result must reproduce on another machine: GDAL picks the grid itself, and its pick changed between GDAL 3.8.5 and 3.13.0.
+
+### pystac `Collection.add_item()` rewrites the item's self href and fetches the root over the network
+Re-set the item's self href after `add_item()`, and call `collection.set_root(collection)` once its self href is set: the default layout rewrites the href to `<collection dir>/<id>/<id>.json`, and a root link naming a published URL is resolved by downloading it.
+
+### `pdist::pdist()` loses centimetres at projected coordinates
+Subtract a local origin before `pdist::pdist()`: at BC Albers magnitudes it returns 0 for points up to 7 cm apart.
 
 # Code Check Conventions
 Structured checklist for reviewing diffs before commit.
@@ -1427,6 +1468,12 @@ useful question, which is *which body of work survives*. Ask, then re-land the d
 top of what shipped; two independent attempts at one problem are usually complementary
 rather than redundant, and a mechanical resolution keeps whichever half git preferred.
 
+## Re-read the issue body before the baseline
+
+Re-fetch it and diff against the copy you planned from. An edit made during plan mode
+is invisible to a plan built on the first read: in stac_airphoto_bc#47 the body gained
+two requirements that way, caught only by the plan review after three phases had landed.
+
 ## An issue number you did not file yet is somebody else's
 
 GitHub allocates one sequence across issues **and** PRs, on creation. So a number
@@ -1554,6 +1601,55 @@ something and the issue did not:
 Vigilance does not catch this, because the drift happens exactly when attention
 moves to the merge. `/gh-pr-merge` reconciles at that moment — see its step 3b.
 
+## Public-repo text describes the package, and points nowhere private
+
+In a public repo, issues, PRs, comments, commit messages, NEWS and roxygen describe
+behaviour **in terms of the package's own inputs and conditions**. Our machines, tunnels,
+ports, local env files and private repos stay out, with the two exceptions below. Check
+where the text lands before you draft it, naming the destination: with no argument, `gh`
+reports the repo the session stands in, which reads private when you file from a private
+repo into a public one.
+
+```bash
+gh repo view <owner>/<repo> --json nameWithOwner,visibility --jq '"\(.nameWithOwner): \(.visibility)"'
+```
+
+**Why:** a public package is a tool for anyone who installs it. "On our dev box the
+tunnel on port N is down" tells an outside reader nothing about the package, and it
+publishes our setup. A link to a private repo 404s for everyone outside the
+organisation, and it names internal work as it does so.
+
+**How to apply:**
+
+- **Restate an infrastructure-only repro as its general condition.** "Credentials are
+  set and the server is unreachable, so the test errors instead of skipping" is the bug.
+  Which host it happened on is not. Propose a general mechanism, such as gating on a
+  reachable connection, not a workaround for one setup.
+- **Host names, tunnels, ports and local env files** (`~/.Renviron` and its like) stay in
+  private repos or machine-local notes. A public repo's `planning/` is committed, so it
+  is public too. One exception: where the machine is the subject of a measurement, such
+  as a benchmark between hosts or a run log named for the host that produced it, its
+  label stays. The setup around it still goes.
+- **No links to private repos, and no `owner/private-repo#N`, not even as provenance.**
+  Describe the dependency in words ("work on a downstream estimate is in progress"), or
+  leave it out.
+- **One exception: the R&D tracking cross-reference.** `/gh-pr-push` writes it into PR
+  bodies from the repo's `CLAUDE.md`, which is where its repo and issue number are
+  configured. Both stay: they are deliberate claim tagging, and they are the only private
+  pointers this rule allows.
+- **A public repo's `CLAUDE.md` is contributor text, and it is still public.** Package-level
+  setup, such as which env vars the connection helper reads and how live tests skip, stays.
+  Our host topology does not: which machine runs what, cross-host ssh recipes, tunnel ports.
+  Write those as a generic example, or keep them in machine-local memory. The
+  conventions synced below the marker are generated, so fix a private reference in them
+  at their source, never in place.
+
+This is the public-repo half of the rule that keeps project and client identifiers out of
+public text. Both apply wherever the destination is public, whichever repo the session is
+running in.
+
+*7 lines of evidence for this rule are in `conventions/feature-workflow.md`, which `/code-check` reads in full.*
+
 ## Why This Exists
 
 We've hit snags repeatedly when half-doing this — branches that mix concerns, tests bolted on after, code-check skipped (and then a bug ships in the diff), examples that fail in pkgdown. Each step is small; the cumulative reliability gain is real. The convention is here so it becomes the default expectation, not a thing the user has to remind every session about.
@@ -1662,6 +1758,22 @@ file, not a link to it. A subagent's `tasks/<id>.output` is a **symlink**: `ls -
 `stat` report the link, whose size is the length of the path it points to and whose
 mtime is the spawn time, so it looks frozen while the transcript behind it grows. Use
 `ls -lL` (§6, "Don't trust status").
+
+**Measure in UTC; report clock times to the user in Vancouver time, and name the zone.**
+An ETA, a "started at" or a "finished at" addressed to the user reads `9:22 AM PDT`, not
+`16:22Z`. Add the UTC time only when the exact instant matters: `9:22 AM PDT (16:22 UTC)`.
+Convert with a tool, never by hand, because PDT and PST alternate. `TZ=America/Vancouver date`
+gives the current time. For a given instant, use this, which needs only Python 3.9 or later:
+
+```bash
+python3 -c "import sys,datetime as d,zoneinfo as z; print(d.datetime.fromisoformat(sys.argv[1].replace('Z','+00:00')).astimezone(z.ZoneInfo('America/Vancouver')).strftime('%-I:%M %p %Z'))" 2026-09-28T16:22:00Z
+```
+
+Keep the trailing `Z`, because a time with no offset is read as machine-local. Durations need
+no zone. Timestamps in stored artifacts stay in UTC: commit messages, logs, filenames,
+`research/`, and PR and issue bodies.
+
+*8 lines of evidence for this rule are in `conventions/karpathy.md`, which `/code-check` reads in full.*
 
 ### The same blind spot picks the wrong waiting tool
 
@@ -1887,7 +1999,7 @@ nothing on it; wait for the event, against a clock:
   notification, which is the event. Do not build a file waiter for a subagent
   (`until [ -s review.md ]`): it fires on the first byte, and on whichever reviewer
   writes a shared path first. Until the notification arrives, the true report is
-  "spawned at T, no notification yet", adding "transcript growing" only if `ls -lL`
+  "spawned at T (in Vancouver time, §5; subtract in UTC), no notification yet", adding "transcript growing" only if `ls -lL`
   showed it grow between two looks — never "stalled".
 - **Set a deadline and act only on its expiry.** For a `/code-check` round, 60 minutes
   from the spawn. Rounds taking 30 to 43 minutes are on record, and every one of them
@@ -1977,7 +2089,7 @@ outside what it was given.
 **Measure before you characterise. Presence is not provenance. "Unknowable" is a
 claim.**
 
-Six principles that all fail the same way: something *feels* established — because
+The principles below all fail the same way: something *feels* established — because
 it is visible, because it is present, because someone said so — and gets offered
 with the confidence of a measurement.
 
@@ -2005,6 +2117,18 @@ one.** A bespoke parser silently narrows the population it can see, and the resu
 looks like a measurement rather than a sample — worse than not measuring, because it
 carries a number. Measured 10 of 80 with a hand-written matcher; routed through the
 package's own resolver it was 14 of 117.
+
+### A share is not robust to an unresolved definition until you measure the spread
+
+When work is blocked on a definition nobody has settled, it is tempting to express the
+result as a share, a ratio or a ranking and call it "unaffected by whichever definition
+proves correct". That is a claim, and usually one command checks it: **compute the statistic under each candidate
+definition and report the spread beside it.** If the spread is material against the claim
+being made, the definition is a blocker, so schedule it first. A share is invariant to a
+filter only when the filter is uncorrelated with the thing being measured. Check that; do
+not assume it.
+
+*13 lines of evidence for this rule are in `conventions/karpathy.md`, which `/code-check` reads in full.*
 
 ### Presence is not provenance
 
@@ -2040,7 +2164,7 @@ the thing the prose describes.
 Where a release note is written from the issue rather than from the artifact, its numbers
 have been copied rather than derived, and no reader is positioned to notice.
 
-Five habits:
+Habits:
 
 - **Derive every number in a release note from the artifact it describes**, at the moment you
   write it. Not from the issue, not from the last release's notes, not from memory.
@@ -2062,8 +2186,15 @@ Five habits:
 - **When you find one instance stale, grep for the sentence, not the file.** A claim that
   sits in three documents is not fixed by repairing the one that was quoted; the other two
   still read as authoritative.
+- **A summary sentence over a set is a failure site of its own, even when every number under
+  it is right.** It gets written from the memory of a correct measurement rather than
+  re-derived from it, and it errs toward the tidier claim. Treat `every`, `each`, `all N`,
+  `nothing else`, `roughly doubles` and `between X and Y` as words to check, not words to
+  write. Walk the per-member evidence before writing the quantifier. When review keeps finding
+  these, a list of every quantified or inherited claim in the document, each with a measured
+  verdict, ends the loop (`code-check.md`, "A guard's scope, escape hatches, and remedies").
 
-*39 lines of evidence for this rule are in `conventions/karpathy.md`, which `/code-check` reads in full.*
+*61 lines of evidence for this rule are in `conventions/karpathy.md`, which `/code-check` reads in full.*
 
 ### "It can only be answered by testing" is a claim with an author
 
@@ -2237,6 +2368,22 @@ and needs `gh api repos/<owner>/<repo>/contents/<path>?ref=<branch>`.
 
 *12 lines of evidence for this rule are in `conventions/karpathy.md`, which `/code-check` reads in full.*
 
+#### The temporal version: what you build against may be about to change
+
+The spatial miss above builds a duplicate. The temporal miss builds something correct
+against an artifact another repo has already decided to restructure. **Before a design
+depends on a peer repo's artifact** (a guard comparing against its files, an extractor
+reading its output, automation keyed to its layout), **search the peer repo's open issues
+and PRs for work that changes it**, and read the body of each adjacent hit, not only its
+title. Unquoted words match anywhere; a quoted phrase must match exactly and misses rewordings.
+A full 100 rows means the list was cut: narrow the words.
+
+```bash
+gh search issues --include-prs --repo NewGraphEnvironment/<peer> --state open --limit 100 <artifact words>
+```
+
+*6 lines of evidence for this rule are in `conventions/karpathy.md`, which `/code-check` reads in full.*
+
 ## 8. Decisions Up Front, Then Run
 
 **Ask at the plan gate. After approval, run to the PR. Before a plan exists, a question wants an answer.**
@@ -2336,6 +2483,20 @@ what we are willing to say in public is the user's.
 - Offer the draft in the reply, not as a fait accompli, and say plainly that nothing
   has been posted when the work obviously produced something postable.
 
+### Auto mode refuses a production write whatever the chat says
+
+Auto mode's classifier can refuse a command as a production write: a live store rewritten,
+a deploy, a publish. When it does, approval given in chat does not reach it, and in the
+recorded case a restart did not clear it either. On the **first** such refusal, say so once and offer two routes:
+the user leaves auto mode for that step (Shift+Tab) and approves the prompt, or runs the
+bare command themselves (below). Do not retry, and do not suggest a restart.
+
+It is not the secret-read clamp (`newgraph.md`, "Reading a secret clamps the rest of the
+session"), which names *earlier conversation content* and needs a restart. This refusal
+names a **category** of action, such as "Production Deploy".
+
+*9 lines of evidence for this rule are in `conventions/karpathy.md`, which `/code-check` reads in full.*
+
 ### Hand the user bare commands
 
 When the user must run a command themselves — an interactive login, a
@@ -2352,20 +2513,32 @@ handed-over relative path created the file somewhere nobody was looking. Absolut
 directory it resolves against. So:
 
 - Emit the command plain. Applies to fenced blocks and inline commands alike.
-- **Absolute paths** in any handed-over command that touches files
-  (`~/Projects/repo/<repo>/…`), whichever form the user ends up running it in.
+- **Anchor every path**, whichever form the user ends up running it in: absolute
+  (`~/Projects/repo/<repo>/…`), or relative after `cd ~/Projects/repo/<repo> &&` on the
+  **same** line, so a failed `cd` runs nothing. The second form keeps a log target short.
 - Keep it paste-safe: prefer `grep`/`awk` over a nested `python3 -c "…"` inside a
   single-quoted remote command, so the quoting survives the trip.
+- **Keep each line short enough not to wrap**, one command per line: a wrapped line can
+  paste as two commands. Say what the first line of output must read (for example
+  `PUBLISH run`), so a dropped flag that enables a write shows before anything is written. A
+  dropped guard (`--dry-run`, a scope flag) writes at once, which is one more reason not to wrap.
 
-**A file under `~/Downloads` is unreadable by the agent process, and no retry helps.**
-`Read`, `cp` and `pdftotext` on `~/Downloads/*` all fail with `Operation not permitted`.
-It is macOS folder protection (TCC) on the process, not a Claude Code permission mode, so
-`/permissions` does not change it; Desktop and Documents behave the same. Do not retry
-variants — ask for **one** copy into the repo, with absolute source and destination paths,
-then continue from the copy. (Granting the terminal app Full Disk Access removes it on one
-machine; the fallback stays for the next machine.)
+**A file under `~/Downloads` may be unreadable by the agent process: macOS grants that access
+per app, per machine. Probe before assuming either way:**
 
-*4 lines of evidence for this rule are in `conventions/karpathy.md`, which `/code-check` reads in full.*
+```bash
+ls ~/Downloads >/dev/null 2>&1 && echo readable || echo blocked
+```
+
+If it prints `readable`, read the file where it is. If it prints `blocked`, `Read`, `cp` and
+`pdftotext` on `~/Downloads/*` all fail with `Operation not permitted`. That block is macOS
+folder protection (TCC) on the process, not a Claude Code permission mode, so `/permissions`
+does not change it. Desktop and Documents are protected the same way but granted separately,
+so probe each one. Do not retry variants: ask for
+**one** copy into the repo, with absolute source and destination paths, then continue from
+the copy. Granting the terminal app Full Disk Access removes the block for that app.
+
+*10 lines of evidence for this rule are in `conventions/karpathy.md`, which `/code-check` reads in full.*
 
 ### Link every issue and PR you name to the user
 
@@ -3349,15 +3522,22 @@ infrastructure identity and stay in machine-local memory, not here (soul#177).
 **`immutable=1` serves a stale snapshot, so it cannot confirm a write landed.** The
 read-only URI the skills prescribe —
 `sqlite3 "file:$HOME/Zotero/zotero.sqlite?mode=ro&immutable=1"` — is right for
-*searching*, and it is exactly wrong for *verifying*: `immutable` tells SQLite the file
-cannot change, so it skips the WAL and the change counter and serves whatever it first
-mapped. A write made through the Web API is invisible to it for as long as the process
+*searching* outside a sync, and it is exactly wrong for *verifying*: `immutable` tells SQLite
+the file cannot change, so it skips the rollback journal and the change counter and serves
+whatever it first mapped. A write made through the Web API is invisible to it for as long as the process
 lives, which reads as "the write failed" rather than "this reader cannot see it". Copy
 the file first when the question is whether something landed, and note that a Web API
 create also needs Zotero to **sync** before it is in the local database at all.
 
 Three skills prescribe that URI (`zotero-lookup`, `zotero-api`, `lit-search`) and none
 of them says this, which is why it is here rather than in one of them.
+
+**A copy of the live file needs a consistency check** (knowledge#19). Zotero holds
+`zotero.sqlite` in exclusive locking mode, so a normal read-only connection blocks, an
+`immutable=1` read during a sync can fail as malformed, and the header change counter does
+not move per commit. Accept a copy only when the live file's mtime and size are unchanged
+across it, the rollback journal is absent or has a zero header, and the copy passes
+`PRAGMA quick_check`.
 
 ## Citation keys are BBT-auto-derived
 
@@ -3382,6 +3562,9 @@ PATCHed clean after the user caught it.
   If Zotero auto-disables BBT after an update, keys silently stop generating for new
   items; reinstall the matching line via Plugin Manager → gear → "Install Plugin From
   File…" from the BBT releases page.
+
+A key is unique within one library, not across them: 12 of 327 keys shared between
+libraries named different works (knowledge#19), so resolve a key within its library.
 
 `/lit-search` and `/zotero-api` point here; this is the authority (soul#43).
 
