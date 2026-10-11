@@ -60,11 +60,11 @@ needed it for 2,218 to 4,440 cells (`fallback_cells` in the arms' `timing.json`)
 - [x] Record the numbers, versions and threads in `findings.md` and the `.log`.
 
 ## Phase 4: Docs
-- [ ] Rewrite the `## Performance` section of `fl_valley_attribute()` with the measured MORR
+- [x] Rewrite the `## Performance` section of `fl_valley_attribute()` with the measured MORR
       figures (before/after fallback cost, total), replacing "has not been measured".
-- [ ] `## Coverage` section: say the fallback uses the nearest burned stream cell and that ties
+- [x] `## Coverage` section: say the fallback uses the nearest burned stream cell and that ties
       may resolve either way.
-- [ ] `devtools::document()`; NEWS line left to `/gh-pr-merge`.
+- [x] `devtools::document()`; NEWS line left to `/gh-pr-merge`.
 
 ## Validation
 - [ ] Tests pass

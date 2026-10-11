@@ -86,9 +86,11 @@ this river" independent of whatever else was in the run.
 \code{\link[=fl_valley_confine]{fl_valley_confine()}} adds cells after intersecting its masks — morphological
 closing, hole filling, the channel buffer, and waterbody polygons, which get
 no spatial filter at all. Those cells can fall outside every group's distance
-and cost thresholds. With \code{complete = TRUE} they are assigned to the group
-with the nearest streams so the attribution covers the delineation exactly;
-the count is reported and available as \code{attr(x, "fl_fallback_cells")}. Use
+and cost thresholds. With \code{complete = TRUE} each is assigned to the group of
+the nearest burned stream cell (centre to centre, the cells
+\code{\link[=fl_stream_rasterize]{fl_stream_rasterize()}} burns), so the attribution covers the delineation
+exactly. Where two groups' stream cells are equally near, either may win. The
+count is reported and available as \code{attr(x, "fl_fallback_cells")}. Use
 \code{complete = FALSE} to see only cost-reachable ground.
 }
 
@@ -111,9 +113,16 @@ Widen it if group corridors are unusually convoluted.
 Attributing the bundled tile by \code{gnis_name} (5 groups, 518,400 cells) takes
 about 0.7 s against 1.4 s for the delineation itself. That saving comes from
 the crop, so it shrinks as a group's bounding box approaches the full grid —
-a long sinuous mainstem is the worst case, and a run with hundreds of groups
-on a multi-million-cell raster has not been measured. Supplying \code{slope}
-avoids re-deriving it from \code{dem}.
+a long sinuous mainstem is the worst case. Supplying \code{slope} avoids
+re-deriving it from \code{dem}.
+
+At watershed scale, attributing the Morice (MORR) floodplain on an
+18.1-million-cell 30 m grid by \code{blue_line_key} (340 blue lines, 385,021
+valley cells) took 37.8 s, against 35.2 s with \code{complete = FALSE}. Placing
+the 14,170 cells left uncovered took 0.4 s. Through 0.6.3 that step took
+805.6 s, because it measured distance over the whole grid, and the whole
+attribution took 855.8 s. The cells were assigned identically. Measured
+with 12 terra threads (#71).
 }
 }
 \examples{
