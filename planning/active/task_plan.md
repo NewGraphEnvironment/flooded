@@ -58,7 +58,7 @@ the order >= 2 networks: BULK 31,631 segments / 2,550 blue lines, MORR 20,812 / 
       own `fp_wf_read_network()` / `fp_wf_keep()`. Write them to
       `floodplains/data/<area>/probe_whole_fwa/arm2_streams.gpkg` (gitignored). Assert the segment
       and blue-line counts above.
-- [x] `planning/active/bench_attribution.R`, modelled on #71's `bench_fallback.R`, with three modes:
+- [x] `planning/active/bench_attribution.R`, modelled on #71's `bench_fallback.R`, with three modes (as built: `e2e` covers e2e + cells, with section checkpoints; `rprof`; `steps` is the per-step replica):
       - `e2e`: total time plus per-group cell counts (CSV) for a two-tree comparison.
       - `cells`: per-group cell indices (rds), for the per-cell membership check.
       - `profile`: a timed replica of each `fl_group_cells()` step (crop slope, crop valleys,
@@ -76,7 +76,7 @@ the order >= 2 networks: BULK 31,631 segments / 2,550 blue lines, MORR 20,812 / 
       full-grid `slope`/`valleys` per group (pre-index or file-back once), per-call
       CRS checks and `sf` subsetting in the loop, and terra's per-op overhead at 12 threads on tiny
       crops.
-- [x] Tests: everything in `test-fl_valley_attribute.R` stays green. Add a test that pins per-group
+- [x] Tests: everything in `test-fl_valley_attribute.R` stays green. (As built: an every-group uncropped full-grid oracle with an interior-crop non-vacuity check, which needs no snapshot, plus a pairwise-rbind identity test.) Add a test that pins per-group
       membership to a pre-change snapshot on the bundled tile, taken at both the package defaults
       and a binding `cost_threshold = 300` (see the test-data traps).
 

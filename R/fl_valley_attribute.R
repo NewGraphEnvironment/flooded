@@ -296,9 +296,9 @@ fl_check_out <- function(out, group) {
 #' Row-bind a list of `sf` objects in pairs
 #'
 #' `do.call(rbind, x)` over one `sf` per group grows with the square of the
-#' group count: 21.2 s for MORR's 1,633 order >= 2 groups and 52.9 s for BULK's
-#' 2,391 (#72). Binding in pairs, then pairs of pairs, gives an `identical()`
-#' result in 2.3 s on MORR.
+#' group count: 24.5 s for MORR's 1,633 order >= 2 groups and 52.8 s for BULK's
+#' 2,391 (CPU, #72). Binding in pairs, then pairs of pairs, gives an
+#' `identical()` result in 2.4 s and 5.0 s.
 #'
 #' @param x A non-empty list of `sf` objects with the same columns.
 #'

@@ -152,7 +152,8 @@ cell) identical main vs branch on all six inputs (`*_cells.rds`, not committed â
   arm 1 (all FWA, 6,753 blue lines; ~8 min at 0.07 s/group) or a larger group ever needs it.
 - **Buffer-shaped crop (#44 option 1):** the per-group pass is per-group overhead, not crop size,
   on these networks; no measured payoff.
-- **Cell-table output:** polygonizing is 21-23% of the total on every input; not worth an
+- **Cell-table output:** polygonizing is 21-23% of the total on all four watershed networks (18% on the bundled tile at
+  `cost_threshold = 300`); not worth an
   interface addition on these numbers.
 
 ## Errors Encountered

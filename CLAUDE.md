@@ -116,8 +116,11 @@ tests/testthat/          — unit tests for each fl_* function (17 test files, 1
   uncovered cells (`fl_nearest_group()`, #71). The full-grid `terra::distance()` it replaced was
   805.6 s of MORR's 855.8 s attribution, and it grew with network size, so 0.6.0 timings across
   networks of different size read it as a per-group cost (#72).
-- **Time attribution with CPU time, not wall time** — other jobs share the bench machine, and one
-  input's wall time moved 5x with load while its CPU time held (#72). The harness is
+- **Time attribution on a quiet machine, and say how quiet** — other jobs share the bench machine.
+  One input's wall time moved from 55 s to 324 s with load, and CPU time inflated too (an
+  unchanged section moved 216 -> 174 s between two runs) (#72). CPU time is steadier than wall
+  but is not immune, so record load averages, repeat runs, and credit a change only with the
+  delta that is larger than the repeat spread. The harness is
   `planning/archive/2026-10-issue-72-attribution-scale/bench_attribution.R`. It runs against
   floodplains' cached MORR and BULK probe inputs (coho and order >= 2), records CPU time, load
   averages and per-section times, and writes per-group cell tables for comparing two trees.
