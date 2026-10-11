@@ -1,6 +1,6 @@
 # bench_attribution.R — time and profile fl_valley_attribute() at watershed scale (#72)
 #
-# Inputs are floodplains' cached probe outputs (floodplains#104 / #110): the common DEM, each arm's
+# Inputs are floodplains' cached probe outputs (floodplains#104 / floodplains#110): the common DEM, each arm's
 # co_ff04 floodplain and its network. Arm 2 (order >= 2) networks come from extract_arm2.R.
 #
 # Datasets:
