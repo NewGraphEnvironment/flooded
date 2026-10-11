@@ -67,8 +67,8 @@ needed it for 2,218 to 4,440 cells (`fallback_cells` in the arms' `timing.json`)
 - [x] `devtools::document()`; NEWS line left to `/gh-pr-merge`.
 
 ## Validation
-- [ ] Tests pass
-- [ ] `/code-check` clean (once over the branch with `/code-check branch`)
-- [ ] PWF checkboxes match landed work
+- [x] Tests pass
+- [x] `/code-check` clean (once over the branch with `/code-check branch`)
+- [x] PWF checkboxes match landed work
 - [ ] `/planning-archive` on completion, with Measurement / Evidence sections in the archive README
 

@@ -15,3 +15,7 @@
   the nearest stream *line* rule, which disagrees with the shipped rule on 10 of 9,904 cells
   at ct = 300. Fixed. Other prose ("nearest group", "nearest watercourse") states no rule and
   was left alone.
+- Round 4 checked 267fc52 and listed every statement of the fallback rule in the repo: all are
+  consistent or state no specific rule. One stale claim outside the diff,
+  `inst/notes/methodology.md` "production-scale timing is unmeasured", was reworded to point at
+  the measured figures and #72. The loop ended on that list.

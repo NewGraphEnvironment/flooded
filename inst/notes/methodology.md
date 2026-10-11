@@ -210,7 +210,8 @@ ground.
 ### See also
 
 - `fl_valley_attribute()` docs — corridor cropping (`crop_margin`) is an approximation, not a bound
-- flooded#44 — production-scale timing is unmeasured; the k=5 figure does not establish k=340
+- flooded#44 — production-scale timing, now measured: k=340 on MORR in `fl_valley_attribute()`'s
+  Performance docs (#71); the per-group cost that grew from MORR to BULK is flooded#72
 - NewGraphEnvironment/floodplains#40 — driver-side half (config surface, key column on the gpkg)
 
 ## Cross-refs
