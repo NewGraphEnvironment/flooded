@@ -67,6 +67,15 @@ and NA where x is NA. That is the same form as the no-anchor path, so all paths 
 - [x] Confirm the bundled-tile 10 m pins in `test-vignette_data.R` still hold. That tile has no cut-off
       cells, so they should not move
 
+## Phase 3b: Plan-review fixes (review-plan.md)
+- [x] B1: `fl_valley_confine()` zeroes NA where the DEM has a value, after the `mask(dem)` line
+      (cut-off cells, slope-NA specks, supplied slope NA). The `mask_cost` line from Phase 3 is
+      removed: the guard subsumes it (mutation: dropping it failed nothing), and during cleanup it
+      let hole filling see a cut-off island as a hole
+- [x] AC2/AC3: island test asserts the fixture reaches the case; tests for a DEM speck in a gap and a
+      supplied slope with NA where the DEM is valid, on both cleanup paths (both fail without the guard)
+- [x] G1: CLAUDE.md Test-data-traps bullet no longer says the bundled DEM hides #65
+
 ## Phase 4: Cached vignette data
 - [ ] If the STAC endpoint is reachable, re-run `data-raw/stac_dem_vignette_data.R` into scratch and
       compare the lidar NA counts with the pins (115,385 at 5 m; 11,020 at 1 m site). If they match,

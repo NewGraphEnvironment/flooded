@@ -16,3 +16,8 @@
   fl_valley_confine() with and without slope.tif. @return softened to "fails the cost criterion
   rather than reading as NA": hole fill can still set a small enclosed island to 1 before
   fl_patch_rm(), so "is 0" would overclaim.
+- Plan review delivered after Phases 1-3 (findings in review-plan.md). B1 reproduced: a 2x2 DEM speck
+  inside a gap (4/4 NA) and a supplied slope with a 31x31 NA block (625/961 NA) came out NA on both
+  paths. Fixed with a guard after `mask(dem)`; the Phase 3 `mask_cost` line was dropped (subsumed;
+  mutation showed no test depended on it). Mutation without the guard: speck and slope tests fail.
+  Bundled-tile output still identical to main's, with and without slope.tif.

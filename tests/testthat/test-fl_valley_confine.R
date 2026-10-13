@@ -452,18 +452,63 @@ island_fixture <- function() {
   list(dem = dem, streams = streams_sf, island = island, ring = ring, outer = outer)
 }
 
+# Run both cleanup paths. size_threshold = 1 removes no patch (fl_patch_rm()
+# returns early); the default removes some on this tile. size_threshold is read
+# only by fl_patch_rm(), so the two outputs differ exactly when it removed one.
+vc_both_paths <- function(dem, streams, ...) {
+  lapply(c(p1 = 1, p5000 = 5000), function(size) {
+    terra::values(
+      fl_valley_confine(dem, streams, area_field = "upstream_area_ha",
+                        channel_buffer = FALSE, size_threshold = size, ...)
+    )[, 1]
+  })
+}
+
 test_that("DEM cells cut off from every stream are 0, on both cleanup paths (#65)", {
   f <- island_fixture()
 
-  # size_threshold = 1 removes no patch (fl_patch_rm() returns early); the
-  # default removes some on this tile.
-  for (size in c(1, 5000)) {
-    v <- terra::values(
-      fl_valley_confine(f$dem, f$streams, area_field = "upstream_area_ha",
-                        channel_buffer = FALSE, size_threshold = size)
-    )[, 1]
-    expect_true(all(v[f$island] == 0L), info = paste("size_threshold =", size))
-    expect_true(all(is.na(v[f$ring])), info = paste("size_threshold =", size))
-    expect_false(anyNA(v[-f$outer]), info = paste("size_threshold =", size))
+  # Fixture reaches the case: the island interior has slope but no cost distance.
+  slope <- tan(terra::terrain(f$dem, "slope", unit = "degrees") * pi / 180) * 100
+  stream_r <- fl_stream_rasterize(f$streams, f$dem, field = "upstream_area_ha")
+  cost <- terra::values(fl_cost_distance(slope, stream_r))[, 1]
+  interior <- terra::cellFromRowColCombine(f$dem, 344:366, 574:596)
+  expect_true(all(!is.na(terra::values(slope)[interior, 1])))
+  expect_true(all(is.na(cost[interior])))
+
+  v <- vc_both_paths(f$dem, f$streams)
+  expect_true(any(v$p1 != v$p5000, na.rm = TRUE))
+  for (p in names(v)) {
+    expect_true(all(v[[p]][f$island] == 0L), info = p)
+    expect_true(all(is.na(v[[p]][f$ring])), info = p)
+    expect_false(anyNA(v[[p]][-f$outer]), info = p)
+  }
+})
+
+test_that("a speck of DEM inside a gap is 0, not NA, on both cleanup paths (#65)", {
+  f <- island_fixture()
+  # Leave a 2 x 2 speck of DEM in the middle of an otherwise solid 31 x 31 gap:
+  # no slope anywhere in it, and no measured neighbour within a focal window.
+  speck <- terra::cellFromRowColCombine(f$dem, 355:356, 585:586)
+  f$dem[setdiff(f$island, speck)] <- NA
+
+  v <- vc_both_paths(f$dem, f$streams)
+  for (p in names(v)) {
+    expect_true(all(v[[p]][speck] == 0L), info = p)
+    expect_true(all(is.na(v[[p]][setdiff(f$outer, speck)])), info = p)
+  }
+})
+
+test_that("cells where a supplied slope is NA but the DEM is not are 0 (#65)", {
+  dem <- terra::rast(testdata_path("dem.tif"))
+  streams_sf <- sf::st_read(testdata_path("streams.gpkg"), quiet = TRUE)
+  slope <- terra::rast(testdata_path("slope.tif"))
+  block <- terra::cellFromRowColCombine(dem, 340:370, 570:600)
+  slope[block] <- NA
+
+  v <- vc_both_paths(dem, streams_sf, slope = slope)
+  for (p in names(v)) {
+    # The DEM is complete, so no cell may be NA, the block's interior included.
+    expect_false(anyNA(v[[p]]), info = p)
+    expect_true(all(v[[p]][block] == 0L), info = p)
   }
 })

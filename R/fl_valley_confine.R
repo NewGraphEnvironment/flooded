@@ -49,9 +49,10 @@
 #'
 #' @return A `SpatRaster` with binary values: `1` = unconfined valley, `0` =
 #'   confined / hillslope. A cell is `NA` wherever `dem` is `NA`, unless the
-#'   channel buffer or a waterbody covers it, in which case it is `1`. A cell
-#'   that has a slope value but that a gap cuts off from every stream has no
-#'   cost distance; it fails the cost criterion rather than reading as `NA`.
+#'   channel buffer or a waterbody covers it, in which case it is `1`. Every
+#'   cell with a DEM value is `0` or `1`, including one that a gap cuts off from
+#'   every stream (it has no cost distance, so it fails the cost criterion) and
+#'   one whose slope is `NA`.
 #'
 #' @details
 #' The algorithm combines four criteria via intersection (AND):
@@ -228,11 +229,6 @@ fl_valley_confine <- function(dem, streams,
   # --- 3. Cost distance mask ---
   cost <- fl_cost_distance(slope, stream_r)
   mask_cost <- fl_mask(cost, threshold = cost_threshold, operator = "<")
-  # costDist cannot cross NA, so ground that a DEM gap cuts off from every
-  # stream has friction but no cost distance. No stream can reach it: it fails
-  # the criterion, rather than reading as unmeasured. Left NA, it came out NA or
-  # 0 depending on whether fl_patch_rm() had some other patch to remove (#65).
-  mask_cost <- terra::ifel(is.na(cost) & !is.na(slope), 0L, mask_cost)
 
   # --- 4. Flood mask ---
   flood <- fl_flood_model(dem, stream_r,
@@ -275,10 +271,18 @@ fl_valley_confine <- function(dem, streams,
   valleys <- terra::ifel(valleys >= 1, 1L, 0L)
 
   # No DEM, no measurement (#63). The focal filters smear 1s and 0s into a gap's
-  # edge, so restore NA here. Before the overlays,
-  # not after: the channel buffer and waterbodies do not depend on the DEM, so a
-  # channel or lake inside a DEM gap is still a channel or lake.
+  # edge, so restore NA here. Before the overlays, not after: the channel buffer
+  # and waterbodies do not depend on the DEM, so a channel or lake inside a DEM
+  # gap is still a channel or lake.
   valleys <- terra::mask(valleys, dem)
+  # The converse (#65): a DEM value is a measurement, so every cell with one is
+  # 0 or 1. Among the cells that reach here NA: ground a gap cuts off from every
+  # stream (costDist cannot cross NA, so no stream reaches it and it fails the
+  # cost criterion), and a cell with elevation but no slope (a speck of DEM inside
+  # a gap, or a user `slope` with NA where `dem` has values). Zeroed here, after
+  # cleanup, so hole filling does not see a cut-off island as a hole. Before #65
+  # fl_patch_rm() zeroed them, but only when it had some other patch to remove.
+  valleys <- terra::ifel(is.na(valleys) & !is.na(dem), 0L, valleys)
 
   # --- Add features (OR into valley output) ---
 
