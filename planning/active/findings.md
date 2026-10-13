@@ -83,3 +83,12 @@ scratch `STAC_DEM_TILE_DIR`. 04:36:21 to 05:02:18 UTC. Both rasters identical ce
 committed cache: 5 m-on-10 m NA 115,385 / ones 46,656; 1 m site NA 11,020 / ones 31,030. stac_meta
 differs only in flooded_version, git_sha (empty: copy has no .git) and date_built. Cache left
 unchanged. (A first run on pre-B1 code was stopped at the 1 m stage once B1 landed.)
+
+## Where the zeroing sits (code-check round 3)
+
+The zeroing must come before the 3 x 3 modal filter, because `na.rm = TRUE` skips NA voters. Main's
+removal path (inside fl_patch_rm()) zeroed every NA there. Zeroing after the filter (round 2
+placement) changed DEM-valid cells next to NA regions: valley-floor 13 x 13 supplied-slope NA block
+gave 120/169 ones vs 92; an island behind a 1-cell ring gave 34/121 vs 2. Final placement (right
+after fl_patch_rm(), then mask(dem)) is identical to main's removal path on every fixture measured
+(`scratchpad equiv.R`: ring1/ring2 on valley floor, ring3 island, slope-NA valley/hill, bundled).

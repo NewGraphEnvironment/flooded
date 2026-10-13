@@ -432,11 +432,10 @@ test_that("a waterbody inside an NA DEM gap is valley, the rest of the gap NA (#
 
 # --- DEM cells cut off from every stream (#65) -------------------------------
 # A gap that encloses ground with no stream leaves that ground with a DEM value
-# but no cost distance (costDist cannot cross NA), so it fails the cost
-# criterion. This fixture's 3-cell ring is too wide for the 3 x 3 cleanup
-# filters to reach across, so the whole island is 0; behind a 1-2 cell gap they
-# can mark part of it 1. Before #65 it came out NA when fl_patch_rm() had no patch
-# to remove and 0 when it did, so run both paths.
+# but no cost distance (costDist cannot cross NA). Before #65 it came out NA
+# when fl_patch_rm() had no patch to remove and 0 when it did, so run both
+# paths. This island sits on hillslope behind a 3-cell ring, where it is all 0;
+# near valley floor, cleanup can mark cut-off cells 1 (see @return).
 island_fixture <- function() {
   dem <- terra::rast(testdata_path("dem.tif"))
   streams_sf <- sf::st_read(testdata_path("streams.gpkg"), quiet = TRUE)
@@ -466,7 +465,7 @@ vc_both_paths <- function(dem, streams, ...) {
   })
 }
 
-test_that("DEM cells cut off from every stream are 0, on both cleanup paths (#65)", {
+test_that("DEM cells cut off from every stream are measured, not NA, on both paths (#65)", {
   f <- island_fixture()
 
   # Fixture reaches the case: the island interior has slope but no cost distance.
@@ -486,7 +485,7 @@ test_that("DEM cells cut off from every stream are 0, on both cleanup paths (#65
   }
 })
 
-test_that("a speck of DEM inside a gap is 0, not NA, on both cleanup paths (#65)", {
+test_that("a speck of DEM inside a gap is measured, not NA, on both paths (#65)", {
   f <- island_fixture()
   # Leave a 2 x 2 speck of DEM in the middle of an otherwise solid 31 x 31 gap:
   # no slope anywhere in it, and no measured neighbour within a focal window.
@@ -500,7 +499,7 @@ test_that("a speck of DEM inside a gap is 0, not NA, on both cleanup paths (#65)
   }
 })
 
-test_that("cells where a supplied slope is NA but the DEM is not are 0 (#65)", {
+test_that("cells where a supplied slope is NA but the DEM is not are measured, not NA (#65)", {
   dem <- terra::rast(testdata_path("dem.tif"))
   streams_sf <- sf::st_read(testdata_path("streams.gpkg"), quiet = TRUE)
   slope <- terra::rast(testdata_path("slope.tif"))
@@ -511,6 +510,27 @@ test_that("cells where a supplied slope is NA but the DEM is not are 0 (#65)", {
   for (p in names(v)) {
     # The DEM is complete, so no cell may be NA, the block's interior included.
     expect_false(anyNA(v[[p]]), info = p)
+    # On this hillslope site the whole block is 0; on valley floor, cleanup
+    # marks the cells near its edge 1.
     expect_true(all(v[[p]][block] == 0L), info = p)
+  }
+})
+
+test_that("cells NA before the majority filter vote in it as 0 (#65)", {
+  # Before #65, fl_patch_rm()'s removal path zeroed every NA cell ahead of the
+  # 3 x 3 modal filter, so they voted 0; that is the path every run now takes.
+  # Zeroing after the filter instead lets it skip them, and more cells near
+  # them come out 1: 120 of these 169, against 92 on the old removal path. A
+  # 13 x 13 supplied-slope NA block on valley floor, with no stream cell in it.
+  dem <- terra::rast(testdata_path("dem.tif"))
+  streams_sf <- sf::st_read(testdata_path("streams.gpkg"), quiet = TRUE)
+  slope <- terra::rast(testdata_path("slope.tif"))
+  block <- terra::cellFromRowColCombine(dem, 311:323, 229:241)
+  slope[block] <- NA
+
+  v <- vc_both_paths(dem, streams_sf, slope = slope)
+  for (p in names(v)) {
+    expect_false(anyNA(v[[p]]), info = p)
+    expect_equal(sum(v[[p]][block] == 1L), 92L, info = p)
   }
 })

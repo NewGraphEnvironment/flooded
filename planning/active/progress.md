@@ -22,3 +22,10 @@
   mutation showed no test depended on it). Mutation without the guard: speck and slope tests fail.
   Bundled-tile output still identical to main's, with and without slope.tif.
 - Phase 4: stac-dem rebuilt in scratch on final logic; rasters identical to the cache, kept. Parsnip recomputed; identical. Code-check rounds 1-2 done (round 1: two prose fixes; round 2 clean); round 3 running.
+- Code-check round 3 found a defect inside the B1 fix: zeroing after the modal filter let it skip
+  those cells (valley-floor slope-NA block: 120/169 ones vs 92 on main's removal path). Fixed by
+  zeroing all NA right after fl_patch_rm() (main's removal path, made the only path) and dropping the
+  post-mask guard. Measured vs main (6b5cd1d) on 6 fixtures x 2 paths: identical to main at
+  size_threshold 5000 everywhere; at 1, differs only where main left DEM-valid NA. New test pins
+  92/169; it fails against the round 2 placement. stac cache rebuilt on the round-2 code was
+  identical to the cache, and the round-3 code reproduces main's removal path, which built it.
