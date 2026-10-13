@@ -1,0 +1,24 @@
+16:48:20Z terra 1.9.50 links GDAL 3.13.0 PROJ 9.8.1 
+16:48:20Z sf 1.1.2 links GDAL 3.8.5 PROJ 9.5.1; sf_proj_network() = FALSE 
+16:48:20Z flooded 0.6.6 (load_all, git cbeaa79) 
+16:48:20Z streams_co3: 4877 segments; waterbodies_co3: 412 
+16:48:21Z PROJ pipeline sf would use 3979 -> 3005: Inverse of Canada Atlas Lambert + Inverse of NAD83 to NAD83(CSRS) (4) + British Columbia Albers (accuracy 2 m) 
+16:49:27Z source cells read: old crop 8777100, new crop 8801084 (x1.0027) 
+16:49:27Z old    res 30.430634931  xmin 847157.099813  ymin 957244.821618  ncell 16478040  NA 7654526 (46.5%) 
+16:49:27Z mid    res 30.430634931  xmin 867881.708223  ymin 962947.011747  ncell 8901062  NA 1682830 (18.9%) 
+16:49:27Z new30  res 30.000000000  xmin 867870.000000  ymin 962940.000000  ncell 9162504  NA 1733542 (18.9%) 
+16:49:33Z sf warp extent equals template: TRUE 
+16:49:34Z (a) fl_dem_aoi vs terra default  cells 7428962  NA-mismatch 0  differ exactly 0  differ as Float32 0  max |diff| 0 m 
+16:49:34Z (a) terra default vs by_util     cells 7428962  NA-mismatch 90  differ exactly 7322512  differ as Float32 7322512  max |diff| 3.34497 m 
+16:49:35Z (a) terra by_util vs sf gdalwarp cells 7428987  NA-mismatch 162  differ exactly 7428976  differ as Float32 7364775  max |diff| 11.336 m 
+16:49:35Z (a) terra default vs sf gdalwarp cells 7428911  NA-mismatch 224  differ exactly 7428900  differ as Float32 7375426  max |diff| 11.3075 m 
+16:50:41Z (b) old    valley cells 384634  35618.0 ha  (cpu 79 s, elapsed 65 s, load { 4.53 4.65 3.70 }) 
+16:51:13Z (b) mid    valley cells 385073  35658.7 ha  (cpu 47 s, elapsed 32 s, load { 5.14 4.80 3.79 }) 
+16:51:46Z (b) new30  valley cells 396346  35671.1 ha  (cpu 49 s, elapsed 33 s, load { 4.82 4.77 3.82 }) 
+16:51:46Z (b) old -> mid: 35618.0 -> 35658.7 ha (+0.11%); shared 34220.8 ha, old-only 1397.3 ha, mid-only 1437.9 ha 
+16:51:46Z (b) mid -> new30: 35658.7 -> 35671.1 ha (+0.03%); shared 34239.1 ha, mid-only 1419.5 ha, new30-only 1432.0 ha 
+16:51:47Z (b) old -> new30: 35618.0 -> 35671.1 ha (+0.15%); shared 34212.3 ha, old-only 1405.7 ha, new30-only 1458.8 ha 
+16:51:47Z done 
+16:52:41Z (c) terra 30 m vs warp_sf.tif  35671.1 -> 35809.9 ha (+0.39%); shared 35488.1 ha, terra-only 183.1 ha, sf-only 321.8 ha 
+16:53:13Z (c) terra 30 m vs w_et0.tif    35671.1 -> 35792.8 ha (+0.34%); shared 35511.1 ha, terra-only 160.0 ha, sf-only 281.7 ha 
+16:53:13Z done (c) 

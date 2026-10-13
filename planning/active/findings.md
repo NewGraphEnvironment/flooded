@@ -84,3 +84,47 @@ here, and MRDEM is Float32. To be filed as its own issue.
 | Error | Resolution |
 |-------|------------|
 | `identical(terra::ext(a), terra::ext(b))` FALSE for equal extents (compares S4 pointers) | Compare `as.vector(terra::ext())` |
+
+## Phase 3 measurements — MORR coho ff04 (2026-10-13, m1)
+
+Log: `planning/active/logs/20261013_measure_grid_morr.log` (harnesses `measure_grid.R`,
+`measure_proj.R`, `probe_warp_proj.R`). terra 1.9.50 / GDAL 3.13.0 / PROJ 9.8.1; sf 1.1.2 /
+GDAL 3.8.5 / PROJ 9.5.1; `sf_proj_network()` FALSE.
+
+**Source bytes.** Old crop 8,777,100 source cells; new crop (padded 2 cells) 8,801,084 (×1.0027).
+The output grid: old 16,478,040 cells, 46.5% NA (rotated crop); new 9,162,504 cells, 18.9% NA.
+
+**(b) Grid only, same terra stack.**
+
+| arm | grid | ha | vs old |
+|---|---|---|---|
+| old | GDAL 3.13.0's choice, 30.4306 m | 35,618.0 | (reproduces the issue's figure exactly) |
+| mid | aligned, 30.4306 m | 35,658.7 | +0.11% |
+| new30 | aligned, 30 m | 35,671.1 | +0.15% |
+
+Totals barely move, but about 1,400 ha changes hands at the margins between any two arms
+(old→new30: 34,212.3 shared, 1,405.7 old-only, 1,458.8 new-only). Most of it is the res change
+(mid→new30: 1,419.5 / 1,432.0 ha), not the origin.
+
+**(a) Values on one identical 30 m grid.**
+- `fl_dem_aoi()` vs `terra::project` default: identical.
+- terra default vs terra `by_util`: 98.6% of cells differ, max 3.34 m.
+- terra vs sf gdalwarp: nearly every cell differs, max 11.3 m.
+- sf default vs sf `-et 0`, within one stack: median 0.095 m, p99 1.07 m, max 4.23 m. That is the warp's 0.125-pixel approximation.
+- terra default vs sf `-et 0`: median 0.21 m, p99 1.94 m, max 11.1 m.
+
+**Mechanism: the PROJ database, not GDAL's warper.**
+- One point near MORR, MRDEM CRS → 3005, sf (PROJ 9.5.1) minus terra (PROJ 9.8.1) gives
+  **+1.13 m east, −0.61 m north**. The issue's grid move, published minus today, was +1.138 m,
+  −0.612 m.
+- PROJ 9.5.1's best operation is "Inverse of NAD83 to NAD83(CSRS) (4)", accuracy 2 m, and its
+  pipeline has **no datum step**: inverse lcc, then aea, both on GRS80.
+- PROJ 9.8.1 (`projinfo`, bbox −128,53,−125,56) offers only two candidates, both via WGS 84 with
+  Helmert steps: "NAD83(CSRS) to WGS 84 (2) + Inverse of NAD83 to WGS 84 (1)", 5 m.
+- So GDAL's suggested grid moved because the datum operation moved. The issue's "isolated: the GDAL
+  version" table changed GDAL and PROJ together (review B2).
+
+**(c) The fixed grid with values from the other stack** (`measure_proj.R`): terra 30 m 35,671.1 ha
+→ sf gdalwarp 35,809.9 ha (+0.39%; 183.1 terra-only, 321.8 sf-only); with `-et 0`, 35,792.8 ha
+(+0.34%). The grid fix alone does **not** make a re-run reproduce across toolchains. The operation
+choice moves the floodplain about as much as the grid did (−0.42% in the issue).
