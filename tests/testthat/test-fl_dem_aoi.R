@@ -239,6 +239,9 @@ test_that("fl_dem_aoi leaves the operation to PROJ outside projected NAD83 pairs
   # Geographic NAD83: GDAL and sf disagree on axis order around a pipeline
   expect_identical(flooded:::dem_pipeline_nad83(sf::st_crs(3005), sf::st_crs(4269)), "")
   expect_identical(flooded:::dem_pipeline_nad83(sf::st_crs(4617), sf::st_crs(3005)), "")
+  # Projected but northing first (NAD83(CSRS) / New Brunswick Stereographic)
+  expect_identical(flooded:::dem_pipeline_nad83(sf::st_crs(3979), sf::st_crs(2953)), "")
+  expect_identical(flooded:::dem_pipeline_nad83(sf::st_crs(2953), sf::st_crs(3005)), "")
   # "North American Datum of 1983 (CSRS) version 2" is a NAD83 realization too
   expect_match(flooded:::dem_pipeline_nad83(sf::st_crs(22209), sf::st_crs(3005)), "^\\+proj=pipeline")
   expect_match(flooded:::dem_pipeline_nad83(sf::st_crs(3979), sf::st_crs(3005)), "^\\+proj=pipeline")
@@ -251,6 +254,15 @@ test_that("fl_dem_aoi returns data for a geographic NAD83 target (#67)", {
 
   # A supplied pipeline here once gave an all-NA raster (axis order)
   result <- fl_dem_aoi(aoi, source = testdata_path("dem.tif"), buffer = 100, target_crs = 4269, res = 1e-4)
+
+  expect_gt(terra::global(!is.na(result), "sum")[[1]], 0.5 * terra::ncell(result))
+})
+
+test_that("fl_dem_aoi returns data for a northing-first projected target (#67)", {
+  aoi <- sf::st_read(testdata_path("streams.gpkg"), quiet = TRUE)
+
+  # A pinned pipeline here once gave an all-NA raster (EPSG:2953 is N, E)
+  result <- fl_dem_aoi(aoi, source = testdata_path("dem.tif"), buffer = 100, target_crs = 2953)
 
   expect_gt(terra::global(!is.na(result), "sum")[[1]], 0.5 * terra::ncell(result))
 })

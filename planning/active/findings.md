@@ -170,10 +170,26 @@ GDAL 3.8.5 was not run directly, since m1 has only terra on 3.13.0).
 ## Code-check round 1 (2026-10-13) — `review-round1.md`
 
 All seven findings reproduced or accepted, and fixed (44f5902 and the commit after it):
-- **Bug:** a geographic NAD83 side (4269 target, 4617 source) gave an **all-NA** raster with the pin. GDAL's warper applies lat/lon axis order around a supplied pipeline; `sf::st_transform(pipeline=)` does not. Reproduced: 0 vs 356,902 cells. `dem_pipeline_nad83()` now returns `""` when either side is geographic. Test added.
+- **Bug:** a geographic NAD83 side (4269 target, 4617 source) gave an **all-NA** raster with the pin. (The mechanism as first written here, "GDAL applies lat/lon order and sf does not", was wrong; see round 2.) Reproduced: 0 vs 356,902 cells. `dem_pipeline_nad83()` now returns `""` when either side is geographic. Test added.
 - **Bug:** `terra::project(pipeline=)` arrived in terra 1.9-25 (terra NEWS). DESCRIPTION now has `terra (>= 1.9-25)`.
 - **Fragile:** the datum regex missed "North American Datum **of** 1983 (CSRS) version N" (e.g. EPSG:22209). Fixed and tested.
 - **False comment:** the pin test's residual is Float32 rounding, not warp approximation. Fixed.
 - **Test passing for the wrong reason:** the "string used as given" arm passed the pin itself. It now passes the pin plus a 50 m affine shift.
 - **Low:** the Rd claimed "about 30.43 m"; Parsnip came out at 30.54 m. Now "30.4 to 30.5 m, depending on the AOI".
 - **Low:** the log's git labels name the HEAD at run time, while the runs measured uncommitted working-tree code. `measure_grid.R`/`measure_proj.R` measured what landed in cb53fb7 (no pin). `measure_pin.R`/`probe_warp_kernel.R` measured the pin as committed in 30df085. A note is appended to the log.
+
+## Code-check round 2 (2026-10-13) — `review-round2.md`: a defect inside round 1's fix
+
+Round 1 guarded on `st_is_longlat()`, a **proxy**. The property is axis order. Projected NAD83 CRSs
+with northing first were still pinned (35 of 1,920 non-deprecated EPSG NAD83/GRS80 projected
+CRSs, per the reviewer; e.g. EPSG:2953 and the Illinois ICS83 ftUS zones).
+- As a target: all NA. Reproduced: 0 of 380,042 cells pinned, 261,921 with `""`.
+- As a source: the template lands about 7,700 km away, and data fills it there.
+
+Fixed: pin only when both CRSs' first two WKT axes are `east`, `north`. The longlat guard is
+kept, because it also excludes the `unitconvert` steps the builder no longer writes. Tests for 2953
+as target and source. The prose mechanism is now "a pipeline can meet a CRS's authority axis order
+on some paths", not the round-1 claim about sf.
+
+Because a round found a defect inside a fix, the loop ends by enumeration, not by a quiet round:
+`planning/active/enumerate_pin.R`.

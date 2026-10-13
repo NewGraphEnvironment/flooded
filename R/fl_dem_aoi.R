@@ -32,10 +32,12 @@
 #'   reproject. `NULL` (default) pins the operation between two NAD83
 #'   realizations on GRS80 (NAD83, NAD83(CSRS), ...; MRDEM-30 to BC Albers is
 #'   one) to the projection-only pipeline, with no datum shift, when both are
-#'   projected, and leaves any other pair to PROJ. `""` leaves every pair to
+#'   projected with easting-then-northing axes, and leaves any other pair to
+#'   PROJ. `""` leaves every pair to
 #'   PROJ. Any other string is a PROJ pipeline passed to [terra::project()] as
-#'   given; supply one only between projected CRSs, because GDAL applies a
-#'   geographic CRS's lat/lon axis order around it.
+#'   given; supply one only between CRSs whose axes are easting then northing,
+#'   because a pipeline can meet a CRS's authority axis order (lat/lon, or
+#'   northing first) and silently return `NA` or a misplaced raster.
 #'
 #' @return A `SpatRaster` covering the buffered AOI. In the source CRS (and
 #'   `res` unset or equal to the source's) it is a crop on the source grid.
@@ -213,10 +215,11 @@ fl_dem_aoi <- function(aoi, source = NULL, buffer = 2000, target_crs = NULL,
 # Left to PROJ, the choice follows its EPSG database: PROJ 9.5.1 picked "NAD83
 # to NAD83(CSRS) (4)", itself shift-free (2 m accuracy), and PROJ 9.8.1 routes
 # through WGS 84 with Helmert steps (5 m), moving MRDEM ~1.3 m in BC (#67). For
-# any other pair, and wherever either side is geographic, this returns "" and
-# PROJ chooses: GDAL's warper applies the CRS's lat/lon axis order around a
-# supplied pipeline and sf::st_transform() does not, so no one string serves
-# both, and a wrong one silently yields an all-NA raster.
+# any other pair this returns "" and PROJ chooses. Both sides must also be
+# easting-then-northing: a supplied pipeline meets the CRS's authority axis
+# order (lat/lon for geographic NAD83, northing first for e.g. EPSG:2953) on
+# some paths and east/north on others, and the mismatch returns an all-NA
+# raster or one placed thousands of km away, without an error.
 dem_pipeline_nad83 <- function(from, to) {
   is_nad83 <- function(crs) {
     w <- crs$wkt
@@ -226,8 +229,15 @@ dem_pipeline_nad83 <- function(from, to) {
       grepl('"(North American Datum (of )?1983[^"]*|NAD83[^"]*)"$', datum) &&
       grepl('"GRS 1980"$', ellps)
   }
+  east_north <- function(crs) {
+    w <- crs$wkt
+    dirs <- sub('.*,[[:space:]]*', "",
+                regmatches(w, gregexpr('AXIS\\["[^"]*",[[:space:]]*[a-z]+', w))[[1]])
+    length(dirs) >= 2L && identical(dirs[1:2], c("east", "north"))
+  }
   if (!is_nad83(from) || !is_nad83(to)) return("")
   if (isTRUE(sf::st_is_longlat(from)) || isTRUE(sf::st_is_longlat(to))) return("")
+  if (!east_north(from) || !east_north(to)) return("")
   step <- function(crs) {
     tok <- strsplit(trimws(crs$proj4string), "[[:space:]]+")[[1]]
     tok <- tok[!grepl("^\\+(no_defs|type|towgs84|datum|vunits|geoidgrids)", tok)]

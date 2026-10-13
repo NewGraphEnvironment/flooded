@@ -87,9 +87,9 @@ tests/testthat/          — unit tests for each fl_* function (17 test files, 1
 - **`fl_dem_aoi()` never lets GDAL or PROJ choose** (#67). A reprojected DEM lands on the buffered
   AOI's bbox in `target_crs`, snapped outward to multiples of `res` (default: the source cell size,
   so MRDEM-30 → 30 m). Between projected CRSs on NAD83 realizations (GRS80) the datum step is
-  pinned to the projection-only pipeline (geographic sides are left to PROJ: GDAL's warper wraps
-  a supplied pipeline in lat/lon axis order and `sf::st_transform()` does not, and the wrong one
-  returns an all-NA raster) (`pipeline = NULL`; `""` hands it back to PROJ). Both were moving:
+  pinned to the projection-only pipeline (only when both are easting-then-northing; otherwise PROJ
+  picks: a supplied pipeline can meet a CRS's authority axis order (lat/lon, or northing first
+  as in EPSG:2953) and returns an all-NA or misplaced raster with no error) (`pipeline = NULL`; `""` hands it back to PROJ). Both were moving:
   PROJ 9.5.1 applies no shift for MRDEM's NAD83(CSRS) → BC Albers and PROJ 9.8.1 routes through
   WGS 84, ~1.3 m apart, and GDAL's *suggested grid* follows the operation. That, not the GDAL
   version, is what moved MORR −0.42% between toolchains; an earlier diagnosis blamed GDAL because
