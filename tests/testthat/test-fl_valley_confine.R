@@ -429,3 +429,41 @@ test_that("a waterbody inside an NA DEM gap is valley, the rest of the gap NA (#
   expect_true(all(v[f$block][in_lake] == 1L))
   expect_true(all(is.na(v[f$block][!in_lake])))
 })
+
+# --- DEM cells cut off from every stream (#65) -------------------------------
+# A gap that encloses ground with no stream leaves that ground with a DEM value
+# but no cost distance (costDist cannot cross NA). Unreachable fails the cost
+# criterion, so it is 0. Before #65 it came out NA when fl_patch_rm() had no
+# patch to remove and 0 when it did, so run both paths.
+island_fixture <- function() {
+  dem <- terra::rast(testdata_path("dem.tif"))
+  streams_sf <- sf::st_read(testdata_path("streams.gpkg"), quiet = TRUE)
+  # 31 x 31 window more than 200 m from any stream; a 3-cell NA ring around its
+  # edge encloses a 25 x 25 island of valid DEM.
+  rows <- 340:370
+  cols <- 570:600
+  stopifnot(all(rows %in% seq_len(nrow(dem))), all(cols %in% seq_len(ncol(dem))))
+  outer <- terra::cellFromRowColCombine(dem, rows, cols)
+  island <- terra::cellFromRowColCombine(dem, rows[4:28], cols[4:28])
+  ring <- setdiff(outer, island)
+  stream_r <- fl_stream_rasterize(streams_sf, dem, field = "upstream_area_ha")
+  stopifnot(!any(!is.na(terra::values(stream_r)[outer, 1])))
+  dem[ring] <- NA
+  list(dem = dem, streams = streams_sf, island = island, ring = ring, outer = outer)
+}
+
+test_that("DEM cells cut off from every stream are 0, on both cleanup paths (#65)", {
+  f <- island_fixture()
+
+  # size_threshold = 1 removes no patch (fl_patch_rm() returns early); the
+  # default removes some on this tile.
+  for (size in c(1, 5000)) {
+    v <- terra::values(
+      fl_valley_confine(f$dem, f$streams, area_field = "upstream_area_ha",
+                        channel_buffer = FALSE, size_threshold = size)
+    )[, 1]
+    expect_true(all(v[f$island] == 0L), info = paste("size_threshold =", size))
+    expect_true(all(is.na(v[f$ring])), info = paste("size_threshold =", size))
+    expect_false(anyNA(v[-f$outer]), info = paste("size_threshold =", size))
+  }
+})

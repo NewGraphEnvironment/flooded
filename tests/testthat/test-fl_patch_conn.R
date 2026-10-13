@@ -65,3 +65,59 @@ test_that("fl_patch_conn errors on mismatched grids", {
 
   expect_error(fl_patch_conn(r1, r2), "same extent")
 })
+
+# --- NA input cells (#65) ---------------------------------------------------
+# The connected path used to set NA to 0; the no-anchor path (x * 0L) kept it.
+na_conn_grid <- function() {
+  vals <- matrix(0L, 10, 10)
+  vals[2:3, 2:3] <- 1L  # Patch A
+  vals[8:9, 8:9] <- 1L  # Patch B
+  vals[5:6, 5:6] <- NA  # NA block clear of both patches
+  vals[7, 8] <- NA      # NA touching Patch B
+  vals
+}
+
+na_conn_anchor <- function(row, col) {
+  anchor_vals <- matrix(NA_real_, 10, 10)
+  anchor_vals[row, col] <- 1
+  terra::rast(anchor_vals, extent = terra::ext(0, 100, 0, 100), crs = "EPSG:3005")
+}
+
+test_that("fl_patch_conn keeps NA cells NA on the connected path (#65)", {
+  vals <- na_conn_grid()
+  r <- terra::rast(vals, extent = terra::ext(0, 100, 0, 100), crs = "EPSG:3005")
+
+  out <- fl_patch_conn(r, na_conn_anchor(2, 2))
+
+  expected <- vals
+  expected[8:9, 8:9] <- 0L
+  # terra::rast(matrix) fills by row, so compare against the row-major vector.
+  expect_equal(terra::values(out)[, 1], as.vector(t(expected)))
+})
+
+test_that("fl_patch_conn keeps NA cells NA when no patch touches an anchor (#65)", {
+  vals <- na_conn_grid()
+  r <- terra::rast(vals, extent = terra::ext(0, 100, 0, 100), crs = "EPSG:3005")
+
+  out <- fl_patch_conn(r, na_conn_anchor(5, 1))
+
+  expected <- vals
+  expected[!is.na(expected)] <- 0L
+  expect_equal(terra::values(out)[, 1], as.vector(t(expected)))
+})
+
+test_that("fl_patch_conn keeps the slope.tif NA border ring NA (#65)", {
+  dem <- terra::rast(testdata_path("dem.tif"))
+  slope <- terra::rast(testdata_path("slope.tif"))
+  streams_sf <- sf::st_read(testdata_path("streams.gpkg"), quiet = TRUE)
+
+  stream_r <- fl_stream_rasterize(streams_sf, dem, field = "upstream_area_ha")
+  gentle <- fl_mask(slope, threshold = 9, operator = "<=")
+  na_in <- which(is.na(terra::values(gentle)[, 1]))
+  # Fixture reaches the case: the ring is there to be zeroed.
+  expect_equal(length(na_in), 2892L)
+
+  connected <- fl_patch_conn(gentle, stream_r)
+
+  expect_identical(which(is.na(terra::values(connected)[, 1])), na_in)
+})

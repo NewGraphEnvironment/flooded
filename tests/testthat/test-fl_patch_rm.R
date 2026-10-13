@@ -64,3 +64,36 @@ test_that("fl_patch_rm errors on invalid inputs", {
   expect_error(fl_patch_rm(r, min_area = -1))
   expect_error(fl_patch_rm("not_raster", min_area = 100))
 })
+
+# --- NA input cells (#65) ---------------------------------------------------
+# NA used to survive only on the early return (no patch small enough to remove)
+# and come back as 0 otherwise. Run both paths against one grid.
+na_patch_grid <- function() {
+  vals <- matrix(0L, 10, 10)
+  vals[2:3, 2:4] <- 1L   # 6-cell patch, 600 m2
+  vals[7:8, 7] <- 1L     # 2-cell patch, 200 m2
+  vals[5:6, 1:3] <- NA   # NA block clear of both patches
+  vals[9, 7] <- NA       # NA touching the small patch
+  vals
+}
+
+test_that("fl_patch_rm keeps NA cells NA when it removes a patch (#65)", {
+  vals <- na_patch_grid()
+  r <- terra::rast(vals, extent = terra::ext(0, 100, 0, 100), crs = "EPSG:3005")
+
+  out <- fl_patch_rm(r, min_area = 500)
+
+  expected <- vals
+  expected[7:8, 7] <- 0L
+  # terra::rast(matrix) fills by row, so compare against the row-major vector.
+  expect_equal(terra::values(out)[, 1], as.vector(t(expected)))
+})
+
+test_that("fl_patch_rm keeps NA cells NA when it removes nothing (#65)", {
+  vals <- na_patch_grid()
+  r <- terra::rast(vals, extent = terra::ext(0, 100, 0, 100), crs = "EPSG:3005")
+
+  out <- fl_patch_rm(r, min_area = 1)
+
+  expect_equal(terra::values(out)[, 1], as.vector(t(vals)))
+})

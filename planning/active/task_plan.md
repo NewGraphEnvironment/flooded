@@ -42,16 +42,16 @@ Fix shape, verified in a probe: `terra::ifel(is.na(kept), x * 0L, x)`. `x * 0L` 
 and NA where x is NA. That is the same form as the no-anchor path, so all paths agree.
 
 ## Phase 1: Tests that reproduce #65 (failing first)
-- [ ] `test-fl_patch_rm.R`: synthetic grid with an NA block, run on both paths (a `min_area` that
+- [x] `test-fl_patch_rm.R`: synthetic grid with an NA block, run on both paths (a `min_area` that
       removes a patch, and one that removes none). Assert NA cells stay NA on both, and 0/1 cells match
       the expected result
-- [ ] `test-fl_patch_conn.R`: NA block on the connected path and on the no-anchor path. NA preserved on both
-- [ ] `test-fl_patch_conn.R`: in the existing real-data test, assert that the `slope.tif` NA border ring
+- [x] `test-fl_patch_conn.R`: NA block on the connected path and on the no-anchor path. NA preserved on both
+- [x] `test-fl_patch_conn.R`: in the existing real-data test, assert that the `slope.tif` NA border ring
       (2,892 cells) is still NA in the output, cell for cell
-- [ ] `test-fl_valley_confine.R`: fixture with a hollow NA ring in the bundled DEM, placed away from
+- [x] `test-fl_valley_confine.R`: fixture with a hollow NA ring in the bundled DEM, placed away from
       streams, so an island of DEM cells has no stream path. Assert the island is 0, not NA, under both a
       `size_threshold` that removes no patch and the default
-- [ ] Confirm each new test fails on current `main` code (restore-the-bug check), counting errors as failures
+- [x] Confirm each new test fails on current `main` code (restore-the-bug check), counting errors as failures
 
 ## Phase 2: Fix the helpers
 - [ ] `fl_patch_rm()`: replace the zeroing `ifel` with `ifel(is.na(masked), x * 0L, x)`; update
