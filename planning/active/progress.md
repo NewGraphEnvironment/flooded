@@ -21,3 +21,4 @@
   paths. Fixed with a guard after `mask(dem)`; the Phase 3 `mask_cost` line was dropped (subsumed;
   mutation showed no test depended on it). Mutation without the guard: speck and slope tests fail.
   Bundled-tile output still identical to main's, with and without slope.tif.
+- Phase 4: stac-dem rebuilt in scratch on final logic; rasters identical to the cache, kept. Parsnip recomputed; identical. Code-check rounds 1-2 done (round 1: two prose fixes; round 2 clean); round 3 running.

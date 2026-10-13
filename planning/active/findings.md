@@ -74,3 +74,12 @@ cells — the cache predates #63 or was written without a nodata flag.
 Cut-off ground behind a 1-2 cell DEM gap can still come out 1: the closing and modal filters reach
 across. Bundled tile, 1-cell NA ring around rows 307:315, cols 237:245: 24 of 49 island cells 1, 25 0,
 all 49 with no cost distance. Pre-existing cleanup behaviour; the roxygen now says so.
+
+## stac-dem cache rebuild (Phase 4, 2026-10-13)
+
+`data-raw/stac_dem_vignette_data.R` run in a scratch copy of the tree (it hard-codes
+`inst/vignette-data/` as output), code at 0e81083 (logic final; later commits are prose), tiles in a
+scratch `STAC_DEM_TILE_DIR`. 04:36:21 to 05:02:18 UTC. Both rasters identical cell for cell to the
+committed cache: 5 m-on-10 m NA 115,385 / ones 46,656; 1 m site NA 11,020 / ones 31,030. stac_meta
+differs only in flooded_version, git_sha (empty: copy has no .git) and date_built. Cache left
+unchanged. (A first run on pre-B1 code was stopped at the 1 m stage once B1 landed.)
