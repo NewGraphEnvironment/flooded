@@ -17,7 +17,7 @@ Default \code{4}.}
 }
 \value{
 A \code{SpatRaster} with the same grid as \code{x}. Only patches touching
-at least one anchor cell are retained.
+at least one anchor cell are retained; \code{NA} cells stay \code{NA}.
 }
 \description{
 Identifies connected patches of \code{1}-valued cells and keeps only those that

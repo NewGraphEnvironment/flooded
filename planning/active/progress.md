@@ -10,3 +10,4 @@
   ring, valley_confine island). The rm early-return and conn no-anchor tests pass by design: those
   paths already kept NA, and the tests pin them. Island probe on main: 625/625 NA at
   size_threshold = 1, 625/625 zero at 5000.
+- Phase 2: both helpers use `ifel(is.na(kept), x * 0L, x)`; helper tests 14/14 pass.

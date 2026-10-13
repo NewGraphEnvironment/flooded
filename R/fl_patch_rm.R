@@ -10,7 +10,7 @@
 #'   Default `4` (matches VCA 4-connectivity convention).
 #'
 #' @return A `SpatRaster` with the same grid as `x`. Small patches are set to
-#'   `0`; all other values are unchanged.
+#'   `0`; all other values are unchanged, and `NA` cells stay `NA`.
 #'
 #' @examples
 #' slope <- terra::rast(system.file("testdata/slope.tif", package = "flooded"))
@@ -40,10 +40,12 @@ fl_patch_rm <- function(x, min_area, directions = 4L) {
 
   if (length(small_ids) == 0L) return(x)
 
-  # Reclassify small patch IDs to NA, then use as mask
+  # Reclassify small patch IDs to NA, then use as mask. `masked` is NA off the
+  # kept patches, including on NA input cells; x * 0L zeroes the rest without
+  # turning those NA into 0, matching the early return above (#65).
   rcl <- cbind(small_ids, NA)
   masked <- terra::classify(patches, rcl)
-  out <- terra::ifel(is.na(masked) | is.na(patches), 0L, x)
+  out <- terra::ifel(is.na(masked), x * 0L, x)
   names(out) <- names(x)
   out
 }

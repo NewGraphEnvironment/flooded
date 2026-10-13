@@ -54,10 +54,10 @@ and NA where x is NA. That is the same form as the no-anchor path, so all paths 
 - [x] Confirm each new test fails on current `main` code (restore-the-bug check), counting errors as failures
 
 ## Phase 2: Fix the helpers
-- [ ] `fl_patch_rm()`: replace the zeroing `ifel` with `ifel(is.na(masked), x * 0L, x)`; update
+- [x] `fl_patch_rm()`: replace the zeroing `ifel` with `ifel(is.na(masked), x * 0L, x)`; update
       `@return` to say NA cells stay NA on every path
-- [ ] `fl_patch_conn()`: `ifel(is.na(kept), x * 0L, x)`; `@return` says NA is preserved
-- [ ] `devtools::document()`
+- [x] `fl_patch_conn()`: `ifel(is.na(kept), x * 0L, x)`; `@return` says NA is preserved
+- [x] `devtools::document()`
 
 ## Phase 3: Cut-off cells in fl_valley_confine() read 0
 - [ ] After `mask_cost`: `mask_cost <- terra::ifel(is.na(cost) & !is.na(slope), 0L, mask_cost)`, with
