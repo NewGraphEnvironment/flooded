@@ -28,7 +28,7 @@ fl_patch_rm(x, min_area, directions = 4L)
 ## Value
 
 A `SpatRaster` with the same grid as `x`. Small patches are set to `0`;
-all other values are unchanged.
+all other values are unchanged, and `NA` cells stay `NA`.
 
 ## Examples
 

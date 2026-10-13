@@ -114,9 +114,12 @@ fl_valley_confine(
 
 A `SpatRaster` with binary values: `1` = unconfined valley, `0` =
 confined / hillslope. A cell is `NA` wherever `dem` is `NA`, unless the
-channel buffer or a waterbody covers it, in which case it is `1`. A cell
-with a DEM value can also be `NA` when a gap cuts it off from every
-stream (#65).
+channel buffer or a waterbody covers it, in which case it is `1`. Every
+cell with a DEM value is `0` or `1`. That includes a cell that a gap
+cuts off from every stream, which has no cost distance, and a cell whose
+slope is `NA`: neither can pass the criterion it cannot be tested on,
+but the morphological cleanup can still mark one `1` when it lies within
+a few cells of valley floor.
 
 ## Details
 

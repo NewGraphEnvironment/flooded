@@ -160,9 +160,12 @@ warns and forwards to <code>area_field</code>; removal is tracked in flooded#53.
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A <code>SpatRaster</code> with binary values: <code>1</code> = unconfined valley, <code>0</code> =
 confined / hillslope. A cell is <code>NA</code> wherever <code>dem</code> is <code>NA</code>, unless the
-channel buffer or a waterbody covers it, in which case it is <code>1</code>. A cell
-with a DEM value can also be <code>NA</code> when a gap cuts it off from every stream
-(#65).</p>
+channel buffer or a waterbody covers it, in which case it is <code>1</code>. Every
+cell with a DEM value is <code>0</code> or <code>1</code>. That includes a cell that a gap cuts
+off from every stream, which has no cost distance, and a cell whose slope
+is <code>NA</code>: neither can pass the criterion it cannot be tested on, but the
+morphological cleanup can still mark one <code>1</code> when it lies within a few
+cells of valley floor.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

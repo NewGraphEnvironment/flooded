@@ -28,7 +28,7 @@ fl_patch_conn(x, anchor, directions = 4L)
 ## Value
 
 A `SpatRaster` with the same grid as `x`. Only patches touching at least
-one anchor cell are retained.
+one anchor cell are retained; `NA` cells stay `NA`.
 
 ## Examples
 
