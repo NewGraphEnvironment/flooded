@@ -1,5 +1,26 @@
 # Changelog
 
+## flooded 0.7.0
+
+- [`fl_dem_aoi()`](https://newgraphenvironment.github.io/flooded/reference/fl_dem_aoi.md)
+  now reprojects onto a grid aligned to multiples of a new `res`
+  argument (default: the source cell size, so MRDEM-30 gives exactly
+  30 m) instead of a grid GDAL chose (about 30.43-30.54 m). Between
+  projected NAD83 CRSs with easting/northing axes it pins the datum step
+  to a projection-only pipeline, so a DEM no longer moves when PROJ’s
+  EPSG database changes; the new `pipeline = ""` restores PROJ’s choice,
+  and a string is used as given
+  ([\#67](https://github.com/NewGraphEnvironment/flooded/issues/67)).
+  The grid had been moving with PROJ’s NAD83(CSRS)-to-NAD83 operation
+  (no shift in PROJ 9.5.1, about 1.3 m via WGS 84 in 9.8.1), not with
+  the GDAL version.
+  - **Results change for every caller**: the DEM grid moves once. A MORR
+    coho floodplain moved +0.17%; the Parsnip vignette cache, rebuilt,
+    moved -0.6% (41,142.9 to 40,888.2 ha).
+  - **API change**: a geographic `target_crs` now requires `res`; the
+    error quotes the degree value at the AOI.
+  - Requires terra (\>= 1.9-25).
+
 ## flooded 0.6.6
 
 - [`fl_patch_rm()`](https://newgraphenvironment.github.io/flooded/reference/fl_patch_rm.md)
