@@ -32,8 +32,10 @@
 #'   reproject. `NULL` (default) pins the operation between two NAD83
 #'   realizations on GRS80 (NAD83, NAD83(CSRS), ...; MRDEM-30 to BC Albers is
 #'   one) to the projection-only pipeline, with no datum shift, when both are
-#'   projected, and leaves any other pair to PROJ. `""` leaves every pair to PROJ. Any other string is a
-#'   PROJ pipeline passed to [terra::project()] as given.
+#'   projected, and leaves any other pair to PROJ. `""` leaves every pair to
+#'   PROJ. Any other string is a PROJ pipeline passed to [terra::project()] as
+#'   given; supply one only between projected CRSs, because GDAL applies a
+#'   geographic CRS's lat/lon axis order around it.
 #'
 #' @return A `SpatRaster` covering the buffered AOI. In the source CRS (and
 #'   `res` unset or equal to the source's) it is a crop on the source grid.

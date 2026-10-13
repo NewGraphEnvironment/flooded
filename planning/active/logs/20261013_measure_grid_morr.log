@@ -41,3 +41,4 @@
 17:24:07Z (e) terra(3.13) vs gdalwarp 3.8.5                  differ 7428980 of 7428996  median 0.207516  max 9.872103
 17:24:07Z (e) terra(3.13) vs gdalwarp 3.8.5 -wo XSCALE=1 -wo YSCALE=1 differ 7428963 of 7428996  median 0.098595  max 3.347291
 17:24:07Z (e) terra(3.13) vs gdalwarp 3.8.5 -wo XSCALE=1 -wo YSCALE=1 -et 0 differ 7428808 of 7428996  median 0.000021  max 0.000122
+NOTE (added after the runs): the 'git <sha>' labels above are HEAD at run time; each run measured uncommitted working-tree code. measure_grid/measure_proj = the code committed in cb53fb7 (template, no pin); measure_pin/probe = the pin as committed in 30df085.

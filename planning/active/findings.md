@@ -142,7 +142,7 @@ a change of datum step is a flooded commit with a NEWS line.
 - Recording: floodplains to record terra's GDAL/PROJ (follow-up issue).
 - The pinned pipeline gives 0 m from PROJ 9.5.1's own shift-free "NAD83 to NAD83(CSRS) (4)" on a
   test point. Test: a synthetic x-field in 3979 projected to 3005 matches the shift-free answer
-  (median 3 cm, p99 6 cm = warp approximation) and misses it by ~0.71 m when PROJ 9.8.1 chooses.
+  (median 3 cm, p99 6 cm: Float32 rounding of the warp output at x ~ -1.9e6, per code-check round 1) and misses it by ~0.71 m when PROJ 9.8.1 chooses.
   Mutation (default → `""`) turns the pin tests red.
 
 ## Phase 3 continued — what the pin buys on MORR (log entries (d) and (e))
@@ -166,3 +166,14 @@ a change of datum step is a flooded commit with a NEWS line.
 Net: with the template **and** the pin, a DEM from `fl_dem_aoi()` reproduces across GDAL
 3.8.5 ↔ 3.13.0 and PROJ 9.5.1 ↔ 9.8.1 to within 0.12 mm per cell (shown for the warper; terra on
 GDAL 3.8.5 was not run directly, since m1 has only terra on 3.13.0).
+
+## Code-check round 1 (2026-10-13) — `review-round1.md`
+
+All seven findings reproduced or accepted, and fixed (44f5902 and the commit after it):
+- **Bug:** a geographic NAD83 side (4269 target, 4617 source) gave an **all-NA** raster with the pin. GDAL's warper applies lat/lon axis order around a supplied pipeline; `sf::st_transform(pipeline=)` does not. Reproduced: 0 vs 356,902 cells. `dem_pipeline_nad83()` now returns `""` when either side is geographic. Test added.
+- **Bug:** `terra::project(pipeline=)` arrived in terra 1.9-25 (terra NEWS). DESCRIPTION now has `terra (>= 1.9-25)`.
+- **Fragile:** the datum regex missed "North American Datum **of** 1983 (CSRS) version N" (e.g. EPSG:22209). Fixed and tested.
+- **False comment:** the pin test's residual is Float32 rounding, not warp approximation. Fixed.
+- **Test passing for the wrong reason:** the "string used as given" arm passed the pin itself. It now passes the pin plus a 50 m affine shift.
+- **Low:** the Rd claimed "about 30.43 m"; Parsnip came out at 30.54 m. Now "30.4 to 30.5 m, depending on the AOI".
+- **Low:** the log's git labels name the HEAD at run time, while the runs measured uncommitted working-tree code. `measure_grid.R`/`measure_proj.R` measured what landed in cb53fb7 (no pin). `measure_pin.R`/`probe_warp_kernel.R` measured the pin as committed in 30df085. A note is appended to the log.
