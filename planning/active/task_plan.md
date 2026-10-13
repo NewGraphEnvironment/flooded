@@ -39,15 +39,18 @@ Decisions taken at the gate:
 - [x] Same CRS with `res` NULL or the source's: crop only, as before
 - [x] Roxygen `@param res`, `@return`, `@details` (#67, PROJ caveat review A1); `devtools::document()`; no lints in the changed files; full suite
 
-## Phase 3: Measure (MORR coho ff04) — `planning/active/measure_grid.R`
-- [ ] (a) Values on one identical 30 m grid: terra default vs terra `by_util` vs sf gdalwarp (Float64). Exact and Float32 difference counts and max |diff|; both GDAL/PROJ versions, the pipeline and the PROJ network state logged (review B2)
-- [ ] (b) Three arms, all under current flooded in one session: old GDAL-chosen (3.13.0) grid, aligned at the old 30.4306 m, aligned at 30 m. Hectares plus shared and only-in-one area (review G1). Source cells read, old vs new crop
-- [ ] Record in `findings.md`; edit the #67 issue body; commit the log
+## Phase 3: Measure (MORR coho ff04): `measure_grid.R`, `measure_proj.R`, `measure_pin.R`, `probe_warp_kernel.R`
+- [x] (a) Values on one identical 30 m grid across warp paths and stacks. GDAL/PROJ versions, pipeline and network state logged (review B2)
+- [x] (b) Three grid arms under current flooded: old 35,618.0 → mid 35,658.7 → 30 m 35,671.1 ha (+0.15%), about 1,400 ha changing hands at the margins. Source cells read ×1.0027
+- [x] Root cause: the PROJ datum operation (9.5.1 shift-free vs 9.8.1 via WGS 84, ~1.3 m) moved GDAL's suggested grid. Gate decision 2: **pin plus override plus recording**
+- [x] Pin `pipeline` for NAD83 pairs (`dem_pipeline_nad83()`), override argument, tests (synthetic x-field, mutation-checked)
+- [x] With the pin, GDAL 3.8.5's warper with terra's settings reproduces terra on 3.13.0 to 0.12 mm; the residual vs `gdalwarp` defaults is warp settings, not version
+- [x] Recorded in `findings.md`; log `logs/20261013_measure_grid_morr.log`. (Issue body edit in Phase 5, once the numbers are final)
 
-## Phase 4: Rebuild the Parsnip cache from cached inputs (review B1)
-- [ ] From the cached `pars.gpkg` streams and waterbodies (no DB): `fl_dem_aoi()` → `pars_dem.tif`, `fl_valley_confine()` ff04 → `pars_valleys.tif`, `fl_valley_poly()` → the `floodplain` layer. Confirm 30 m and alignment; other layers and `pars_meta.rds` unchanged (md5 of the exported layers)
-- [ ] Re-derive or label every Parsnip figure in `vignettes/pars-floodplain.Rmd`, `inst/notes/methodology.md` and `inst/notes/floodplain_interpretation.md` (41,142.9 ha, ~20 Mcells, the ff02/04/06 cell table, 6.4%, 4.6%, 84.7%, 90.1%). Keep the #49 sentence as history on the pre-#67 grid; add the #67 change separately (review G3)
-- [ ] Render the vignette; check figures and inline numbers
+## Phase 4: Rebuild the Parsnip cache from cached inputs (review B1) — `rebuild_pars.R`
+- [x] DEM 30 m on multiples of 30, 14.1 Mcell (was 20.9 Mcell at 30.54 m). ff04 40,888.2 ha (was 41,142.9), ff06 42,667.8, ff07 43,460.1. The 8 other layers and `pars_meta.rds` are unchanged (md5)
+- [x] Re-derived or labelled: vignette (6.3%, #49 history kept, #67 sentence, ~14 Mcells); `methodology.md` (pre-0.7.0 labels plus a re-run line); `floodplain_interpretation.md` (pre-0.7.0 labels, 4.4%)
+- [x] Rendered the vignette: no live area figures; the full-WSG map checked
 
 ## Phase 5: Docs, follow-ups, release notes
 - [ ] `CLAUDE.md` design-decision bullet: `fl_dem_aoi()` grid rule (#67), scoped to the reprojecting path (review A3), with measured deltas

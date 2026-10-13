@@ -1,0 +1,10 @@
+17:25:04Z previous dem: res 30.542285  ncell 20888140  non-NA 51.3% 
+17:25:05Z streams 8436, waterbodies 664 
+17:25:32Z new dem: res 30 x 30  ext 1184100, 1296930, 1050300, 1162770  ncell 14099989  non-NA 69.8% 
+17:26:39Z ff04: 454313 cells, 40888.2 ha (elapsed 66 s, cpu 93 s) 
+17:27:47Z ff06: 474087 cells, 42667.8 ha (elapsed 66 s, cpu 92 s) 
+17:28:52Z ff07: 482890 cells, 43460.1 ha (elapsed 65 s, cpu 94 s) 
+17:28:52Z ff04 -> ff06 +4.4%, ff04 -> ff07 +6.3% 
+17:28:52Z non-floodplain layers unchanged: TRUE (aoi, streams, waterbodies, railways, roads, reserves, parks, named_streams) 
+17:28:52Z pars_meta.rds unchanged: TRUE 
+17:28:52Z done 
