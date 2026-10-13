@@ -107,7 +107,7 @@ reaches the boundary where the flood mask is the binding criterion:
 
 - bundled 10 m tile, where flood binds: `ff04` 476.8 -> **231.9 ha**, 49% retained
 - Parsnip WSG on MRDEM-30, where slope and cost bind first: `ff04` 48,603.1 -> **41,142.9 ha**,
-  84.7% retained
+  84.7% retained (both on the pre-0.7.0 grid; 40,888.2 ha on 0.7.0's fixed 30 m grid, flooded#67)
 - `restoration_wedzin_kwa_2024` on MRDEM-30: `co_ff04` 17,100.7 -> **14,345.3 ha**, 84% retained
 
 So **absolute hectare claims from 0.4.1 need restating.** Whether a *proportional* claim survives is
@@ -125,7 +125,8 @@ for a floodplain-derived numerator, means asking where the denominator sits:
   share of the watershed group, published as `fp_pct_aoi` beside the hectares in each 2025
   fish-passage report appendix that carries a floodplain delineation (peace, skeena, fraser). The
   peace report publishes **48,116 ha — 8.6%** of the 5,596.6 km² Parsnip group; this package's
-  corrected delineation of the same group, measured the same way, is **40,807.9 ha — 7.3%**. The
+  corrected delineation of the same group, measured the same way, is **40,807.9 ha — 7.3%** (on the
+  pre-0.7.0 grid, flooded#67). The
   share falls ~15%, exactly as the area does, because the watershed group does not shrink. A share
   of this shape has to be **re-run**, not held. Only the floodplain's *own area* over a fixed
   denominator rescales by the group's retention; a numerator that is a length or a count does not,
@@ -153,7 +154,7 @@ channel/waterbody unions are all order-preserving — but the
 *gaps between* them do not, and not even predictably in direction. On the bundled 10 m tile the
 `ff06`–`ff04` gap widens, 12.5% -> 23.9%, while `ff04`–`ff02` narrows, 48.63% -> 25.07%
 (section 9). On the Parsnip WSG at 30 m the corrected `ff06`–`ff04` gap is 4.6% — 41,142.9 ->
-43,015.6 ha (`methodology.md`) — because there the slope and cost criteria bind before
+43,015.6 ha (`methodology.md`; 4.4% on 0.7.0's fixed grid, 40,888.2 -> 42,667.8 ha) — because there the slope and cost criteria bind before
 the flood mask does. So a restatement factor cannot be *assumed* to transfer: the two 30 m
 watersheds here agree to within 1%, while the 10 m tile sits 35-36 points of retention away.
 

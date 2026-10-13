@@ -32,7 +32,7 @@ Depends:
     R (>= 4.1)
 Imports:
     cli,
-    terra,
+    terra (>= 1.9-25),
     sf,
     tibble
 Suggests:

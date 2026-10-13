@@ -1,0 +1,44 @@
+16:48:20Z terra 1.9.50 links GDAL 3.13.0 PROJ 9.8.1 
+16:48:20Z sf 1.1.2 links GDAL 3.8.5 PROJ 9.5.1; sf_proj_network() = FALSE 
+16:48:20Z flooded 0.6.6 (load_all, git cbeaa79) 
+16:48:20Z streams_co3: 4877 segments; waterbodies_co3: 412 
+16:48:21Z PROJ pipeline sf would use 3979 -> 3005: Inverse of Canada Atlas Lambert + Inverse of NAD83 to NAD83(CSRS) (4) + British Columbia Albers (accuracy 2 m) 
+16:49:27Z source cells read: old crop 8777100, new crop 8801084 (x1.0027) 
+16:49:27Z old    res 30.430634931  xmin 847157.099813  ymin 957244.821618  ncell 16478040  NA 7654526 (46.5%) 
+16:49:27Z mid    res 30.430634931  xmin 867881.708223  ymin 962947.011747  ncell 8901062  NA 1682830 (18.9%) 
+16:49:27Z new30  res 30.000000000  xmin 867870.000000  ymin 962940.000000  ncell 9162504  NA 1733542 (18.9%) 
+16:49:33Z sf warp extent equals template: TRUE 
+16:49:34Z (a) fl_dem_aoi vs terra default  cells 7428962  NA-mismatch 0  differ exactly 0  differ as Float32 0  max |diff| 0 m 
+16:49:34Z (a) terra default vs by_util     cells 7428962  NA-mismatch 90  differ exactly 7322512  differ as Float32 7322512  max |diff| 3.34497 m 
+16:49:35Z (a) terra by_util vs sf gdalwarp cells 7428987  NA-mismatch 162  differ exactly 7428976  differ as Float32 7364775  max |diff| 11.336 m 
+16:49:35Z (a) terra default vs sf gdalwarp cells 7428911  NA-mismatch 224  differ exactly 7428900  differ as Float32 7375426  max |diff| 11.3075 m 
+16:50:41Z (b) old    valley cells 384634  35618.0 ha  (cpu 79 s, elapsed 65 s, load { 4.53 4.65 3.70 }) 
+16:51:13Z (b) mid    valley cells 385073  35658.7 ha  (cpu 47 s, elapsed 32 s, load { 5.14 4.80 3.79 }) 
+16:51:46Z (b) new30  valley cells 396346  35671.1 ha  (cpu 49 s, elapsed 33 s, load { 4.82 4.77 3.82 }) 
+16:51:46Z (b) old -> mid: 35618.0 -> 35658.7 ha (+0.11%); shared 34220.8 ha, old-only 1397.3 ha, mid-only 1437.9 ha 
+16:51:46Z (b) mid -> new30: 35658.7 -> 35671.1 ha (+0.03%); shared 34239.1 ha, mid-only 1419.5 ha, new30-only 1432.0 ha 
+16:51:47Z (b) old -> new30: 35618.0 -> 35671.1 ha (+0.15%); shared 34212.3 ha, old-only 1405.7 ha, new30-only 1458.8 ha 
+16:51:47Z done 
+16:52:41Z (c) terra 30 m vs warp_sf.tif  35671.1 -> 35809.9 ha (+0.39%); shared 35488.1 ha, terra-only 183.1 ha, sf-only 321.8 ha 
+16:53:13Z (c) terra 30 m vs w_et0.tif    35671.1 -> 35792.8 ha (+0.34%); shared 35511.1 ha, terra-only 160.0 ha, sf-only 281.7 ha 
+16:53:13Z done (c) 
+17:20:16Z pinned (default): git a08c094 res 30 ext 867870, 958230, 962940, 1054200 
+17:20:16Z pipeline: +proj=pipeline +step +inv +proj=lcc +lat_0=49 +lon_0=-95 +lat_1=49 +lat_2=77 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +step +proj=aea +lat_0=45 +lon_0=-126 +lat_1=50 +lat_2=58.5 +x_0=1000000 +y_0=0 +units=m +ellps=GRS80 
+17:20:22Z (d) terra pinned vs sf -ct pinned      cells 7428996 NA-mismatch 88 differ 7428985  median 0.2075  p99 1.8662  max 9.8721 m 
+17:20:22Z (d) terra pinned vs terra by_util      cells 7428965 NA-mismatch 118 differ 7348079  median 0.1337  p99 1.0228  max 3.6068 m 
+17:20:23Z (d) terra by_util vs sf -ct pinned     cells 7428987 NA-mismatch 162 differ 7428976  median 0.2126  p99 1.9385  max 11.3360 m 
+17:20:23Z (d) terra pinned vs sf -ct -et 0       cells 7428996 NA-mismatch 0 differ 7428988  median 0.1857  p99 1.5287  max 9.7085 m 
+17:20:56Z (d) terra pinned: 35679.2 ha 
+17:21:28Z (d) terra pinned vs sf_pin      35679.2 -> 35809.9 ha (+0.37%); terra-only 152.5 ha, other-only 283.2 ha 
+17:22:01Z (d) terra pinned vs sf_pin_et0  35679.2 -> 35792.8 ha (+0.32%); terra-only 141.7 ha, other-only 255.3 ha 
+17:22:34Z (d) terra pinned vs terra_util  35679.2 -> 35678.5 ha (-0.00%); terra-only 103.1 ha, other-only 102.5 ha 
+17:22:34Z done (d) 
+17:24:07Z (e) sf default vs sf -ct pinned (bilinear)   differ 0 of 7429084  median 0.0000  p99 0.0000  max 0.0000
+17:24:07Z (e) GDAL3.13 by_util -et0 vs 3.8.5 -et0, near differ 381737 of 7428965  median 0.0000  p99 8.4705  max 73.6117
+17:24:07Z (e) GDAL3.13 default vs 3.8.5 -et0, near     differ 0 of 7428996  median 0.0000  p99 0.0000  max 0.0000
+17:24:07Z (e) GDAL3.13 by_util -et0 vs 3.8.5 -et0, bilinear differ 7428957 of 7428965  median 0.2105  p99 1.9229  max 11.5161
+17:24:07Z (e) GDAL3.13 default vs 3.8.5 -et0, bilinear differ 7428988 of 7428996  median 0.1857  p99 1.5287  max 9.7085
+17:24:07Z (e) terra(3.13) vs gdalwarp 3.8.5                  differ 7428980 of 7428996  median 0.207516  max 9.872103
+17:24:07Z (e) terra(3.13) vs gdalwarp 3.8.5 -wo XSCALE=1 -wo YSCALE=1 differ 7428963 of 7428996  median 0.098595  max 3.347291
+17:24:07Z (e) terra(3.13) vs gdalwarp 3.8.5 -wo XSCALE=1 -wo YSCALE=1 -et 0 differ 7428808 of 7428996  median 0.000021  max 0.000122
+NOTE (added after the runs): the 'git <sha>' labels above are HEAD at run time; each run measured uncommitted working-tree code. measure_grid/measure_proj = the code committed in cb53fb7 (template, no pin); measure_pin/probe = the pin as committed in 30df085.

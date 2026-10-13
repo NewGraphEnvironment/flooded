@@ -4,7 +4,14 @@
 \alias{fl_dem_aoi}
 \title{Fetch a DEM cropped to an AOI}
 \usage{
-fl_dem_aoi(aoi, source = NULL, buffer = 2000, target_crs = NULL)
+fl_dem_aoi(
+  aoi,
+  source = NULL,
+  buffer = 2000,
+  target_crs = NULL,
+  res = NULL,
+  pipeline = NULL
+)
 }
 \arguments{
 \item{aoi}{An \code{sf} or \code{sfc} object — polygon, lines, or points. Buffered by
@@ -25,10 +32,31 @@ Default \code{2000}.}
 PROJ string, or \code{crs} object). \code{NULL} (default) returns the raster in the
 input AOI's CRS. \strong{Reprojection happens after crop}, never before — the
 84 GB MRDEM COG must not be reprojected as a whole.}
+
+\item{res}{Numeric. Output cell size in \code{target_crs} units, used when the
+raster is reprojected. \code{NULL} (default) takes the source's cell size when
+the source and \code{target_crs} share linear units (MRDEM-30 to BC Albers gives
+exactly 30 m). A \code{target_crs} in degrees has no single equivalent of a
+metre cell, so there \code{res} must be given; the error quotes the degree
+value at the AOI's latitude. Any other unit mismatch (a US-foot target,
+a geographic source with a projected target) also needs \code{res}.}
+
+\item{pipeline}{Character or \code{NULL}. The PROJ coordinate operation used to
+reproject. \code{NULL} (default) pins the operation between two NAD83
+realizations on GRS80 (NAD83, NAD83(CSRS), ...; MRDEM-30 to BC Albers is
+one) to the projection-only pipeline, with no datum shift, when both are
+projected with easting-then-northing axes, and leaves any other pair to
+PROJ. \code{""} leaves every pair to
+PROJ. Any other string is a PROJ pipeline passed to \code{\link[terra:project]{terra::project()}} as
+given; supply one only between CRSs whose axes are easting then northing,
+because a pipeline can meet a CRS's authority axis order (lat/lon, or
+northing first) and silently return \code{NA} or a misplaced raster.}
 }
 \value{
-A \code{SpatRaster} cropped to the buffered AOI extent, projected to
-\code{target_crs} if it differs from the source raster's CRS.
+A \code{SpatRaster} covering the buffered AOI. In the source CRS (and
+\code{res} unset or equal to the source's) it is a crop on the source grid.
+Otherwise it is on a grid of \code{res} cells whose edges are multiples of
+\code{res}, spanning the buffered AOI's bounding box in \code{target_crs}.
 }
 \description{
 Returns a \code{SpatRaster} of elevation cropped to a buffered AOI. Source is a
@@ -42,6 +70,34 @@ MRDEM-30 (\verb{s3://canelevation-dem/mrdem-30/mrdem-30-dtm.tif}) is a single
 84 GB Cloud-Optimized GeoTIFF in EPSG:3979 covering all of Canada. The
 \verb{/vsicurl/} access pattern range-reads only the bytes intersecting the AOI,
 so total bandwidth scales with AOI size, not the COG size.
+
+When \code{target_crs} differs from the source CRS, the raster is projected onto
+an explicit grid: the buffered AOI's bounding box in \code{target_crs}, snapped
+outward to multiples of \code{res}. The grid therefore depends only on the AOI
+and \code{res}, so the same AOI lands on the same cells whatever terra or GDAL
+version runs it, and neighbouring AOIs share one alignment. Before flooded
+0.7.0 GDAL chose the origin and cell size itself (MRDEM-30 came out at
+30.4 to 30.5 m, depending on the AOI), and that choice moved between toolchains (GDAL 3.8.5 / PROJ 9.5.1
+against GDAL 3.13.0 / PROJ 9.8.1) because the datum operation below moved
+(#67).
+Cells outside the buffered AOI can come back \code{NA}, where the grid's corners
+reach past the area read from the source.
+
+The cell values depend on the coordinate operation, and left to PROJ that
+choice follows its EPSG database: between MRDEM-30's NAD83(CSRS) and BC
+Albers' NAD83, PROJ 9.5.1 applies no datum shift and PROJ 9.8.1 routes
+through WGS 84, about 1.3 m apart in BC. So between projected CRSs on NAD83
+realizations with easting-then-northing axes (MRDEM-30 to BC Albers is one)
+the operation is pinned by default (see \code{pipeline}) and changes only with
+flooded. With it pinned, GDAL 3.8.5's warper reproduces terra on GDAL
+3.13.0 to within 0.2 mm per cell (#67). The \code{gdalwarp} utility's defaults
+(an approximate transformer and a kernel widened with scale) differ from
+terra's by up to ~10 m per cell, so re-derive a kept DEM through
+\code{fl_dem_aoi()}, not \code{gdalwarp}, and record terra's GDAL and PROJ versions
+(\code{terra::gdal(lib = "all")}) with it. When \code{aoi} is not already in
+\code{target_crs}, its bounding box is transformed through sf's PROJ, so an edge
+lying within a datum shift of a multiple of \code{res} can snap one cell
+differently on another machine.
 
 For sub-10 m riparian-scale work where lidar coverage exists, query the
 \code{stac-elevation-bc} STAC catalog and pass an item's COG URL as \code{source}. See the

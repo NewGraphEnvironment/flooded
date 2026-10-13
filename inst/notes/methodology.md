@@ -86,7 +86,8 @@ are deliberately left at `ff04` — moving them is a calibration decision for th
 not something this package should do silently.
 
 **But at 30 m it barely matters, and that is worth knowing before anyone re-runs a watershed.**
-Measured on the Parsnip WSG (MRDEM-30, 20.9 Mcell, 8,436 streams, 664 waterbodies):
+Measured on the Parsnip WSG (MRDEM-30 on the pre-0.7.0 grid GDAL chose, 30.54 m, 20.9 Mcell; 8,436
+streams, 664 waterbodies):
 
 | run | cells | ha | vs as-coded `ff04` |
 |---|---|---|---|
@@ -100,6 +101,11 @@ at 30 m the slope and cost-distance criteria bind first and the flood mask is ne
 So raising `ff` to chase Nagel's resolution equivalent does **not** recover the old extent: even
 `ff07` lands at 90% of the as-coded `ff04`. Every corrected run is a strict subset of the as-coded
 one (0 cells gained), so the fix only ever removes ground.
+
+Re-run on 0.7.0's fixed 30 m grid (14.1 Mcell, flooded#67): `ff04` 40,888.2 ha, `ff06` 42,667.8,
+`ff07` 43,460.1, so `ff04` to `ff07` spans **6.3%**, against 6.4% above. The comparison with the
+as-coded run is not repeated: it would need the 0.4.1 code on the new grid, and the finding is the
+span, which held.
 
 ### See also
 
@@ -183,7 +189,8 @@ package ships:
 
 > This table records what the **0.4.1** `fl_cost_distance()` fix did, measured under the units
 > defect that 0.5.0 later corrected (flooded#49). The valley-cell counts are therefore no longer
-> current absolute figures. They are left as measured — the finding is about the *change* the #41
+> current absolute figures, and they were taken on the pre-0.7.0 grid GDAL chose (30.54 m;
+> flooded#67). They are left as measured — the finding is about the *change* the #41
 > fix produced, and re-stating it against different inputs would not be the same measurement.
 
 Two things worth separating. MRDEM-30 — the package default source — **does** produce exact zeros
