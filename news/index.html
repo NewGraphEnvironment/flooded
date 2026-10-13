@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">flooded</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.6</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -34,9 +34,15 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/NewGraphEnvironment/flooded/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/NewGraphEnvironment/flooded/blob/v0.6.6/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.6.6" id="flooded-066">flooded 0.6.6<a class="anchor" aria-label="anchor" href="#flooded-066"></a></h2>
+<ul><li>
+<code><a href="../reference/fl_patch_rm.html">fl_patch_rm()</a></code> and <code><a href="../reference/fl_patch_conn.html">fl_patch_conn()</a></code> now keep <code>NA</code> input cells <code>NA</code> (<a href="https://github.com/NewGraphEnvironment/flooded/issues/65" class="external-link">#65</a>). Each used to turn them into 0 on one code path and keep them on the other: <code><a href="../reference/fl_patch_rm.html">fl_patch_rm()</a></code> zeroed them only when some patch was small enough to remove. A caller using either helper directly now gets <code>NA</code> back where it used to get 0, so pass <code>na.rm = TRUE</code> when summing.</li>
+<li>In <code><a href="../reference/fl_valley_confine.html">fl_valley_confine()</a></code>, <code>NA</code> now means only “no DEM”. Every cell with a DEM value is 0 or 1, including ground a gap cuts off from every stream and cells whose slope is <code>NA</code>; on the early path through <code><a href="../reference/fl_patch_rm.html">fl_patch_rm()</a></code> some of those used to come out <code>NA</code>. The bundled tile gives the same result as 0.6.5 cell for cell, and on DEMs with gaps the result now always matches what 0.6.5 gave whenever cleanup removed a patch, which is almost every real run. The cached <code>stac-dem</code> and Parsnip results are unchanged.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.6.5" id="flooded-065">flooded 0.6.5<a class="anchor" aria-label="anchor" href="#flooded-065"></a></h2>
 <ul><li>
