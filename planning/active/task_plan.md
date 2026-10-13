@@ -81,11 +81,12 @@ and NA where x is NA. That is the same form as the no-anchor path, so all paths 
       compare the lidar NA counts with the pins (115,385 at 5 m; 11,020 at 1 m site). If they match,
       leave the cache alone. If they differ, update the cache, the pins and any page prose that cites them
 - [ ] If it is unreachable, file a follow-up issue and say so in the PR
-- [ ] Check whether the Parsnip cache (`pars_valleys.tif`, a watershed-clipped DEM) can contain cut-off
+- [x] Check whether the Parsnip cache (`pars_valleys.tif`, a watershed-clipped DEM) can contain cut-off
       cells; note the outcome (no rebuild needed without a DB connection)
 
 ## Phase 5: Docs
-- [ ] Remove or rewrite the NEWS.md line 36 known-issue entry (release wording is left to `/gh-pr-merge`)
+- [x] Remove or rewrite the NEWS.md line 36 known-issue entry (release wording is left to `/gh-pr-merge`)
+      — kept: the 0.6.3 line was true at that release; the new entry is written at merge
 
 ## Validation
 

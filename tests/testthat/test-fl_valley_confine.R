@@ -435,7 +435,7 @@ test_that("a waterbody inside an NA DEM gap is valley, the rest of the gap NA (#
 # but no cost distance (costDist cannot cross NA), so it fails the cost
 # criterion. This fixture's 3-cell ring is too wide for the 3 x 3 cleanup
 # filters to reach across, so the whole island is 0; behind a 1-2 cell gap they
-# can mark its edge 1. Before #65 it came out NA when fl_patch_rm() had no patch
+# can mark part of it 1. Before #65 it came out NA when fl_patch_rm() had no patch
 # to remove and 0 when it did, so run both paths.
 island_fixture <- function() {
   dem <- terra::rast(testdata_path("dem.tif"))

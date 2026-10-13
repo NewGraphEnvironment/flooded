@@ -59,3 +59,18 @@ Cells with a DEM value that a gap cuts off from every stream (costDist NaN) read
 
 | Error | Resolution |
 |-------|------------|
+
+## Parsnip cache (Phase 4, 2026-10-13)
+
+Recomputed with the branch code (guard at 0e81083) from the cached `pars_dem.tif` and `pars.gpkg`
+streams/waterbodies, using the `data-raw/wsg_vignette_data.R` call (ff04, waterbodies, precip):
+441,054 valley cells live and cached; 0 cells differ in `== 1`; 0 DEM-valid cells NA. The valid-slope
+area is one 8-connected region (no cut-off ground). No rebuild needed.
+Side note, outside #65: `pars_valleys.tif` holds no NA although `pars_dem.tif` has 10,180,862 NA
+cells — the cache predates #63 or was written without a nodata flag.
+
+## Narrow gaps (code-check round 1)
+
+Cut-off ground behind a 1-2 cell DEM gap can still come out 1: the closing and modal filters reach
+across. Bundled tile, 1-cell NA ring around rows 307:315, cols 237:245: 24 of 49 island cells 1, 25 0,
+all 49 with no cost distance. Pre-existing cleanup behaviour; the roxygen now says so.
