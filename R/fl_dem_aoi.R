@@ -66,7 +66,8 @@
 #' choice follows its EPSG database: between MRDEM-30's NAD83(CSRS) and BC
 #' Albers' NAD83, PROJ 9.5.1 applies no datum shift and PROJ 9.8.1 routes
 #' through WGS 84, about 1.3 m apart in BC. So between projected CRSs on NAD83
-#' realizations the operation is pinned by default (see `pipeline`) and changes only with
+#' realizations with easting-then-northing axes (MRDEM-30 to BC Albers is one)
+#' the operation is pinned by default (see `pipeline`) and changes only with
 #' flooded. With it pinned, GDAL 3.8.5's warper reproduces terra on GDAL
 #' 3.13.0 to within 0.2 mm per cell (#67). The `gdalwarp` utility's defaults
 #' (an approximate transformer and a kernel widened with scale) differ from

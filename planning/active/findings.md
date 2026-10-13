@@ -193,3 +193,32 @@ on some paths", not the round-1 claim about sf.
 
 Because a round found a defect inside a fix, the loop ends by enumeration, not by a quiet round:
 `planning/active/enumerate_pin.R`.
+
+## Code-check round 3 (2026-10-13) — `review-round3.md`: the mechanism
+
+The reviewer's statement of it: whether a hand-built PROJ pipeline is valid for a CRS was decided
+from a stand-in (`st_is_longlat`, WKT regexes, names, `proj4string`, `units_gdal`) rather than from
+the libraries that run it, sf and GDAL's warper, each of which applies the CRS's authority axis
+order around the pipeline.
+- **Round 1** used geographic as a stand-in for axis order.
+- **Round 2** tests the axis order itself.
+- **Round 3** found the assumption one level up, in the enumeration harness: "no failing row" was
+  read as "every pinned CRS passes".
+
+In the package code every place the mechanism reaches was checked and found sound. `is_nad83` and
+`east_north` read sf's normalised WKT2, and a miss is the safe direction. `st_is_longlat` is still
+needed (OGC:CRS83 is lon/lat with east/north axes). Pipelines in feet are correct through both sf
+and terra, and the gate on the sf branch distinguishes axis-swapped CRSs.
+
+Fixed:
+- **The `@details` sentence** said every projected NAD83 pair is pinned; it now says east/north
+  axes only.
+- **The harness, which could pass vacuously:** every foot CRS errored with no `res` (744 of 1,886
+  pinned), and an errored or all-NA row dropped out as NA. It never exercised the sf branch, and an
+  x-only field could not see a north–south shift. Rewritten: `res` in the target's units; four
+  cases per CRS (A, A2, B, B2), so the AOI-in-source-CRS sf branch runs; an x **and** y field; and
+  a pinned case that errored or has no PROJ data counts as not passing.
+- **Proven able to fail** on 7 CRSs (3005, 2953, 26910, 23301, 2227, 22209, 3979):
+  - unmutated: 20 of 20 pinned cases pass;
+  - with the axis guard removed: 8 fail (2953 and 23301, all four cases);
+  - with `+proj=affine +yoff=150` added to the pin: all 20 fail.
