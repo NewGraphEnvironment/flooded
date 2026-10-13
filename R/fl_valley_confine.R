@@ -50,8 +50,8 @@
 #' @return A `SpatRaster` with binary values: `1` = unconfined valley, `0` =
 #'   confined / hillslope. A cell is `NA` wherever `dem` is `NA`, unless the
 #'   channel buffer or a waterbody covers it, in which case it is `1`. A cell
-#'   with a DEM value can also be `NA` when a gap cuts it off from every stream
-#'   (#65).
+#'   that has a slope value but that a gap cuts off from every stream has no
+#'   cost distance; it fails the cost criterion rather than reading as `NA`.
 #'
 #' @details
 #' The algorithm combines four criteria via intersection (AND):
@@ -228,6 +228,11 @@ fl_valley_confine <- function(dem, streams,
   # --- 3. Cost distance mask ---
   cost <- fl_cost_distance(slope, stream_r)
   mask_cost <- fl_mask(cost, threshold = cost_threshold, operator = "<")
+  # costDist cannot cross NA, so ground that a DEM gap cuts off from every
+  # stream has friction but no cost distance. No stream can reach it: it fails
+  # the criterion, rather than reading as unmeasured. Left NA, it came out NA or
+  # 0 depending on whether fl_patch_rm() had some other patch to remove (#65).
+  mask_cost <- terra::ifel(is.na(cost) & !is.na(slope), 0L, mask_cost)
 
   # --- 4. Flood mask ---
   flood <- fl_flood_model(dem, stream_r,
@@ -269,8 +274,8 @@ fl_valley_confine <- function(dem, streams,
   # Ensure binary output
   valleys <- terra::ifel(valleys >= 1, 1L, 0L)
 
-  # No DEM, no measurement (#63). fl_patch_rm() can turn NA into 0 (#65) and the focal
-  # filters smear 1s into a gap's edge, so restore NA here. Before the overlays,
+  # No DEM, no measurement (#63). The focal filters smear 1s and 0s into a gap's
+  # edge, so restore NA here. Before the overlays,
   # not after: the channel buffer and waterbodies do not depend on the DEM, so a
   # channel or lake inside a DEM gap is still a channel or lake.
   valleys <- terra::mask(valleys, dem)

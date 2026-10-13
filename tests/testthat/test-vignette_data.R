@@ -59,8 +59,8 @@ test_that("stac-dem cached lidar rasters carry the lidar gap as NA (#63)", {
   # The 10 m guard above cannot see #63: the bundled DEM has no NA. Before the
   # fix the 2019 lidar gap (22% of the tile, ~8% of the site) was cached as 0
   # outside the channel buffer; with it those cells are NA. Pin the exact counts
-  # from the rebuild at 1ea1ae5: a partial regression can leave some NA (when
-  # fl_patch_rm() returns early, #65), so "any NA" would not catch it.
+  # from the rebuild at 1ea1ae5: a partial regression can leave some NA (before
+  # #65, fl_patch_rm() kept NA on its early return), so "any NA" would not catch it.
   v5 <- terra::rast(system.file("vignette-data", "stac_valleys_5m.tif",
                                 package = "flooded", mustWork = TRUE))
   v1 <- terra::rast(system.file("vignette-data", "stac_valleys_1m_site.tif",

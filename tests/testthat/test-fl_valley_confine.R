@@ -355,8 +355,8 @@ test_that("area_field must be a single column name", {
 
 # --- NA DEM cells (#63) ----------------------------------------------------
 # The bundled DEM has no NA cells, which hid this: fl_patch_rm() turned NA
-# reaching it into 0 (#65) and the focal filters smeared 1s into it, so a coverage
-# gap came back as measured hillslope and valley. Punch a
+# reaching it into 0 (fixed in #65) and the focal filters smeared 1s into it, so a
+# coverage gap came back as measured hillslope and valley. Punch a
 # synthetic gap over a stream so the gap also overlaps valley floor, the channel
 # buffer, and (in the last test) a waterbody.
 na_block_fixture <- function() {
@@ -387,7 +387,7 @@ test_that("NA DEM cells come back NA, not 0 (#63)", {
 
   expect_true(all(is.na(v[f$block])))
   # The gap must not leak: on this fixture every cell with a DEM value is measured,
-  # including the ring next to the gap where slope is undefined (exception: #65).
+  # including the ring next to the gap where slope is undefined.
   expect_false(anyNA(v[-f$block]))
 })
 

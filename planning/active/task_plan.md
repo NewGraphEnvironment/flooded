@@ -60,11 +60,11 @@ and NA where x is NA. That is the same form as the no-anchor path, so all paths 
 - [x] `devtools::document()`
 
 ## Phase 3: Cut-off cells in fl_valley_confine() read 0
-- [ ] After `mask_cost`: `mask_cost <- terra::ifel(is.na(cost) & !is.na(slope), 0L, mask_cost)`, with
+- [x] After `mask_cost`: `mask_cost <- terra::ifel(is.na(cost) & !is.na(slope), 0L, mask_cost)`, with
       a comment saying unreachable means it fails the cost criterion
-- [ ] Remove the `(#65)` sentence from `@return`. Update the line-272 comment, the test comments at
+- [x] Remove the `(#65)` sentence from `@return`. Update the line-272 comment, the test comments at
       `test-fl_valley_confine.R:358,390` and `test-vignette_data.R:63` to reflect the fix
-- [ ] Confirm the bundled-tile 10 m pins in `test-vignette_data.R` still hold. That tile has no cut-off
+- [x] Confirm the bundled-tile 10 m pins in `test-vignette_data.R` still hold. That tile has no cut-off
       cells, so they should not move
 
 ## Phase 4: Cached vignette data
