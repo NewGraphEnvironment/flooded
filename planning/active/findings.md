@@ -57,3 +57,30 @@ Relates: floodplains#117 (the consequence for published floodplains and the prov
 
 
 
+
+## Plan review 1 (2026-10-13)
+
+`review-1.md` lists the findings and their dispositions. The one that changed the design (G2):
+cropping the source to the template's footprint read 1.9–2.3× the source cells (MORR 8.77 M →
+16.22 M, PARS 10.68 M → 24.72 M, reviewer's estimate), and every cell it added lay outside the
+buffered AOI. The crop stays at the buffered AOI's bbox in the source CRS, padded 2 cells for
+bilinear sampling.
+
+## Old-code behaviour on the bundled tile (measured 2026-10-13)
+
+`fl_dem_aoi(streams, source = dem.tif, buffer = 100, target_crs = 3157)` on main: res
+10.0124303162, xmin 282320.031212, 24,039 NA cells. The new code gives exactly 10 m on
+multiples of 10.
+
+## Pre-existing: UInt32 nodata through terra::project
+
+`inst/testdata/dem.tif` is UInt32 with nodata 4294967295. When `crop()` covers the whole source,
+terra returns the file-backed raster, and `terra::project()` fills cells beyond the source with
+4294967296 instead of NA. The old code does the same at `buffer = 2000`. It is not introduced
+here, and MRDEM is Float32. To be filed as its own issue.
+
+## Errors Encountered
+
+| Error | Resolution |
+|-------|------------|
+| `identical(terra::ext(a), terra::ext(b))` FALSE for equal extents (compares S4 pointers) | Compare `as.vector(terra::ext())` |

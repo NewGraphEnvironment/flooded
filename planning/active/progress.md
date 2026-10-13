@@ -7,3 +7,6 @@
 - Created branch `67-fl-dem-aoi-lets-gdal-choose-the-output-g` off main
 - Scaffolded PWF baseline from issue #67 with approved phases
 - Next: start Phase 1
+- Plan review (Plan agent) returned 2 blockers and 6 gaps; dispositions in `review-1.md`. The crop design changed (G2); Phase 3 got three arms (G1) and like-for-like warp paths (B2); Phase 4 rebuilds from cache, not the DB (B1)
+- Phases 1–2: grid tests written and shown red on the old code; `fl_dem_aoi(res = )` projects onto a template aligned to multiples of `res`. Full suite 372 PASS, 0 FAIL
+- Phase 3 measurement started: harness `planning/active/measure_grid.R`

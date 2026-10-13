@@ -19,37 +19,41 @@ Decisions taken at the gate:
 - **Parsnip cache.** Rebuild it in this PR and update the vignette's figures.
 
 ## Phase 1: Failing tests (tests/testthat/test-fl_dem_aoi.R)
-- [ ] Reprojecting the bundled 10 m DEM (EPSG:3005) to EPSG:3157 with no `res`: the result's res is exactly `c(10, 10)`. Its extent equals the floor/ceiling-to-10 of the buffered AOI's bbox in 3157, computed independently in the test.
-- [ ] With an explicit `res = 30`, the res is exactly 30 and every edge is a multiple of 30.
-- [ ] No NA rim: when the source covers the AOI (the bundled AOI + 100 m sits about 900 m inside `dem.tif`), the reprojected result has zero NA cells.
-- [ ] Same CRS with `res = NULL` keeps today's behaviour: the result is identical to `terra::crop(r, ..., snap = "out")`.
-- [ ] A geographic target with no `res` errors, and the message contains `res =` and a numeric suggestion. The existing 4326 test passes `res`.
-- [ ] `res` validation: a non-numeric, length > 1 or non-positive `res` errors.
-- [ ] Confirm the new grid tests fail against the current code (`r$failed > 0 | r$error`).
+- [x] Reprojecting the bundled 10 m DEM (EPSG:3005) to EPSG:3157 with no `res`: the res is exactly `c(10, 10)`, and the extent equals the floor/ceiling-to-10 of the buffered AOI's bbox in 3157, computed independently, at `tolerance = 0`
+- [x] Explicit `res = 30`: res exactly 30, every edge `%% 30 == 0`
+- [x] ~~No NA rim~~ → no NA **inside the buffered AOI** (review G2: the crop stays minimal). Mutation-checked: a shrunken crop turns it red
+- [x] AOI already in target CRS ≠ source (the floodplains shape) is aligned (review G5)
+- [x] Same CRS with a different `res` resamples onto an aligned grid (review G5)
+- [x] Same CRS with `res = NULL` is unchanged: identical to `terra::crop(r, ..., snap = "out")`
+- [x] A geographic target with no `res` errors with `res = <degrees>`; the existing 4326 tests pass `res`
+- [x] `res` validation (`"\`res\` must be"`)
+- [x] Online MRDEM test asserts 30 m and edges on multiples of 30 (review G5)
+- [x] The new grid tests fail on the old code (res 10.0124, 24,039 NA cells, unused argument `res`)
 
 ## Phase 2: Implement (R/fl_dem_aoi.R)
-- [ ] Add `res = NULL` as the **last** formal, so positional callers still work.
-- [ ] Resolve `res`. With no `res` and matching `units_gdal`, use `terra::res(r)[1]`. With no `res` and a geographic target, stop with the computed suggestion (30 m / 111,320 m per degree at the AOI centroid latitude).
-- [ ] Build the template: `sf::st_bbox(sf::st_transform(aoi_buf, target_crs))`, snapped outward to multiples of `res`, then `terra::rast(e, resolution = res, crs = target_crs$wkt)`.
-- [ ] Crop the source to the **template's footprint**, not `aoi_buf`: the template extent as a segmentized polygon, transformed to `r_crs`, padded by 2 source cells for bilinear sampling, with `snap = "out"`. Otherwise the template's axis-aligned corners fall outside the crop and come back NA.
-- [ ] `terra::project(r_clip, tmpl, method = "bilinear")`. Bilinear is already the default; it is written out here.
-- [ ] Same CRS with `res` NULL or equal to the source's: crop only, as today. Same CRS with a different `res`: take the template path.
-- [ ] Roxygen: `@param res`, plus an `@details` paragraph on the fixed grid and why it exists (#67). Then `devtools::document()`, `lintr::lint_package()`, and the full `devtools::test()`.
+- [x] `res = NULL` as the last formal
+- [x] Default `res` = source cell size when `units_gdal` matches. A geographic target stops with the degree value at the AOI's latitude; any other unit mismatch stops asking for `res`
+- [x] Template = buffered AOI's bbox in `target_crs`, snapped outward to multiples of `res`
+- [x] Crop = buffered AOI's bbox in the source CRS + 2 source cells (review G2; the template footprint read 1.9–2.3× the bytes for cells outside the AOI)
+- [x] `terra::project(r_clip, tmpl, method = "bilinear")`
+- [x] Same CRS with `res` NULL or the source's: crop only, as before
+- [x] Roxygen `@param res`, `@return`, `@details` (#67, PROJ caveat review A1); `devtools::document()`; no lints in the changed files; full suite
 
-## Phase 3: Measure the issue's two open questions (MORR, coho, ff04)
-Inputs: floodplains `data/morr/aquatic_network.gpkg` (`streams_co3`, `waterbodies_co3`), `buffer = 2000`, `target_crs = 3005`, and the ff04 parameters from floodplains' `config/morr` and `02_floodplain_model.R`. The harness goes in `planning/active/` (archived with the PWF). Record CPU time and repeat any timing claim.
-- [ ] (a) Do cell values differ between GDALs on an **identical** template? Compare `terra::project` (GDAL 3.13.0) with `sf::gdal_utils("warp", -te -tr -r bilinear)` (GDAL 3.8.5): count of differing cells and maximum absolute difference.
-- [ ] (b) What does the fixed 30 m grid do to the delineation? Run `fl_valley_confine()` at ff04 on the old GDAL-chosen grid and on the new 30 m grid, both under the current flooded code in one session. Report hectares and % change against the issue's 35,618.0 / 35,769.1 ha.
-- [ ] Record the results in `findings.md` and edit the #67 issue body with them.
+## Phase 3: Measure (MORR coho ff04) — `planning/active/measure_grid.R`
+- [ ] (a) Values on one identical 30 m grid: terra default vs terra `by_util` vs sf gdalwarp (Float64). Exact and Float32 difference counts and max |diff|; both GDAL/PROJ versions, the pipeline and the PROJ network state logged (review B2)
+- [ ] (b) Three arms, all under current flooded in one session: old GDAL-chosen (3.13.0) grid, aligned at the old 30.4306 m, aligned at 30 m. Hectares plus shared and only-in-one area (review G1). Source cells read, old vs new crop
+- [ ] Record in `findings.md`; edit the #67 issue body; commit the log
 
-## Phase 4: Rebuild the Parsnip vignette cache
-- [ ] Re-run `data-raw/wsg_vignette_data.R` under `load_all()` (needs the bcfishpass DB and an MRDEM read). Confirm `pars_dem.tif` is 30 m with its origin on multiples of 30.
-- [ ] Re-derive every number in `vignettes/pars-floodplain.Rmd` that comes from the cache, including 41,142.9 ha. Trace where the 6.4% ff04–ff07 span came from, and re-measure it or scope it. Add one sentence saying the cache was regenerated for the fixed grid (#67).
-- [ ] Render the vignette and check that the figures and inline numbers match the new cache.
+## Phase 4: Rebuild the Parsnip cache from cached inputs (review B1)
+- [ ] From the cached `pars.gpkg` streams and waterbodies (no DB): `fl_dem_aoi()` → `pars_dem.tif`, `fl_valley_confine()` ff04 → `pars_valleys.tif`, `fl_valley_poly()` → the `floodplain` layer. Confirm 30 m and alignment; other layers and `pars_meta.rds` unchanged (md5 of the exported layers)
+- [ ] Re-derive or label every Parsnip figure in `vignettes/pars-floodplain.Rmd`, `inst/notes/methodology.md` and `inst/notes/floodplain_interpretation.md` (41,142.9 ha, ~20 Mcells, the ff02/04/06 cell table, 6.4%, 4.6%, 84.7%, 90.1%). Keep the #49 sentence as history on the pre-#67 grid; add the #67 change separately (review G3)
+- [ ] Render the vignette; check figures and inline numbers
 
-## Phase 5: Docs and release notes
-- [ ] Add a `CLAUDE.md` design-decision bullet: `fl_dem_aoi()` projects onto an explicit grid aligned to multiples of `res`, never one GDAL chooses (#67, with the measured deltas).
-- [ ] Write the NEWS / PR body as a **results change**: the grid moves once for every caller, with the Phase 3 numbers and the new `res` argument. The version bump is left to `/gh-pr-merge`; this is a minor bump.
+## Phase 5: Docs, follow-ups, release notes
+- [ ] `CLAUDE.md` design-decision bullet: `fl_dem_aoi()` grid rule (#67), scoped to the reprojecting path (review A3), with measured deltas
+- [ ] File a floodplains follow-up (provenance values move; re-anchor #110 / `dem_common.tif`; record terra's GDAL/PROJ) — review S2
+- [ ] File a flooded issue: UInt32 sources with nodata 4294967295 warp to 4294967296 instead of NA when file-backed (pre-existing, found in Phase 2)
+- [ ] NEWS / PR body: results change **and** API change (a geographic `target_crs` now needs `res`, review S1). The version bump is left to `/gh-pr-merge` (minor)
 
 ## Validation
 

@@ -4,7 +4,7 @@
 \alias{fl_dem_aoi}
 \title{Fetch a DEM cropped to an AOI}
 \usage{
-fl_dem_aoi(aoi, source = NULL, buffer = 2000, target_crs = NULL)
+fl_dem_aoi(aoi, source = NULL, buffer = 2000, target_crs = NULL, res = NULL)
 }
 \arguments{
 \item{aoi}{An \code{sf} or \code{sfc} object — polygon, lines, or points. Buffered by
@@ -25,10 +25,19 @@ Default \code{2000}.}
 PROJ string, or \code{crs} object). \code{NULL} (default) returns the raster in the
 input AOI's CRS. \strong{Reprojection happens after crop}, never before — the
 84 GB MRDEM COG must not be reprojected as a whole.}
+
+\item{res}{Numeric. Output cell size in \code{target_crs} units, used when the
+raster is reprojected. \code{NULL} (default) takes the source's cell size when
+the source and \code{target_crs} share linear units (MRDEM-30 to BC Albers gives
+exactly 30 m). A \code{target_crs} in degrees has no single equivalent of a
+metre cell, so there \code{res} must be given; the error quotes the degree
+values at the AOI's latitude.}
 }
 \value{
-A \code{SpatRaster} cropped to the buffered AOI extent, projected to
-\code{target_crs} if it differs from the source raster's CRS.
+A \code{SpatRaster} covering the buffered AOI. In the source CRS it is a
+crop on the source grid. Reprojected, it is on a grid of \code{res} cells whose
+edges are multiples of \code{res}, spanning the buffered AOI's bounding box in
+\code{target_crs}.
 }
 \description{
 Returns a \code{SpatRaster} of elevation cropped to a buffered AOI. Source is a
@@ -42,6 +51,14 @@ MRDEM-30 (\verb{s3://canelevation-dem/mrdem-30/mrdem-30-dtm.tif}) is a single
 84 GB Cloud-Optimized GeoTIFF in EPSG:3979 covering all of Canada. The
 \verb{/vsicurl/} access pattern range-reads only the bytes intersecting the AOI,
 so total bandwidth scales with AOI size, not the COG size.
+
+When \code{target_crs} differs from the source CRS, the raster is projected onto
+an explicit grid: the buffered AOI's bounding box in \code{target_crs}, snapped
+outward to multiples of \code{res}. The grid therefore depends only on the AOI
+and \code{res}, so the same AOI lands on the same cells whatever terra or GDAL
+version runs it, and neighbouring AOIs share one alignment. Before flooded
+0.7.0 GDAL chose the origin and cell size itself (MRDEM-30 came out at about
+30.43 m), and that choice changed between GDAL 3.8.5 and 3.13.0 (#67).
 
 For sub-10 m riparian-scale work where lidar coverage exists, query the
 \code{stac-elevation-bc} STAC catalog and pass an item's COG URL as \code{source}. See the
