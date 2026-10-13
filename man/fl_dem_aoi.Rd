@@ -44,8 +44,8 @@ a geographic source with a projected target) also needs \code{res}.}
 \item{pipeline}{Character or \code{NULL}. The PROJ coordinate operation used to
 reproject. \code{NULL} (default) pins the operation between two NAD83
 realizations on GRS80 (NAD83, NAD83(CSRS), ...; MRDEM-30 to BC Albers is
-one) to the projection-only pipeline, with no datum shift, and leaves any
-other pair to PROJ. \code{""} leaves every pair to PROJ. Any other string is a
+one) to the projection-only pipeline, with no datum shift, when both are
+projected, and leaves any other pair to PROJ. \code{""} leaves every pair to PROJ. Any other string is a
 PROJ pipeline passed to \code{\link[terra:project]{terra::project()}} as given.}
 }
 \value{
@@ -72,8 +72,8 @@ an explicit grid: the buffered AOI's bounding box in \code{target_crs}, snapped
 outward to multiples of \code{res}. The grid therefore depends only on the AOI
 and \code{res}, so the same AOI lands on the same cells whatever terra or GDAL
 version runs it, and neighbouring AOIs share one alignment. Before flooded
-0.7.0 GDAL chose the origin and cell size itself (MRDEM-30 came out at about
-30.43 m), and that choice moved between toolchains (GDAL 3.8.5 / PROJ 9.5.1
+0.7.0 GDAL chose the origin and cell size itself (MRDEM-30 came out at
+30.4 to 30.5 m, depending on the AOI), and that choice moved between toolchains (GDAL 3.8.5 / PROJ 9.5.1
 against GDAL 3.13.0 / PROJ 9.8.1) because the datum operation below moved
 (#67).
 Cells outside the buffered AOI can come back \code{NA}, where the grid's corners
@@ -82,8 +82,8 @@ reach past the area read from the source.
 The cell values depend on the coordinate operation, and left to PROJ that
 choice follows its EPSG database: between MRDEM-30's NAD83(CSRS) and BC
 Albers' NAD83, PROJ 9.5.1 applies no datum shift and PROJ 9.8.1 routes
-through WGS 84, about 1.3 m apart in BC. So between NAD83 realizations the
-operation is pinned by default (see \code{pipeline}) and changes only with
+through WGS 84, about 1.3 m apart in BC. So between projected CRSs on NAD83
+realizations the operation is pinned by default (see \code{pipeline}) and changes only with
 flooded. With it pinned, GDAL 3.8.5's warper reproduces terra on GDAL
 3.13.0 to within 0.2 mm per cell (#67). The \code{gdalwarp} utility's defaults
 (an approximate transformer and a kernel widened with scale) differ from

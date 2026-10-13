@@ -204,7 +204,8 @@ test_that("fl_dem_aoi projects NAD83(CSRS) to NAD83 with no datum shift, whateve
 
   expect_gt(length(v), 1000)
   # A datum step moves these ~0.7 m here (PROJ 9.8.1 routes via WGS 84). The
-  # residual is GDAL's warp approximation (median 3 cm, p99 6 cm); edge cells, where bilinear
+  # residual is Float32 rounding of the warp output (0.125 m steps at x ~ -1.9e6;
+  # median 3 cm, p99 6 cm); edge cells, where bilinear
   # sampling meets the rim of the source, are left out by the quantile.
   expect_lt(stats::median(d), 0.1)
   expect_lt(stats::quantile(d, 0.99)[[1]], 0.2)
@@ -215,8 +216,10 @@ test_that("fl_dem_aoi pipeline = \"\" hands the operation to PROJ; a string is u
   src <- x_field_3979(aoi, 100)
 
   pinned <- fl_dem_aoi(aoi, source = src, buffer = 100)
-  given <- fl_dem_aoi(aoi, source = src, buffer = 100,
-                      pipeline = flooded:::dem_pipeline_nad83(sf::st_crs(3979), sf::st_crs(3005)))
+  # The pinned pipeline plus a 50 m shift: a string that differs from the pin
+  shifted <- paste(flooded:::dem_pipeline_nad83(sf::st_crs(3979), sf::st_crs(3005)),
+                   "+step +proj=affine +xoff=50")
+  given <- fl_dem_aoi(aoi, source = src, buffer = 100, pipeline = shifted)
   proj <- fl_dem_aoi(aoi, source = src, buffer = 100, pipeline = "")
   r <- terra::rast(src)
   expected_proj <- terra::project(
@@ -225,16 +228,31 @@ test_that("fl_dem_aoi pipeline = \"\" hands the operation to PROJ; a string is u
     terra::rast(pinned), method = "bilinear"
   )
 
-  expect_identical(terra::values(given), terra::values(pinned))
+  d_given <- abs(terra::values(given, mat = FALSE) - terra::values(pinned, mat = FALSE))
+  expect_gt(stats::median(d_given, na.rm = TRUE), 10)
   expect_equal(terra::values(proj), terra::values(expected_proj), tolerance = 1e-9)
 })
 
-test_that("fl_dem_aoi leaves the operation to PROJ outside NAD83 pairs", {
+test_that("fl_dem_aoi leaves the operation to PROJ outside projected NAD83 pairs", {
   expect_identical(flooded:::dem_pipeline_nad83(sf::st_crs(3005), sf::st_crs(4326)), "")
   expect_identical(flooded:::dem_pipeline_nad83(sf::st_crs(4326), sf::st_crs(3005)), "")
+  # Geographic NAD83: GDAL and sf disagree on axis order around a pipeline
+  expect_identical(flooded:::dem_pipeline_nad83(sf::st_crs(3005), sf::st_crs(4269)), "")
+  expect_identical(flooded:::dem_pipeline_nad83(sf::st_crs(4617), sf::st_crs(3005)), "")
+  # "North American Datum of 1983 (CSRS) version 2" is a NAD83 realization too
+  expect_match(flooded:::dem_pipeline_nad83(sf::st_crs(22209), sf::st_crs(3005)), "^\\+proj=pipeline")
   expect_match(flooded:::dem_pipeline_nad83(sf::st_crs(3979), sf::st_crs(3005)), "^\\+proj=pipeline")
   expect_false(grepl("helmert|cart|towgs84|datum",
                      flooded:::dem_pipeline_nad83(sf::st_crs(3979), sf::st_crs(3005))))
+})
+
+test_that("fl_dem_aoi returns data for a geographic NAD83 target (#67)", {
+  aoi <- sf::st_read(testdata_path("streams.gpkg"), quiet = TRUE)
+
+  # A supplied pipeline here once gave an all-NA raster (axis order)
+  result <- fl_dem_aoi(aoi, source = testdata_path("dem.tif"), buffer = 100, target_crs = 4269, res = 1e-4)
+
+  expect_gt(terra::global(!is.na(result), "sum")[[1]], 0.5 * terra::ncell(result))
 })
 
 test_that("fl_dem_aoi rejects an invalid pipeline", {

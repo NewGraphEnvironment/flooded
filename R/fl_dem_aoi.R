@@ -31,8 +31,8 @@
 #' @param pipeline Character or `NULL`. The PROJ coordinate operation used to
 #'   reproject. `NULL` (default) pins the operation between two NAD83
 #'   realizations on GRS80 (NAD83, NAD83(CSRS), ...; MRDEM-30 to BC Albers is
-#'   one) to the projection-only pipeline, with no datum shift, and leaves any
-#'   other pair to PROJ. `""` leaves every pair to PROJ. Any other string is a
+#'   one) to the projection-only pipeline, with no datum shift, when both are
+#'   projected, and leaves any other pair to PROJ. `""` leaves every pair to PROJ. Any other string is a
 #'   PROJ pipeline passed to [terra::project()] as given.
 #'
 #' @return A `SpatRaster` covering the buffered AOI. In the source CRS (and
@@ -51,8 +51,8 @@
 #' outward to multiples of `res`. The grid therefore depends only on the AOI
 #' and `res`, so the same AOI lands on the same cells whatever terra or GDAL
 #' version runs it, and neighbouring AOIs share one alignment. Before flooded
-#' 0.7.0 GDAL chose the origin and cell size itself (MRDEM-30 came out at about
-#' 30.43 m), and that choice moved between toolchains (GDAL 3.8.5 / PROJ 9.5.1
+#' 0.7.0 GDAL chose the origin and cell size itself (MRDEM-30 came out at
+#' 30.4 to 30.5 m, depending on the AOI), and that choice moved between toolchains (GDAL 3.8.5 / PROJ 9.5.1
 #' against GDAL 3.13.0 / PROJ 9.8.1) because the datum operation below moved
 #' (#67).
 #' Cells outside the buffered AOI can come back `NA`, where the grid's corners
@@ -61,8 +61,8 @@
 #' The cell values depend on the coordinate operation, and left to PROJ that
 #' choice follows its EPSG database: between MRDEM-30's NAD83(CSRS) and BC
 #' Albers' NAD83, PROJ 9.5.1 applies no datum shift and PROJ 9.8.1 routes
-#' through WGS 84, about 1.3 m apart in BC. So between NAD83 realizations the
-#' operation is pinned by default (see `pipeline`) and changes only with
+#' through WGS 84, about 1.3 m apart in BC. So between projected CRSs on NAD83
+#' realizations the operation is pinned by default (see `pipeline`) and changes only with
 #' flooded. With it pinned, GDAL 3.8.5's warper reproduces terra on GDAL
 #' 3.13.0 to within 0.2 mm per cell (#67). The `gdalwarp` utility's defaults
 #' (an approximate transformer and a kernel widened with scale) differ from
@@ -211,30 +211,27 @@ fl_dem_aoi <- function(aoi, source = NULL, buffer = 2000, target_crs = NULL,
 # Left to PROJ, the choice follows its EPSG database: PROJ 9.5.1 picked "NAD83
 # to NAD83(CSRS) (4)", itself shift-free (2 m accuracy), and PROJ 9.8.1 routes
 # through WGS 84 with Helmert steps (5 m), moving MRDEM ~1.3 m in BC (#67). For
-# any other pair this returns "", and PROJ chooses.
+# any other pair, and wherever either side is geographic, this returns "" and
+# PROJ chooses: GDAL's warper applies the CRS's lat/lon axis order around a
+# supplied pipeline and sf::st_transform() does not, so no one string serves
+# both, and a wrong one silently yields an all-NA raster.
 dem_pipeline_nad83 <- function(from, to) {
   is_nad83 <- function(crs) {
     w <- crs$wkt
     datum <- regmatches(w, regexpr('DATUM\\["[^"]+"', w))
     ellps <- regmatches(w, regexpr('ELLIPSOID\\["[^"]+"', w))
     length(datum) == 1L && length(ellps) == 1L &&
-      grepl('"(North American Datum 1983|NAD83[^"]*)"$', datum) &&
+      grepl('"(North American Datum (of )?1983[^"]*|NAD83[^"]*)"$', datum) &&
       grepl('"GRS 1980"$', ellps)
   }
   if (!is_nad83(from) || !is_nad83(to)) return("")
+  if (isTRUE(sf::st_is_longlat(from)) || isTRUE(sf::st_is_longlat(to))) return("")
   step <- function(crs) {
     tok <- strsplit(trimws(crs$proj4string), "[[:space:]]+")[[1]]
     tok <- tok[!grepl("^\\+(no_defs|type|towgs84|datum|vunits|geoidgrids)", tok)]
-    if ("+proj=longlat" %in% tok) return(NULL)
     paste(c(tok, if (!any(grepl("^\\+ellps=", tok))) "+ellps=GRS80"), collapse = " ")
   }
-  deg <- "+proj=unitconvert +xy_in=deg +xy_out=rad"
-  s_from <- step(from)
-  s_to <- step(to)
-  steps <- c(
-    if (is.null(s_from)) deg else paste("+inv", s_from),
-    if (is.null(s_to)) "+inv +proj=unitconvert +xy_in=deg +xy_out=rad" else s_to
-  )
+  steps <- c(paste("+inv", step(from)), step(to))
   paste("+proj=pipeline", paste("+step", steps, collapse = " "))
 }
 
