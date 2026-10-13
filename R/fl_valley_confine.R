@@ -50,9 +50,11 @@
 #' @return A `SpatRaster` with binary values: `1` = unconfined valley, `0` =
 #'   confined / hillslope. A cell is `NA` wherever `dem` is `NA`, unless the
 #'   channel buffer or a waterbody covers it, in which case it is `1`. Every
-#'   cell with a DEM value is `0` or `1`, including one that a gap cuts off from
-#'   every stream (it has no cost distance, so it fails the cost criterion) and
-#'   one whose slope is `NA`.
+#'   cell with a DEM value is `0` or `1`. That includes a cell that a gap cuts
+#'   off from every stream, which has no cost distance and so fails the cost
+#'   criterion, and a cell whose slope is `NA`. The morphological cleanup can
+#'   still mark such a cell `1` where the gap is narrow enough (one or two
+#'   cells) for its 3 x 3 filters to reach across.
 #'
 #' @details
 #' The algorithm combines four criteria via intersection (AND):

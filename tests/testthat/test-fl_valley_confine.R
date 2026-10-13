@@ -432,9 +432,11 @@ test_that("a waterbody inside an NA DEM gap is valley, the rest of the gap NA (#
 
 # --- DEM cells cut off from every stream (#65) -------------------------------
 # A gap that encloses ground with no stream leaves that ground with a DEM value
-# but no cost distance (costDist cannot cross NA). Unreachable fails the cost
-# criterion, so it is 0. Before #65 it came out NA when fl_patch_rm() had no
-# patch to remove and 0 when it did, so run both paths.
+# but no cost distance (costDist cannot cross NA), so it fails the cost
+# criterion. This fixture's 3-cell ring is too wide for the 3 x 3 cleanup
+# filters to reach across, so the whole island is 0; behind a 1-2 cell gap they
+# can mark its edge 1. Before #65 it came out NA when fl_patch_rm() had no patch
+# to remove and 0 when it did, so run both paths.
 island_fixture <- function() {
   dem <- terra::rast(testdata_path("dem.tif"))
   streams_sf <- sf::st_read(testdata_path("streams.gpkg"), quiet = TRUE)
@@ -454,7 +456,7 @@ island_fixture <- function() {
 
 # Run both cleanup paths. size_threshold = 1 removes no patch (fl_patch_rm()
 # returns early); the default removes some on this tile. size_threshold is read
-# only by fl_patch_rm(), so the two outputs differ exactly when it removed one.
+# only by fl_patch_rm(), so the two outputs differ only if it removed one.
 vc_both_paths <- function(dem, streams, ...) {
   lapply(c(p1 = 1, p5000 = 5000), function(size) {
     terra::values(
