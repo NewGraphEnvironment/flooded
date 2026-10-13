@@ -88,9 +88,14 @@ and NA where x is NA. That is the same form as the no-anchor path, so all paths 
 - [x] Remove or rewrite the NEWS.md line 36 known-issue entry (release wording is left to `/gh-pr-merge`)
       — kept: the 0.6.3 line was true at that release; the new entry is written at merge
 
+## Phase 3c: Code-check fixes
+- [x] Round 1: cut-off-cell prose no longer implies 0; "differ only if"
+- [x] Round 3: zero NA right after fl_patch_rm() (before modal), drop the post-mask guard; test pins 92/169
+- [x] Round 4: progress note and CLAUDE.md "on this tile" corrected
+
 ## Validation
 
-- [ ] Tests pass (`devtools::test()`, grep for FAIL/ERROR), and `lintr::lint_package()` is clean
-- [ ] `/code-check` clean (each commit, or once over the branch with `/code-check branch`)
-- [ ] PWF checkboxes match landed work
+- [x] Tests pass (`devtools::test()`, grep for FAIL/ERROR), and `lintr::lint_package()` is clean
+- [x] `/code-check` clean (each commit, or once over the branch with `/code-check branch`)
+- [x] PWF checkboxes match landed work
 - [ ] `/planning-archive` on completion

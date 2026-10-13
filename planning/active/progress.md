@@ -26,6 +26,13 @@
   those cells (valley-floor slope-NA block: 120/169 ones vs 92 on main's removal path). Fixed by
   zeroing all NA right after fl_patch_rm() (main's removal path, made the only path) and dropping the
   post-mask guard. Measured vs main (6b5cd1d) on 6 fixtures x 2 paths: identical to main at
-  size_threshold 5000 everywhere; at 1, differs only where main left DEM-valid NA. New test pins
+  size_threshold 5000 everywhere; at 1, it also differs off main's NA cells (code-check round 4:
+  valley-floor slope-NA block, 77 cells differ of which 49 were NA on main; the other 28 were 1 on
+  main's early path, where modal filled them from neighbours, and are 0 now). Decided behaviour. New test pins
   92/169; it fails against the round 2 placement. stac cache rebuilt on the round-2 code was
   identical to the cache, and the round-3 code reproduces main's removal path, which built it.
+- Code-check round 4 (enumeration): 18 NA-handling operations, HEAD = main's removal path on all
+  (5 fixtures, 0 cells differ at 5000); 33 prose claims in the diff, all true. One false row, in this
+  file (corrected above). Loop ended by enumeration. Four rounds.
+- R CMD check on ef8d757: 0 errors, 0 warnings, 2 pre-existing notes (CITATION.cff, pkgdown,
+  gitignored Rplots.pdf); tests and vignette rebuild OK.
