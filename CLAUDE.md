@@ -84,6 +84,20 @@ tests/testthat/          — unit tests for each fl_* function (17 test files, 1
 - **Waterbodies:** optional user-supplied sf. No buffer, no spatial filter — user pre-filters.
 - **Roads / rails / urban:** flooded detects them; `drift` decides what to do.
 - **Default DEM source for `fl_dem_aoi()`:** MRDEM-30 (NRCan, public S3 COG, `/vsicurl/`).
+- **`fl_dem_aoi()` never lets GDAL or PROJ choose** (#67). A reprojected DEM lands on the buffered
+  AOI's bbox in `target_crs`, snapped outward to multiples of `res` (default: the source cell size,
+  so MRDEM-30 → 30 m). Between NAD83 realizations on GRS80 the datum step is pinned to the
+  projection-only pipeline (`pipeline = NULL`; `""` hands it back to PROJ). Both were moving:
+  PROJ 9.5.1 applies no shift for MRDEM's NAD83(CSRS) → BC Albers and PROJ 9.8.1 routes through
+  WGS 84, ~1.3 m apart, and GDAL's *suggested grid* follows the operation. That, not the GDAL
+  version, is what moved MORR −0.42% between toolchains; an earlier diagnosis blamed GDAL because
+  the comparison changed GDAL and PROJ together. With both pinned, GDAL 3.8.5's warper with terra's
+  settings reproduces terra on 3.13.0 to 0.12 mm per cell. **Compare warps like for like:** the
+  `gdalwarp` utility's defaults (`-et 0.125`, a kernel widened with scale) differ from terra's
+  (exact, scale 1) by up to ~10 m per cell and +0.37% of floodplain, which reads as toolchain drift
+  and is not. Provenance records terra's GDAL/PROJ (`terra::gdal(lib = "all")`), not sf's.
+  The crop stays the buffered AOI's bbox in the source CRS (+2 cells); cropping to the template
+  footprint read ~2× the bytes only to fill cells outside the AOI.
 - **Attribution, not per-group delineation** — "the Morice's floodplain" comes from attributing one
   whole-network delineation, never from re-running the VCA per watercourse. Per-group runs disagree
   with the whole-network run in *both* directions (measured; see `inst/notes/methodology.md`), which

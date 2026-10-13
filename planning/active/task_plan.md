@@ -53,10 +53,11 @@ Decisions taken at the gate:
 - [x] Rendered the vignette: no live area figures; the full-WSG map checked
 
 ## Phase 5: Docs, follow-ups, release notes
-- [ ] `CLAUDE.md` design-decision bullet: `fl_dem_aoi()` grid rule (#67), scoped to the reprojecting path (review A3), with measured deltas
-- [ ] File a floodplains follow-up (provenance values move; re-anchor #110 / `dem_common.tif`; record terra's GDAL/PROJ) — review S2
-- [ ] File a flooded issue: UInt32 sources with nodata 4294967295 warp to 4294967296 instead of NA when file-backed (pre-existing, found in Phase 2)
-- [ ] NEWS / PR body: results change **and** API change (a geographic `target_crs` now needs `res`, review S1). The version bump is left to `/gh-pr-merge` (minor)
+- [x] `CLAUDE.md` design-decision bullet: the grid rule and the datum pin, the PROJ cause, and comparing warps like for like (#67)
+- [x] floodplains follow-up: **edited floodplains#117** instead of filing a duplicate. Cause corrected to the PROJ operation, toolchain recording widened to `terra::gdal(lib = "all")`, and the after-merge consequences listed (review S2)
+- [x] Filed flooded#76: UInt32 nodata reprojected as 4294967296 (pre-existing)
+- [x] #67 issue body edited: cause corrected, proposal as built, measurements
+- [ ] NEWS text in the PR body for `/gh-pr-merge`: results change **and** API change (geographic `target_crs` needs `res`; new `pipeline`); minor bump
 
 ## Validation
 
