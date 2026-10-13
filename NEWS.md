@@ -1,3 +1,16 @@
+# flooded 0.6.6
+
+* `fl_patch_rm()` and `fl_patch_conn()` now keep `NA` input cells `NA` (#65). Each used to turn
+  them into 0 on one code path and keep them on the other: `fl_patch_rm()` zeroed them only when
+  some patch was small enough to remove. A caller using either helper directly now gets `NA` back
+  where it used to get 0, so pass `na.rm = TRUE` when summing.
+* In `fl_valley_confine()`, `NA` now means only "no DEM". Every cell with a DEM value is 0 or 1,
+  including ground a gap cuts off from every stream and cells whose slope is `NA`; on the early
+  path through `fl_patch_rm()` some of those used to come out `NA`. The bundled tile gives the same
+  result as 0.6.5 cell for cell, and on DEMs with gaps the result now always matches what 0.6.5
+  gave whenever cleanup removed a patch, which is almost every real run. The cached `stac-dem` and
+  Parsnip results are unchanged.
+
 # flooded 0.6.5
 
 * `fl_valley_attribute()` now binds its per-group polygons in pairs instead of in one
