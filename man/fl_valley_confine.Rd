@@ -81,9 +81,12 @@ warns and forwards to \code{area_field}; removal is tracked in flooded#53.}
 \value{
 A \code{SpatRaster} with binary values: \code{1} = unconfined valley, \code{0} =
 confined / hillslope. A cell is \code{NA} wherever \code{dem} is \code{NA}, unless the
-channel buffer or a waterbody covers it, in which case it is \code{1}. A cell
-with a DEM value can also be \code{NA} when a gap cuts it off from every stream
-(#65).
+channel buffer or a waterbody covers it, in which case it is \code{1}. Every
+cell with a DEM value is \code{0} or \code{1}. That includes a cell that a gap cuts
+off from every stream, which has no cost distance, and a cell whose slope
+is \code{NA}: neither can pass the criterion it cannot be tested on, but the
+morphological cleanup can still mark one \code{1} when it lies within a few
+cells of valley floor.
 }
 \description{
 Orchestrates the full VCA pipeline: slope thresholding, cost-distance

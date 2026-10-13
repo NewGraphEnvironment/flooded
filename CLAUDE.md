@@ -150,12 +150,15 @@ tests/testthat/          — unit tests for each fl_* function (17 test files, 1
 - **The bundled DEM has no exactly-zero slope cells** (min 1.42e-14), which hides #41 entirely.
   Anything about flat-ground behaviour needs a synthetic grid, not this tile.
 - **The bundled DEM has no NA cells**, which hid #63 (`fl_valley_confine()` usually returned 0 or 1, not
-  NA, on NA DEM cells; fixed by masking with the DEM before the overlays) and still hides
-  #65 (`fl_patch_rm()` / `fl_patch_conn()` can turn NA into 0). Anything about no-data behaviour needs
+  NA, on NA DEM cells; fixed by masking with the DEM before the overlays) and #65
+  (`fl_patch_rm()` / `fl_patch_conn()` turned NA into 0 on one code path and kept it on the other;
+  fixed in both). Anything about no-data behaviour needs
   NA cells: a synthetic NA block (`na_block_fixture()` in `test-fl_valley_confine.R`), the bundled
   `slope.tif` (its 2,892-cell border ring is NA), or a patchy lidar DEM —
-  the 2019 stac-dem lidar leaves 22% of the tile NA. `fl_patch_rm()` only zeroes NA when some patch
-  is small enough to remove, so a small synthetic grid can take the early return and hide it.
+  the 2019 stac-dem lidar leaves 22% of the tile NA. Both helpers have an early return, and so does
+  `fl_valley_confine()`'s cleanup through `fl_patch_rm()`, so run an NA test on both paths:
+  `size_threshold = 1` removes no patch, and the default removes some (69) on the bundled tile
+  (`vc_both_paths()` in `test-fl_valley_confine.R`).
 - **Package defaults are not binding on this tile** — `max_width = 2000` / `cost_threshold = 2500`
   leave the criteria slack, so a coverage test at defaults can pass for the wrong reason. Squeeze
   `cost_threshold` (300 works) to make cleanup-added cells actually cross a boundary.

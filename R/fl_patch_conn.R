@@ -11,7 +11,7 @@
 #'   Default `4`.
 #'
 #' @return A `SpatRaster` with the same grid as `x`. Only patches touching
-#'   at least one anchor cell are retained.
+#'   at least one anchor cell are retained; `NA` cells stay `NA`.
 #'
 #' @examples
 #' dem <- terra::rast(system.file("testdata/dem.tif", package = "flooded"))
@@ -65,7 +65,9 @@ fl_patch_conn <- function(x, anchor, directions = 4L) {
   } else {
     kept <- patches
   }
-  out <- terra::ifel(!is.na(kept), x, 0L)
+  # x * 0L, not 0L: NA input cells are NA in `kept` too, and must stay NA, as
+  # they do on the no-anchor path above (#65).
+  out <- terra::ifel(is.na(kept), x * 0L, x)
   names(out) <- names(x)
   out
 }

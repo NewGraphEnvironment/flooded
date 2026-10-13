@@ -17,7 +17,7 @@ Default \code{4} (matches VCA 4-connectivity convention).}
 }
 \value{
 A \code{SpatRaster} with the same grid as \code{x}. Small patches are set to
-\code{0}; all other values are unchanged.
+\code{0}; all other values are unchanged, and \code{NA} cells stay \code{NA}.
 }
 \description{
 Identifies connected patches of \code{1}-valued cells and removes (sets to \code{0})

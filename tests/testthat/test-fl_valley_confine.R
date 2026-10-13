@@ -355,8 +355,8 @@ test_that("area_field must be a single column name", {
 
 # --- NA DEM cells (#63) ----------------------------------------------------
 # The bundled DEM has no NA cells, which hid this: fl_patch_rm() turned NA
-# reaching it into 0 (#65) and the focal filters smeared 1s into it, so a coverage
-# gap came back as measured hillslope and valley. Punch a
+# reaching it into 0 (fixed in #65) and the focal filters smeared 1s into it, so a
+# coverage gap came back as measured hillslope and valley. Punch a
 # synthetic gap over a stream so the gap also overlaps valley floor, the channel
 # buffer, and (in the last test) a waterbody.
 na_block_fixture <- function() {
@@ -387,7 +387,7 @@ test_that("NA DEM cells come back NA, not 0 (#63)", {
 
   expect_true(all(is.na(v[f$block])))
   # The gap must not leak: on this fixture every cell with a DEM value is measured,
-  # including the ring next to the gap where slope is undefined (exception: #65).
+  # including the ring next to the gap where slope is undefined.
   expect_false(anyNA(v[-f$block]))
 })
 
@@ -428,4 +428,109 @@ test_that("a waterbody inside an NA DEM gap is valley, the rest of the gap NA (#
   expect_gt(sum(in_lake), 0)
   expect_true(all(v[f$block][in_lake] == 1L))
   expect_true(all(is.na(v[f$block][!in_lake])))
+})
+
+# --- DEM cells cut off from every stream (#65) -------------------------------
+# A gap that encloses ground with no stream leaves that ground with a DEM value
+# but no cost distance (costDist cannot cross NA). Before #65 it came out NA
+# when fl_patch_rm() had no patch to remove and 0 when it did, so run both
+# paths. This island sits on hillslope behind a 3-cell ring, where it is all 0;
+# near valley floor, cleanup can mark cut-off cells 1 (see @return).
+island_fixture <- function() {
+  dem <- terra::rast(testdata_path("dem.tif"))
+  streams_sf <- sf::st_read(testdata_path("streams.gpkg"), quiet = TRUE)
+  # 31 x 31 window more than 200 m from any stream; a 3-cell NA ring around its
+  # edge encloses a 25 x 25 island of valid DEM.
+  rows <- 340:370
+  cols <- 570:600
+  stopifnot(all(rows %in% seq_len(nrow(dem))), all(cols %in% seq_len(ncol(dem))))
+  outer <- terra::cellFromRowColCombine(dem, rows, cols)
+  island <- terra::cellFromRowColCombine(dem, rows[4:28], cols[4:28])
+  ring <- setdiff(outer, island)
+  stream_r <- fl_stream_rasterize(streams_sf, dem, field = "upstream_area_ha")
+  stopifnot(!any(!is.na(terra::values(stream_r)[outer, 1])))
+  dem[ring] <- NA
+  list(dem = dem, streams = streams_sf, island = island, ring = ring, outer = outer)
+}
+
+# Run both cleanup paths. size_threshold = 1 removes no patch (fl_patch_rm()
+# returns early); the default removes some on this tile. size_threshold is read
+# only by fl_patch_rm(), so the two outputs differ only if it removed one.
+vc_both_paths <- function(dem, streams, ...) {
+  lapply(c(p1 = 1, p5000 = 5000), function(size) {
+    terra::values(
+      fl_valley_confine(dem, streams, area_field = "upstream_area_ha",
+                        channel_buffer = FALSE, size_threshold = size, ...)
+    )[, 1]
+  })
+}
+
+test_that("DEM cells cut off from every stream are measured, not NA, on both paths (#65)", {
+  f <- island_fixture()
+
+  # Fixture reaches the case: the island interior has slope but no cost distance.
+  slope <- tan(terra::terrain(f$dem, "slope", unit = "degrees") * pi / 180) * 100
+  stream_r <- fl_stream_rasterize(f$streams, f$dem, field = "upstream_area_ha")
+  cost <- terra::values(fl_cost_distance(slope, stream_r))[, 1]
+  interior <- terra::cellFromRowColCombine(f$dem, 344:366, 574:596)
+  expect_true(all(!is.na(terra::values(slope)[interior, 1])))
+  expect_true(all(is.na(cost[interior])))
+
+  v <- vc_both_paths(f$dem, f$streams)
+  expect_true(any(v$p1 != v$p5000, na.rm = TRUE))
+  for (p in names(v)) {
+    expect_true(all(v[[p]][f$island] == 0L), info = p)
+    expect_true(all(is.na(v[[p]][f$ring])), info = p)
+    expect_false(anyNA(v[[p]][-f$outer]), info = p)
+  }
+})
+
+test_that("a speck of DEM inside a gap is measured, not NA, on both paths (#65)", {
+  f <- island_fixture()
+  # Leave a 2 x 2 speck of DEM in the middle of an otherwise solid 31 x 31 gap:
+  # no slope anywhere in it, and no measured neighbour within a focal window.
+  speck <- terra::cellFromRowColCombine(f$dem, 355:356, 585:586)
+  f$dem[setdiff(f$island, speck)] <- NA
+
+  v <- vc_both_paths(f$dem, f$streams)
+  for (p in names(v)) {
+    expect_true(all(v[[p]][speck] == 0L), info = p)
+    expect_true(all(is.na(v[[p]][setdiff(f$outer, speck)])), info = p)
+  }
+})
+
+test_that("cells where a supplied slope is NA but the DEM is not are measured, not NA (#65)", {
+  dem <- terra::rast(testdata_path("dem.tif"))
+  streams_sf <- sf::st_read(testdata_path("streams.gpkg"), quiet = TRUE)
+  slope <- terra::rast(testdata_path("slope.tif"))
+  block <- terra::cellFromRowColCombine(dem, 340:370, 570:600)
+  slope[block] <- NA
+
+  v <- vc_both_paths(dem, streams_sf, slope = slope)
+  for (p in names(v)) {
+    # The DEM is complete, so no cell may be NA, the block's interior included.
+    expect_false(anyNA(v[[p]]), info = p)
+    # On this hillslope site the whole block is 0; on valley floor, cleanup
+    # marks the cells near its edge 1.
+    expect_true(all(v[[p]][block] == 0L), info = p)
+  }
+})
+
+test_that("cells NA before the majority filter vote in it as 0 (#65)", {
+  # Before #65, fl_patch_rm()'s removal path zeroed every NA cell ahead of the
+  # 3 x 3 modal filter, so they voted 0; that is the path every run now takes.
+  # Zeroing after the filter instead lets it skip them, and more cells near
+  # them come out 1: 120 of these 169, against 92 on the old removal path. A
+  # 13 x 13 supplied-slope NA block on valley floor, with no stream cell in it.
+  dem <- terra::rast(testdata_path("dem.tif"))
+  streams_sf <- sf::st_read(testdata_path("streams.gpkg"), quiet = TRUE)
+  slope <- terra::rast(testdata_path("slope.tif"))
+  block <- terra::cellFromRowColCombine(dem, 311:323, 229:241)
+  slope[block] <- NA
+
+  v <- vc_both_paths(dem, streams_sf, slope = slope)
+  for (p in names(v)) {
+    expect_false(anyNA(v[[p]]), info = p)
+    expect_equal(sum(v[[p]][block] == 1L), 92L, info = p)
+  }
 })
