@@ -3,7 +3,7 @@
 # Runs after measure_grid.R, on its outputs: the identical 30 m MORR grid warped by
 # sf's gdalwarp (GDAL 3.8.5 / PROJ 9.5.1, default -et and -et 0) vs fl_dem_aoi()
 # (terra, GDAL 3.13.0 / PROJ 9.8.1).
-# Usage: Rscript planning/active/measure_proj.R <measure_grid out_dir> <dir with w_et0.tif>
+# Usage: Rscript planning/archive/2026-10-issue-67-fl-dem-aoi-grid/measure_proj.R <measure_grid out_dir> <dir with w_et0.tif>
 suppressMessages(pkgload::load_all(".", quiet = TRUE))
 sf::sf_use_s2(FALSE)
 a <- commandArgs(TRUE)

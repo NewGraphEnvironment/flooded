@@ -7,7 +7,7 @@
 #   "snap":         values agree (< 10 units) and only coverage differs (a template row/column
 #                   snapping differently between the two template bboxes).
 #   "UNEXPLAINED":  anything else -- a real defect candidate.
-# Usage: Rscript planning/active/classify_enum_fails.R <enumerate_pin.csv>
+# Usage: Rscript planning/archive/2026-10-issue-67-fl-dem-aoi-grid/classify_enum_fails.R <enumerate_pin.csv>
 suppressMessages(pkgload::load_all(".", quiet = TRUE))
 d <- utils::read.csv(commandArgs(TRUE)[1])
 p <- d[d$pinned %in% TRUE & !d$pass %in% TRUE, ]

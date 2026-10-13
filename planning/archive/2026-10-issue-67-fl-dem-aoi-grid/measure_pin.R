@@ -2,7 +2,7 @@
 # the two GDAL/PROJ stacks agree? terra (GDAL 3.13.0 / PROJ 9.8.1) via fl_dem_aoi()
 # against sf's gdalwarp (GDAL 3.8.5 / PROJ 9.5.1) given the same pipeline with -ct,
 # on the identical 30 m grid. Then delineates both (co_ff04).
-# Usage: Rscript planning/active/measure_pin.R <measure_grid out_dir>
+# Usage: Rscript planning/archive/2026-10-issue-67-fl-dem-aoi-grid/measure_pin.R <measure_grid out_dir>
 suppressMessages(pkgload::load_all(".", quiet = TRUE))
 sf::sf_use_s2(FALSE)
 out_dir <- commandArgs(TRUE)[1]

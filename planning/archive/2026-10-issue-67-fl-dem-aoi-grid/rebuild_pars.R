@@ -6,7 +6,7 @@
 # rewritten. Every other layer and pars_meta.rds is checked unchanged.
 # Also runs ff06 and ff07 (not cached) for the scenario-span figures in the prose.
 #
-# Usage (from the package root): Rscript planning/active/rebuild_pars.R <log_dir>
+# Usage (from the package root): Rscript planning/archive/2026-10-issue-67-fl-dem-aoi-grid/rebuild_pars.R <log_dir>
 
 Sys.setenv(GDAL_HTTP_MAX_RETRY = "3", GDAL_HTTP_RETRY_DELAY = "2", VSI_CACHE = "TRUE")
 suppressMessages(pkgload::load_all(".", quiet = TRUE))

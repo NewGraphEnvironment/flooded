@@ -7,7 +7,7 @@
 #       on an aligned grid separates origin from resolution.
 #
 # Usage (from the package root):
-#   Rscript planning/active/measure_grid.R <out_dir>
+#   Rscript planning/archive/2026-10-issue-67-fl-dem-aoi-grid/measure_grid.R <out_dir>
 # Inputs: floodplains' data/morr/aquatic_network.gpkg (streams_co3, waterbodies_co3),
 # buffer 2000 m, target CRS = the streams' CRS, co_ff04 parameters from
 # floodplains config/morr/flood_scenarios.csv. Reads MRDEM-30 over /vsicurl/.

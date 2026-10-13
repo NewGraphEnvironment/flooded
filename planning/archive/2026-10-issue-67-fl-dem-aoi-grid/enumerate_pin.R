@@ -12,7 +12,7 @@
 # agree to < 10 source units median (a datum step is ~1-2 m; axis or unit faults are km).
 # For an unpinned pair (pin == "") the two runs are the same call and the case is "left to PROJ".
 # A pinned case that errored or has no PROJ data counts as NOT passing.
-# Usage: Rscript planning/active/enumerate_pin.R <out_dir>
+# Usage: Rscript planning/archive/2026-10-issue-67-fl-dem-aoi-grid/enumerate_pin.R <out_dir>
 suppressMessages(pkgload::load_all(".", quiet = TRUE))
 out_dir <- commandArgs(TRUE)[1]
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)

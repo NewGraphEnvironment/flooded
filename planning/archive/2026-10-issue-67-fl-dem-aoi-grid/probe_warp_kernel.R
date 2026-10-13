@@ -1,6 +1,6 @@
 # probe_warp_kernel.R -- #67: with the pipeline pinned, is the residual terra-vs-gdalwarp value
 # difference GDAL's version or the warp settings? Run after measure_pin.R.
-# Usage: Rscript planning/active/probe_warp_kernel.R <dir holding measure_morr/>
+# Usage: Rscript planning/archive/2026-10-issue-67-fl-dem-aoi-grid/probe_warp_kernel.R <dir holding measure_morr/>
 suppressMessages(devtools::load_all(quiet = TRUE))
 S <- commandArgs(TRUE)[1]
 clip_tif <- file.path(S, "measure_morr/clip_new.tif")
