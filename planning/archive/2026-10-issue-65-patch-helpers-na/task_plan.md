@@ -98,4 +98,4 @@ and NA where x is NA. That is the same form as the no-anchor path, so all paths 
 - [x] Tests pass (`devtools::test()`, grep for FAIL/ERROR), and `lintr::lint_package()` is clean
 - [x] `/code-check` clean (each commit, or once over the branch with `/code-check branch`)
 - [x] PWF checkboxes match landed work
-- [ ] `/planning-archive` on completion
+- [x] `/planning-archive` on completion
