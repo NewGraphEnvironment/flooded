@@ -49,14 +49,17 @@ active parameter values are shown in the table below.
 On a 30 m DEM, `ff04` is a *conservative* functional floodplain: Nagel
 et al. put the resolution equivalent nearer `ff07`. In practice the
 difference is small here — corrected `ff04` through `ff07` span only
-6.4% of mapped area on this watershed, because at 30 m the slope and
+6.3% of mapped area on this watershed, because at 30 m the slope and
 cost-distance criteria bind before the flood mask does.
 
 The cached outputs below were regenerated for `flooded` 0.5.0, which
-corrected a units defect in the bankfull regression (flooded#49). The
-mapped extent shown here is correspondingly smaller than in earlier
-versions of this vignette — 48,603.1 ha before the fix, 41,142.9 ha now,
-a loss of 15.3%.
+corrected a units defect in the bankfull regression (flooded#49): the
+mapped extent went from 48,603.1 ha to 41,142.9 ha, a loss of 15.3%.
+They were regenerated again for 0.7.0, which projects MRDEM-30 onto a
+fixed 30 m grid aligned to multiples of 30 m instead of a grid GDAL
+chose (30.54 m here), and pins the datum step between MRDEM-30 and BC
+Albers (flooded#67). The extent is now 40,888.2 ha, 0.6% less, and the
+DEM 14.1 rather than 20.9 million cells.
 
 | parameter | value | unit | effect | source |
 |:---|---:|:---|:---|:---|
@@ -137,7 +140,7 @@ would otherwise carve donut holes around.
 
 [`flooded::fl_valley_confine()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_confine.md)
 runs the full VCA pipeline on the cached DEM, streams, and waterbodies.
-On the Parsnip River Watershed Group at 30 m (~20 Mcells) it takes a
+On the Parsnip River Watershed Group at 30 m (~14 Mcells) it takes a
 couple of minutes single-threaded; `terra::terraOptions(threads = N)`
 parallelises the heavy raster ops.
 
