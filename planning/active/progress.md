@@ -13,3 +13,9 @@
 - Phase 3: MORR measurements. Root cause is the PROJ datum operation, not GDAL's warper. Gate decision 2 (user): pin plus override plus recording. The pin landed in 30df085
 - Phase 4: Parsnip cache rebuilt from cached inputs (40,888.2 ha ff04 on the fixed grid); vignette and notes updated
 - Filed flooded#76 (UInt32 nodata reprojected as 2^32, pre-existing)
+- Phase 5: CLAUDE.md note; #67 and floodplains#117 bodies corrected (cause = PROJ datum operation)
+- /code-check branch:
+  - r1: 7 findings, fixed (geographic NAD83 gave all-NA; terra floor; datum regex; a test passing for the wrong reason)
+  - r2: a defect inside r1's fix (northing-first projected CRSs), fixed with an axis guard
+  - r3: the mechanism (stand-ins for library behaviour) traced to every place it reaches; harness made able to fail
+  - enumeration over 1,935 CRSs: 0 unexplained. Loop ended by enumeration

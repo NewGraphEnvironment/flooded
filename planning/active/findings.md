@@ -222,3 +222,29 @@ Fixed:
   - unmutated: 20 of 20 pinned cases pass;
   - with the axis guard removed: 8 fail (2953 and 23301, all four cases);
   - with `+proj=affine +yoff=150` added to the pin: all 20 fail.
+
+## Terminal enumeration (2026-10-13): `enumerate_pin.R` + `classify_enum_fails.R`
+
+Log: `logs/20261013_enumerate_pin.csv` and `logs/20261013_enumerate_pin_summary.txt`.
+
+**Candidate set:** every EPSG projected CRS named for a NAD83 realization in PROJ 9.8.1's list.
+- 1,935 CRSs, 13 of them with no area of use.
+- 7,544 pinned cases across A, A2, B and B2, plus 144 cases left to PROJ.
+
+**Outcome:** 7,501 pinned cases pass; **0 errored**. Every one of the 43 that do not pass is
+classified against a second oracle, a point at the CRS's area-of-use centre through the pin, sf's
+default (PROJ 9.5.1) and terra's default (PROJ 9.8.1):
+- **32 "PROJ outlier"** (NAD83(NSRS2007) and NAD83(2011) Alaska and UTM 1N/2N/8N/60N zones,
+  NAD83(CSRS)v6–v8 UTM 8N, and InGCS Bartholomew ftUS):
+  - the pin matches sf's PROJ to 0.00 m;
+  - terra's PROJ 9.8.1 lands **3.5–88 m** away (deformation grids not installed);
+  - so the value gap measures PROJ 9.8.1's own choice. That is one more reason the pin exists:
+    left to PROJ, these DEMs would move by tens of metres with the grid files present on a machine.
+- **11 "snap"** (HARN ftUS zones and the WISCRS counties, case B2 only): values within 2 source
+  units. A template row or column snaps differently because the AOI bbox through the pin and
+  through PROJ (HARN, about 1 m) straddle a `res` multiple. This is the documented edge-snapping
+  caveat.
+- **0 unexplained.**
+
+**The loop ends here**, by enumeration of the candidate set, as the code-check rule requires after
+a round found a defect inside a fix (round 2).

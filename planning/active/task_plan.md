@@ -61,7 +61,7 @@ Decisions taken at the gate:
 
 ## Validation
 
-- [ ] Tests pass
-- [ ] `/code-check` clean (each commit, or once over the branch with `/code-check branch`)
-- [ ] PWF checkboxes match landed work
+- [x] Tests pass (full suite 390 PASS, 0 FAIL, NOT_CRAN=true)
+- [x] `/code-check branch`: 3 rounds plus a terminal enumeration (round 2 found a defect inside round 1's fix); see findings.md
+- [x] PWF checkboxes match landed work
 - [ ] `/planning-archive` on completion
