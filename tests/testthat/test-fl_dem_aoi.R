@@ -162,6 +162,89 @@ test_that("fl_dem_aoi rejects an invalid res", {
   expect_error(fl_dem_aoi(aoi, source = dem, target_crs = 3157, res = NA_real_), "`res` must be")
 })
 
+# A source in EPSG:3979 (NAD83(CSRS), MRDEM's CRS) whose value is its own x
+# coordinate. Bilinear sampling of a linear field is exact, so each output cell
+# holds the 3979 x of its centre under whatever operation projected it.
+x_field_3979 <- function(aoi, buffer) {
+  bb <- sf::st_bbox(sf::st_transform(sf::st_buffer(aoi, buffer + 500), 3979))
+  r <- terra::rast(terra::ext(bb[["xmin"]], bb[["xmax"]], bb[["ymin"]], bb[["ymax"]]),
+                   resolution = 10, crs = "EPSG:3979")
+  r <- terra::init(r, "x")
+  f <- tempfile(fileext = ".tif")
+  terra::writeRaster(r, f, datatype = "FLT8S")
+  f
+}
+
+# The shift-free NAD83(CSRS) -> NAD83 operation, written out here rather than
+# taken from fl_dem_aoi()'s builder: inverse BC Albers, then Canada Atlas
+# Lambert, both on GRS80, with no datum step between them.
+pipeline_3005_to_3979 <- paste(
+  "+proj=pipeline",
+  "+step +inv +proj=aea +lat_0=45 +lon_0=-126 +lat_1=50 +lat_2=58.5 +x_0=1000000 +y_0=0 +ellps=GRS80",
+  "+step +proj=lcc +lat_0=49 +lon_0=-95 +lat_1=49 +lat_2=77 +x_0=0 +y_0=0 +ellps=GRS80"
+)
+
+cell_x_3979 <- function(r) {
+  xy <- terra::xyFromCell(r, which(!is.na(terra::values(r, mat = FALSE))))
+  pts <- sf::st_sfc(sf::st_multipoint(xy), crs = 3005)
+  suppressWarnings(
+    sf::st_coordinates(sf::st_transform(pts, sf::st_crs(3979)$wkt, pipeline = pipeline_3005_to_3979))[, "X"]
+  )
+}
+
+test_that("fl_dem_aoi projects NAD83(CSRS) to NAD83 with no datum shift, whatever PROJ prefers (#67)", {
+  aoi <- sf::st_read(testdata_path("streams.gpkg"), quiet = TRUE)
+  src <- x_field_3979(aoi, 100)
+
+  result <- fl_dem_aoi(aoi, source = src, buffer = 100)
+  v <- terra::values(result, mat = FALSE)
+  v <- v[!is.na(v)]
+
+  d <- abs(v - cell_x_3979(result))
+
+  expect_gt(length(v), 1000)
+  # A datum step moves these ~0.7 m here (PROJ 9.8.1 routes via WGS 84). The
+  # residual is GDAL's warp approximation (median 3 cm, p99 6 cm); edge cells, where bilinear
+  # sampling meets the rim of the source, are left out by the quantile.
+  expect_lt(stats::median(d), 0.1)
+  expect_lt(stats::quantile(d, 0.99)[[1]], 0.2)
+})
+
+test_that("fl_dem_aoi pipeline = \"\" hands the operation to PROJ; a string is used as given (#67)", {
+  aoi <- sf::st_read(testdata_path("streams.gpkg"), quiet = TRUE)
+  src <- x_field_3979(aoi, 100)
+
+  pinned <- fl_dem_aoi(aoi, source = src, buffer = 100)
+  given <- fl_dem_aoi(aoi, source = src, buffer = 100,
+                      pipeline = flooded:::dem_pipeline_nad83(sf::st_crs(3979), sf::st_crs(3005)))
+  proj <- fl_dem_aoi(aoi, source = src, buffer = 100, pipeline = "")
+  r <- terra::rast(src)
+  expected_proj <- terra::project(
+    terra::crop(r, terra::ext(terra::vect(sf::st_transform(sf::st_buffer(aoi, 100), 3979))) + 20,
+                snap = "out"),
+    terra::rast(pinned), method = "bilinear"
+  )
+
+  expect_identical(terra::values(given), terra::values(pinned))
+  expect_equal(terra::values(proj), terra::values(expected_proj), tolerance = 1e-9)
+})
+
+test_that("fl_dem_aoi leaves the operation to PROJ outside NAD83 pairs", {
+  expect_identical(flooded:::dem_pipeline_nad83(sf::st_crs(3005), sf::st_crs(4326)), "")
+  expect_identical(flooded:::dem_pipeline_nad83(sf::st_crs(4326), sf::st_crs(3005)), "")
+  expect_match(flooded:::dem_pipeline_nad83(sf::st_crs(3979), sf::st_crs(3005)), "^\\+proj=pipeline")
+  expect_false(grepl("helmert|cart|towgs84|datum",
+                     flooded:::dem_pipeline_nad83(sf::st_crs(3979), sf::st_crs(3005))))
+})
+
+test_that("fl_dem_aoi rejects an invalid pipeline", {
+  aoi <- sf::st_read(testdata_path("streams.gpkg"), quiet = TRUE)
+  dem <- testdata_path("dem.tif")
+
+  expect_error(fl_dem_aoi(aoi, source = dem, target_crs = 3157, pipeline = NA_character_), "`pipeline` must be")
+  expect_error(fl_dem_aoi(aoi, source = dem, target_crs = 3157, pipeline = c("a", "b")), "`pipeline` must be")
+})
+
 test_that("fl_dem_aoi rejects non-sf aoi", {
   expect_error(
     fl_dem_aoi("not_sf", source = testdata_path("dem.tif")),

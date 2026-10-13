@@ -28,6 +28,12 @@
 #'   metre cell, so there `res` must be given; the error quotes the degree
 #'   value at the AOI's latitude. Any other unit mismatch (a US-foot target,
 #'   a geographic source with a projected target) also needs `res`.
+#' @param pipeline Character or `NULL`. The PROJ coordinate operation used to
+#'   reproject. `NULL` (default) pins the operation between two NAD83
+#'   realizations on GRS80 (NAD83, NAD83(CSRS), ...; MRDEM-30 to BC Albers is
+#'   one) to the projection-only pipeline, with no datum shift, and leaves any
+#'   other pair to PROJ. `""` leaves every pair to PROJ. Any other string is a
+#'   PROJ pipeline passed to [terra::project()] as given.
 #'
 #' @return A `SpatRaster` covering the buffered AOI. In the source CRS (and
 #'   `res` unset or equal to the source's) it is a crop on the source grid.
@@ -46,10 +52,23 @@
 #' and `res`, so the same AOI lands on the same cells whatever terra or GDAL
 #' version runs it, and neighbouring AOIs share one alignment. Before flooded
 #' 0.7.0 GDAL chose the origin and cell size itself (MRDEM-30 came out at about
-#' 30.43 m), and that choice changed between GDAL 3.8.5 and 3.13.0 (#67).
+#' 30.43 m), and that choice moved between toolchains (GDAL 3.8.5 / PROJ 9.5.1
+#' against GDAL 3.13.0 / PROJ 9.8.1) because the datum operation below moved
+#' (#67).
 #' Cells outside the buffered AOI can come back `NA`, where the grid's corners
-#' reach past the area read from the source. The cell values still come from
-#' the GDAL/PROJ stack that terra links. When `aoi` is not already in
+#' reach past the area read from the source.
+#'
+#' The cell values depend on the coordinate operation, and left to PROJ that
+#' choice follows its EPSG database: between MRDEM-30's NAD83(CSRS) and BC
+#' Albers' NAD83, PROJ 9.5.1 applies no datum shift and PROJ 9.8.1 routes
+#' through WGS 84, about 1.3 m apart in BC. So between NAD83 realizations the
+#' operation is pinned by default (see `pipeline`) and changes only with
+#' flooded. With it pinned, GDAL 3.8.5's warper reproduces terra on GDAL
+#' 3.13.0 to within 0.2 mm per cell (#67). The `gdalwarp` utility's defaults
+#' (an approximate transformer and a kernel widened with scale) differ from
+#' terra's by up to ~10 m per cell, so re-derive a kept DEM through
+#' `fl_dem_aoi()`, not `gdalwarp`, and record terra's GDAL and PROJ versions
+#' (`terra::gdal(lib = "all")`) with it. When `aoi` is not already in
 #' `target_crs`, its bounding box is transformed through sf's PROJ, so an edge
 #' lying within a datum shift of a multiple of `res` can snap one cell
 #' differently on another machine.
@@ -96,7 +115,7 @@
 #'
 #' @export
 fl_dem_aoi <- function(aoi, source = NULL, buffer = 2000, target_crs = NULL,
-                       res = NULL) {
+                       res = NULL, pipeline = NULL) {
   if (!(inherits(aoi, "sf") || inherits(aoi, "sfc"))) {
     stop("`aoi` must be an sf or sfc object.", call. = FALSE)
   }
@@ -104,6 +123,11 @@ fl_dem_aoi <- function(aoi, source = NULL, buffer = 2000, target_crs = NULL,
   if (!is.null(res) &&
         !(is.numeric(res) && length(res) == 1L && is.finite(res) && res > 0)) {
     stop("`res` must be a single positive number, in `target_crs` units.",
+         call. = FALSE)
+  }
+  if (!is.null(pipeline) &&
+        !(is.character(pipeline) && length(pipeline) == 1L && !is.na(pipeline))) {
+    stop("`pipeline` must be NULL or a single string (\"\" lets PROJ choose).",
          call. = FALSE)
   }
 
@@ -134,12 +158,28 @@ fl_dem_aoi <- function(aoi, source = NULL, buffer = 2000, target_crs = NULL,
   }
 
   if (is.null(res)) res <- dem_res_default(r_crs, r_res, target_crs, aoi_buf)
+  if (is.null(pipeline)) pipeline <- dem_pipeline_nad83(r_crs, target_crs)
 
   # Project onto an explicit grid: the buffered AOI's bbox in target_crs,
   # snapped outward to multiples of `res`. Left to choose, GDAL derives the
-  # origin and cell size itself, and its choice changed between GDAL 3.8.5 and
-  # 3.13.0 (#67).
-  aoi_buf_in_t <- if (target_crs == aoi_crs) aoi_buf else sf::st_transform(aoi_buf, target_crs)
+  # origin and cell size itself from the transformed source edges, so the grid
+  # moved whenever the datum operation did (#67).
+  aoi_buf_in_t <- if (target_crs == aoi_crs) {
+    aoi_buf
+  } else if (aoi_crs == r_crs && nzchar(pipeline)) {
+    # sf warns when a pipeline is not among PROJ's own candidates, which is
+    # the point of pinning one
+    withCallingHandlers(
+      sf::st_transform(aoi_buf, target_crs$wkt, pipeline = pipeline),
+      warning = function(w) {
+        if (grepl("pipeline not found", conditionMessage(w), fixed = TRUE)) {
+          invokeRestart("muffleWarning")
+        }
+      }
+    )
+  } else {
+    sf::st_transform(aoi_buf, target_crs)
+  }
   bb <- sf::st_bbox(aoi_buf_in_t)
   tmpl <- terra::rast(
     terra::ext(
@@ -163,7 +203,39 @@ fl_dem_aoi <- function(aoi, source = NULL, buffer = 2000, target_crs = NULL,
     snap = "out"
   )
 
-  terra::project(r_clip, tmpl, method = "bilinear")
+  terra::project(r_clip, tmpl, method = "bilinear", pipeline = pipeline)
+}
+
+# The coordinate operation between two NAD83 realizations on GRS80 (NAD83,
+# NAD83(CSRS), ...) is pinned to the projection-only pipeline: no datum shift.
+# Left to PROJ, the choice follows its EPSG database: PROJ 9.5.1 picked "NAD83
+# to NAD83(CSRS) (4)", itself shift-free (2 m accuracy), and PROJ 9.8.1 routes
+# through WGS 84 with Helmert steps (5 m), moving MRDEM ~1.3 m in BC (#67). For
+# any other pair this returns "", and PROJ chooses.
+dem_pipeline_nad83 <- function(from, to) {
+  is_nad83 <- function(crs) {
+    w <- crs$wkt
+    datum <- regmatches(w, regexpr('DATUM\\["[^"]+"', w))
+    ellps <- regmatches(w, regexpr('ELLIPSOID\\["[^"]+"', w))
+    length(datum) == 1L && length(ellps) == 1L &&
+      grepl('"(North American Datum 1983|NAD83[^"]*)"$', datum) &&
+      grepl('"GRS 1980"$', ellps)
+  }
+  if (!is_nad83(from) || !is_nad83(to)) return("")
+  step <- function(crs) {
+    tok <- strsplit(trimws(crs$proj4string), "[[:space:]]+")[[1]]
+    tok <- tok[!grepl("^\\+(no_defs|type|towgs84|datum|vunits|geoidgrids)", tok)]
+    if ("+proj=longlat" %in% tok) return(NULL)
+    paste(c(tok, if (!any(grepl("^\\+ellps=", tok))) "+ellps=GRS80"), collapse = " ")
+  }
+  deg <- "+proj=unitconvert +xy_in=deg +xy_out=rad"
+  s_from <- step(from)
+  s_to <- step(to)
+  steps <- c(
+    if (is.null(s_from)) deg else paste("+inv", s_from),
+    if (is.null(s_to)) "+inv +proj=unitconvert +xy_in=deg +xy_out=rad" else s_to
+  )
+  paste("+proj=pipeline", paste("+step", steps, collapse = " "))
 }
 
 # Default output cell size: the source's, when source and target share linear

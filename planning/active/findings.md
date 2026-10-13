@@ -128,3 +128,41 @@ Totals barely move, but about 1,400 ha changes hands at the margins between any 
 → sf gdalwarp 35,809.9 ha (+0.39%; 183.1 terra-only, 321.8 sf-only); with `-et 0`, 35,792.8 ha
 (+0.34%). The grid fix alone does **not** make a re-run reproduce across toolchains. The operation
 choice moves the floodplain about as much as the grid did (−0.42% in the issue).
+
+## Gate decision 2 (2026-10-13): pin the datum step, allow an override, record versions
+
+The user's framing: provenance tracks versions; it does not freeze our evolution. We want to be able
+to recreate a result and to tell what changed. With PROJ choosing, recreating needs the same PROJ,
+and a moved digest cannot separate NRCan from a PROJ upgrade. Pinned, any machine recreates it, and
+a change of datum step is a flooded commit with a NEWS line.
+
+- `fl_dem_aoi(pipeline = NULL)` pins the projection-only pipeline (no datum step) between two NAD83
+  realizations on GRS80 (`dem_pipeline_nad83()`). `""` hands the choice to PROJ, and a string is used
+  as given.
+- Recording: floodplains to record terra's GDAL/PROJ (follow-up issue).
+- The pinned pipeline gives 0 m from PROJ 9.5.1's own shift-free "NAD83 to NAD83(CSRS) (4)" on a
+  test point. Test: a synthetic x-field in 3979 projected to 3005 matches the shift-free answer
+  (median 3 cm, p99 6 cm = warp approximation) and misses it by ~0.71 m when PROJ 9.8.1 chooses.
+  Mutation (default → `""`) turns the pin tests red.
+
+## Phase 3 continued — what the pin buys on MORR (log entries (d) and (e))
+
+- terra pinned vs terra unpinned (`measure_grid.R` new30 arm), same 30 m grid: 35,671.1 → 35,679.2 ha
+  (**+0.02%**). On the fixed grid the datum step barely moves the delineation; the issue's −0.42%
+  came through the **grid**, which the datum step had moved.
+- terra pinned vs sf gdalwarp `-ct <same pipeline>`: median 0.21 m, max 9.9 m per cell; floodplain
+  +0.37%. **This is not GDAL's version.** With nearest-neighbour, terra (GDAL 3.13.0) and gdalwarp
+  (GDAL 3.8.5) are identical in every cell. With bilinear, gdalwarp `-wo XSCALE=1 -wo YSCALE=1
+  -et 0` reproduces terra to median 0.02 mm, max 0.12 mm. terra's warper uses an exact transformer
+  and scale 1. gdalwarp's defaults (`-et 0.125`, a kernel widened when the scale exceeds 1)
+  produce the difference.
+- So the earlier (a) and (c) differences, "terra vs sf gdalwarp, +0.34 to +0.39%", measured warp
+  **settings**, not the GDAL/PROJ version. They were misread at first as residual cross-toolchain
+  drift, which is what prompted gate decision 2. The decision still stands on its own reasoning:
+  the datum step moves the grid when GDAL picks it, and moves the values ~1.3 m.
+- `terra::project(by_util = TRUE)` with `warpOpts = c("-et", "0")` still differs from gdalwarp with
+  `-et 0` (nearest: 381,737 cells differ). Its options did not reproduce the utility's; not pursued.
+
+Net: with the template **and** the pin, a DEM from `fl_dem_aoi()` reproduces across GDAL
+3.8.5 ↔ 3.13.0 and PROJ 9.5.1 ↔ 9.8.1 to within 0.12 mm per cell (shown for the warper; terra on
+GDAL 3.8.5 was not run directly, since m1 has only terra on 3.13.0).
