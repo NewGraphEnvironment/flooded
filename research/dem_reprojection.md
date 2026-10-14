@@ -103,7 +103,8 @@ So compare warps like for like, and re-derive a kept DEM through `fl_dem_aoi()`,
 - With template + pin, a DEM from `fl_dem_aoi()` reproduces across GDAL 3.8.5 ↔ 3.13.0 and PROJ
   9.5.1 ↔ 9.8.1 to within 0.12 mm per cell. The warper was shown that way; terra on GDAL 3.8.5 was
   not run. Until #78 that held for **terra's** PROJ only: the AOI's transforms went through sf's,
-  and moved edge cells. Since #78 it holds for both where the AOI's pairs are projected NAD83.
+  and moved edge cells. Since #78 it holds for both where the AOI's pairs are projected NAD83 with
+  easting-then-northing axes.
 - Record terra's GDAL and PROJ (`terra::gdal(lib = "all")`) with any kept DEM (floodplains#117),
   and sf's PROJ (`sf::sf_extSoftVersion()`) too when the AOI's CRS pair is not pinned
   (geographic, northing-first or non-NAD83 on either side).
