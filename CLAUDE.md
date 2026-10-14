@@ -101,9 +101,9 @@ tests/testthat/          — unit tests for each fl_* function (17 test files, 1
   as well where the AOI's CRS pair is not pinned (#78).
   The crop stays the buffered AOI's bbox in the source CRS (+2 cells); cropping to the template
   footprint read ~2× the bytes only to fill cells outside the AOI. The AOI's own transforms (read
-  window, and the grid for an AOI in a third CRS) are pinned the same way (#78): through sf's
-  default PROJ an edge within the datum step of a cell boundary flipped 47–91 edge cells for 3 of 60
-  AOI positions, none inside the buffered AOI; 0 of 60 after the fix, with unpinned sf transforms
+  window, and the grid for an AOI in a third CRS) are pinned the same way (#78): through PROJ
+  9.8.1's WGS 84 route an edge within the datum step of a cell boundary changed 47–91 edge cells
+  for 3 of 60 AOI positions, none inside the buffered AOI; 0 of 60 after the fix, with unpinned sf transforms
   routed through terra's PROJ 9.8.1. Outside projected NAD83 pairs (a WGS 84 source, a geographic
   or northing-first AOI) and with `pipeline = ""`, those edges still follow sf's PROJ.
   Enumerated over all 1,935 EPSG NAD83 projected CRSs (`planning/archive/2026-10-issue-67-fl-dem-aoi-grid/enumerate_pin.R`; `research/dem_reprojection.md`):

@@ -75,7 +75,8 @@ terra's PROJ 9.8.1 (+0.71, −1.05 m here), the same 60 positions through `fl_de
 0.7.0 changed the DEM at 3 of 60 (dx = 3.5, 21.5, 28.5: the probe's three), the fix at **0 of 60**
 (`measure_window_real_proj.R`, log `logs/20261014_measure_window_real_proj.log`). On sf's own PROJ
 9.5.1 the fix is output-neutral: six call shapes identical to 0.7.0. A WGS 84 source still leaves
-the read window to sf's PROJ (CSRS or NAD83 to WGS 84 has no pin); the grid is pinned there.
+the read window to sf's PROJ (CSRS or NAD83 to WGS 84 has no pin). Its grid is pinned when the AOI
+is in a projected NAD83 CRS of its own; an AOI in the WGS 84 source's CRS leaves both to sf's PROJ.
 
 **Why geographic and northing-first CRSs are excluded.** A supplied pipeline meets a CRS's
 authority axis order (lat/lon; or northing first, as in EPSG:2953 and the Illinois ICS83 zones) on

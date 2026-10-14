@@ -392,14 +392,23 @@ test_that("fl_dem_aoi inverts a supplied pipeline for the read window (#78)", {
   }
 })
 
-test_that("fl_dem_aoi stops clearly when a supplied pipeline cannot be inverted (#78)", {
+test_that("fl_dem_aoi stops clearly when a supplied pipeline cannot be applied in reverse (#78)", {
   aoi <- sf::st_read(testdata_path("streams.gpkg"), quiet = TRUE)
   src <- x_field_3979(aoi, 100, res = 30)
-  # urm5 has no inverse
-  no_inverse <- paste(flooded:::dem_pipeline_nad83(sf::st_crs(3979), sf::st_crs(3005)),
-                      "+step +proj=urm5 +n=0.9 +alpha=2 +q=4")
+  lcc_3979 <- "+proj=lcc +lat_0=49 +lon_0=-95 +lat_1=49 +lat_2=77 +x_0=0 +y_0=0 +ellps=GRS80"
+  # Valid forward, but urm5 has no inverse: the reverse returns NaN
+  no_inverse <- paste("+proj=pipeline +step +inv", lcc_3979, "+step +proj=urm5 +n=0.9 +alpha=2 +q=4")
   expect_error(fl_dem_aoi(aoi, source = src, buffer = 100, pipeline = no_inverse),
-               "could not be inverted")
+               "could not be applied in reverse")
+
+  # Not a valid pipeline at all (urm5 wants lon/lat, the pin ends in metres):
+  # sf errors, and PROJ's own reason arrives as GDAL warnings
+  invalid <- paste(flooded:::dem_pipeline_nad83(sf::st_crs(3979), sf::st_crs(3005)),
+                   "+step +proj=urm5 +n=0.9 +alpha=2 +q=4")
+  suppressWarnings(
+    expect_error(fl_dem_aoi(aoi, source = src, buffer = 100, pipeline = invalid),
+                 "could not be applied in reverse")
+  )
 
   # Degrees out, but sf feeds the inverse lat/lon in authority order
   to_degrees <- paste(
@@ -409,7 +418,7 @@ test_that("fl_dem_aoi stops clearly when a supplied pipeline cannot be inverted 
   aoi_ll <- sf::st_transform(aoi, 4269)
   expect_error(
     fl_dem_aoi(aoi_ll, source = src, buffer = 100, res = 3e-4, pipeline = to_degrees),
-    "could not be inverted"
+    "could not be applied in reverse"
   )
 })
 

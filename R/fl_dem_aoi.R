@@ -179,9 +179,10 @@ fl_dem_aoi <- function(aoi, source = NULL, buffer = 2000, target_crs = NULL,
   user_pipeline <- !is.null(pipeline_arg) && nzchar(pipeline_arg) &&
     aoi_crs == target_crs
   not_inverted <- function(why) {
-    stop("`pipeline` could not be inverted to carry the AOI into the source ",
-         "CRS for the read window (", why, "). A supplied pipeline must be ",
-         "invertible and run between CRSs whose axes are easting then northing.",
+    stop("`pipeline` could not be applied in reverse to carry the AOI into ",
+         "the source CRS for the read window (", why, "). A supplied pipeline ",
+         "must be valid, invertible, and run between CRSs whose axes are ",
+         "easting then northing.",
          call. = FALSE)
   }
   aoi_buf_in_r <- if (user_pipeline) {
