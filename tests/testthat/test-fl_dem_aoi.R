@@ -594,9 +594,9 @@ test_that("fl_dem_aoi fetches MRDEM-30 via /vsicurl/", {
 })
 
 # dem.tif is UInt32 with nodata 4294967295. terra::project() of a file-backed
-# copy fills cells beyond the source with that nodata rounded to Float32
-# (4294967296) and tags the output NoData = NaN, so the fill reads as data
-# (#76). Any integer nodata Float32 cannot hold does the same. The same DEM
+# copy leaves cells beyond the source at that nodata rounded to Float32
+# (4294967296), which no longer matches the nodata, so it reads as data (#76).
+# Any integer nodata Float32 cannot hold does the same. The same DEM
 # stored as Float32 never takes that path, so it is the reference: the result
 # must be identical, NA where the source ends included.
 dem_as <- function(datatype, ...) {

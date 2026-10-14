@@ -81,7 +81,8 @@ source, so it is untouched. Report upstream as a draft only.
 - [x] *Added (review #1):* multi-layer INT4U test; without `any()` it errors
 - [x] Mutation check (in a copy of the tree): cast removed -> all 5 #76 blocks red; `any()`
       removed -> multi-layer block errors; restored -> 34/34 blocks green
-- [ ] Existing `fl_dem_aoi` tests and full suite green; `lintr::lint_package()` clean
+- [x] Existing `fl_dem_aoi` tests and full suite green (`devtools::test()`: FAIL 0, WARN 0, SKIP 0,
+      PASS 461); `lintr::lint_package()` clean
       (`fl_dem_aoi` tests: 34/34; lint: nothing new beyond the `testdata_path` false positive
       the other test files already carry)
 - [x] `devtools::document()`: one `@details` sentence on integer sources
@@ -97,7 +98,7 @@ source, so it is untouched. Report upstream as a draft only.
       (§4 added; landed with the Phase 3 fix it describes)
 
 ## Validation
-- [ ] Tests pass
+- [x] Tests pass
 - [ ] `/code-check` clean (each commit, or once over the branch with `/code-check branch`)
 - [ ] PWF checkboxes match landed work
 - [ ] `/planning-archive` on completion

@@ -103,9 +103,11 @@ So compare warps like for like, and re-derive a kept DEM through `fl_dem_aoi()`,
 **Verified:** 2026-10-14, terra 1.9.50 / GDAL 3.13.0 / PROJ 9.8.1 · **Produced by:**
 `planning/archive/2026-10-issue-76-fl-dem-aoi-a-whole-file-uint32-source-re/reprex_terra_uint32.R`
 
-`terra::project()` of a **file-backed** `INT4U` raster with NoData 4294967295 fills the cells no
-source cell maps to with **4294967296**, that NoData rounded to Float32, and tags the Float32
-output `NoData=nan`, so the fill reads back as data. The bundled `dem.tif` is such a source:
+`terra::project()` of a **file-backed** `INT4U` raster with NoData 4294967295 leaves the cells no
+source cell maps to at **4294967296**, that NoData rounded to Float32, in an output tagged
+`NoData=nan`, so they read back as data. As observed, cells beyond the source that still equal
+the NoData in Float32 are written as NaN (a file-backed `INT2U`, NoData 65535: all 45,116 NaN);
+the rounding is what defeats that match. terra's internals were not read. The bundled `dem.tif` is such a source:
 `fl_dem_aoi(streams, dem.tif, buffer = 2000, target_crs = 3157)` returned 2^32 beyond the tile
 on 0.6.6 and every release since.
 

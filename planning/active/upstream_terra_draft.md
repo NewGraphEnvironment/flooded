@@ -13,9 +13,13 @@ instead of `NA`. 4294967296 is 4294967295 rounded to Float32. The output is tagg
 
 The same values held in memory (`x * 1`), or a `datatype = "FLT8S"` output, give `NA`. GDAL's own
 `gdalwarp` of the same file, from the same GDAL build, with a Float32 output, writes
-`NoData Value=4.2949673e+09` and the fill is masked on read. So the fill value and the declared
-NoData appear to come from different sources in terra's warp: the fill from the source's NoData
-cast to the output type, the tag from `NaN`.
+`NoData Value=4.2949673e+09` and the fill is masked on read.
+
+With a file-backed `INT2U` source (NoData 65535) the same call writes those cells as NaN. So it
+looks as though cells equal to the source NoData are converted to NaN by value, and with a
+NoData that Float32 cannot hold exactly the stored value (4294967296) no longer equals it
+(4294967295) and survives as data. I have not read the code, so that is inferred from the
+outputs.
 
 The same happens with an `INT8U` source at terra's default NoData (fill 18446744073709551616)
 and with an `INT4S` source whose NoData is 2147483647 (fill 2147483648). `INT2U` (65535) and

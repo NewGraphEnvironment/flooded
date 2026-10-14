@@ -240,11 +240,11 @@ fl_dem_aoi <- function(aoi, source = NULL, buffer = 2000, target_crs = NULL,
                bs[["ymin"]] - pad, bs[["ymax"]] + pad),
     snap = "out"
   )
-  # terra::project() of a file-backed integer raster fills cells beyond the
-  # source with its NoData cast to the Float32 output, and tags the output
-  # NoData = NaN, so a NoData Float32 cannot hold exactly (UInt32 4294967295,
-  # Int32 2147483647) comes back as data: 4294967296 m (#76). A float copy
-  # carries NA instead. An in-memory crop reports datatype "" and is already
+  # terra::project() of a file-backed integer raster writes cells beyond the
+  # source as NaN only when they match its NoData in the Float32 output. A
+  # NoData Float32 cannot hold exactly (UInt32 4294967295, Int32 2147483647)
+  # is stored rounded, no longer matches, and comes back as data: 4294967296 m
+  # (#76). A float copy carries NA instead. An in-memory crop reports datatype "" and is already
   # fine. On disk the copy is Float32: integers above 2^24 lose precision.
   if (any(grepl("^INT", terra::datatype(r_clip)))) r_clip <- r_clip * 1
 
