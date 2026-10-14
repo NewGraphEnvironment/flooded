@@ -1,5 +1,27 @@
 # Changelog
 
+## flooded 0.7.1
+
+- [`fl_dem_aoi()`](https://newgraphenvironment.github.io/flooded/reference/fl_dem_aoi.md)
+  now pins the AOI’s own transforms the way 0.7.0 pinned the warp
+  ([\#78](https://github.com/NewGraphEnvironment/flooded/issues/78)):
+  the read window (the buffered AOI carried into the source CRS) and,
+  for an AOI in a third CRS, the grid (carried into `target_crs`) use
+  the projection-only pipeline between projected NAD83 CRSs, so the
+  returned DEM no longer depends on which PROJ sf links. Measured on 60
+  sub-cell AOI positions, a ~1.3 m datum step changed 0.7.0’s DEM at 3
+  of them (47 to 91 edge cells, none inside the buffered AOI); the fix
+  changes it at none.
+  - **Output is unchanged** where sf’s PROJ applies no shift for these
+    pairs. Edge cells can change for callers whose sf takes a datum
+    step, and for callers who pass a custom `pipeline` with the AOI in
+    `target_crs`: the read window now follows their string, inverted. A
+    string that cannot be applied in reverse stops with a clear error.
+  - Geographic, northing-first and non-NAD83 AOI pairs, and
+    `pipeline = ""`, still follow sf’s PROJ; record
+    [`sf::sf_extSoftVersion()`](https://r-spatial.github.io/sf/reference/sf_extSoftVersion.html)
+    with a kept DEM in those cases.
+
 ## flooded 0.7.0
 
 - [`fl_dem_aoi()`](https://newgraphenvironment.github.io/flooded/reference/fl_dem_aoi.md)

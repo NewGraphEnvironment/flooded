@@ -23,16 +23,16 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/NewGraphEnvironment/flooded/blob/main/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/NewGraphEnvironment/flooded/blob/v0.7.1/DESCRIPTION)
 
 Irvine A (2026). *flooded: Portable Floodplain Delineation from DEM and
-Stream Network*. R package version 0.7.0,
+Stream Network*. R package version 0.7.1,
 <https://github.com/NewGraphEnvironment/flooded>.
 
     @Manual{,
       title = {flooded: Portable Floodplain Delineation from DEM and Stream Network},
       author = {Allan Irvine},
       year = {2026},
-      note = {R package version 0.7.0},
+      note = {R package version 0.7.1},
       url = {https://github.com/NewGraphEnvironment/flooded},
     }
