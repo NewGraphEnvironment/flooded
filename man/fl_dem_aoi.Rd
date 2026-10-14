@@ -50,7 +50,9 @@ PROJ. \code{""} leaves every pair to
 PROJ. Any other string is a PROJ pipeline passed to \code{\link[terra:project]{terra::project()}} as
 given; supply one only between CRSs whose axes are easting then northing,
 because a pipeline can meet a CRS's authority axis order (lat/lon, or
-northing first) and silently return \code{NA} or a misplaced raster.}
+northing first) and silently return \code{NA} or a misplaced raster. When
+\code{aoi} is in \code{target_crs}, a supplied string is also used, inverted, to
+carry the AOI into the source CRS for the read window.}
 }
 \value{
 A \code{SpatRaster} covering the buffered AOI. In the source CRS (and
@@ -94,10 +96,15 @@ flooded. With it pinned, GDAL 3.8.5's warper reproduces terra on GDAL
 (an approximate transformer and a kernel widened with scale) differ from
 terra's by up to ~10 m per cell, so re-derive a kept DEM through
 \code{fl_dem_aoi()}, not \code{gdalwarp}, and record terra's GDAL and PROJ versions
-(\code{terra::gdal(lib = "all")}) with it. When \code{aoi} is not already in
-\code{target_crs}, its bounding box is transformed through sf's PROJ, so an edge
-lying within a datum shift of a multiple of \code{res} can snap one cell
-differently on another machine.
+(\code{terra::gdal(lib = "all")}) with it.
+
+The AOI's own transforms, into the source CRS for the read window and
+into \code{target_crs} for the grid, go through sf's PROJ, and between projected
+NAD83 pairs they are pinned the same way (#78). Left to PROJ, a datum step
+of about a metre moves an edge that lies that close to a cell boundary by
+a whole cell: on the bundled streams it changed 47 to 91 cells of a 30 m
+DEM for 3 of 60 AOI positions, all outside the buffered AOI. For other
+pairs, and with \code{pipeline = ""}, those edges still follow sf's PROJ.
 
 For sub-10 m riparian-scale work where lidar coverage exists, query the
 \code{stac-elevation-bc} STAC catalog and pass an item's COG URL as \code{source}. See the

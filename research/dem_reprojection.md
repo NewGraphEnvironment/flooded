@@ -1,6 +1,6 @@
 # DEM reprojection: who chooses the grid, the datum step and the warp settings
 
-**Verified:** 2026-10-13 · **Issues:** flooded#67, floodplains#117, flooded#76 · **Produced by:**
+**Verified:** 2026-10-14 · **Issues:** flooded#67, floodplains#117, flooded#76, flooded#78 · **Produced by:**
 `planning/archive/2026-10-issue-67-fl-dem-aoi-grid/` — `measure_grid.R`, `measure_proj.R`,
 `measure_pin.R`, `probe_warp_kernel.R` (MORR coho, MRDEM-30 → BC Albers), `rebuild_pars.R`
 (Parsnip WSG), `enumerate_pin.R` + `classify_enum_fails.R` (all EPSG NAD83 projected CRSs), with
@@ -56,6 +56,19 @@ hands the choice back to PROJ.
 **Measured over all 1,935 EPSG NAD83 projected CRSs, 4 cases each:** 7,501 of 7,544 pinned cases
 pass. The other 43 are PROJ 9.8.1's own choice being the outlier (32) or a template row snapping
 differently (11); none is unexplained.
+
+**The AOI's own transforms are pinned too (#78).** The read window (the buffered AOI carried into
+the source CRS) and, for an AOI in a third CRS, the grid (carried into `target_crs`) went through
+sf's PROJ with its default operation until #78. An edge within the datum step of a source cell
+boundary then crops one column or row differently. **Measured** with the bundled streams, buffer
+100 m, a 30 m source in EPSG:3979, the AOI moved over 60 sub-cell positions, and the window taken
+shift-free and through PROJ 9.8.1's WGS 84 route: 3 of 60 positions changed the returned DEM,
+by 49, 91 and 47 cells (32, 60 and 31 of them NA/value flips). **None lay inside the buffered
+AOI.** So it moves a digest, not a delineation that stays inside the buffer
+(`planning/archive/2026-10-issue-78-*/measure_window.R`, log `logs/20261014_measure_window.log`).
+A wider pad cannot remove it: any window edge can sit that close to a boundary. Only reading the
+whole template footprint, about 2x the bytes, would. A supplied `pipeline` is inverted
+(`reverse = TRUE`) for the window when the AOI is in `target_crs`.
 
 **Why geographic and northing-first CRSs are excluded.** A supplied pipeline meets a CRS's
 authority axis order (lat/lon; or northing first, as in EPSG:2953 and the Illinois ICS83 zones) on

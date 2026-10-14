@@ -37,7 +37,9 @@
 #'   PROJ. Any other string is a PROJ pipeline passed to [terra::project()] as
 #'   given; supply one only between CRSs whose axes are easting then northing,
 #'   because a pipeline can meet a CRS's authority axis order (lat/lon, or
-#'   northing first) and silently return `NA` or a misplaced raster.
+#'   northing first) and silently return `NA` or a misplaced raster. When
+#'   `aoi` is in `target_crs`, a supplied string is also used, inverted, to
+#'   carry the AOI into the source CRS for the read window.
 #'
 #' @return A `SpatRaster` covering the buffered AOI. In the source CRS (and
 #'   `res` unset or equal to the source's) it is a crop on the source grid.
@@ -73,10 +75,15 @@
 #' (an approximate transformer and a kernel widened with scale) differ from
 #' terra's by up to ~10 m per cell, so re-derive a kept DEM through
 #' `fl_dem_aoi()`, not `gdalwarp`, and record terra's GDAL and PROJ versions
-#' (`terra::gdal(lib = "all")`) with it. When `aoi` is not already in
-#' `target_crs`, its bounding box is transformed through sf's PROJ, so an edge
-#' lying within a datum shift of a multiple of `res` can snap one cell
-#' differently on another machine.
+#' (`terra::gdal(lib = "all")`) with it.
+#'
+#' The AOI's own transforms, into the source CRS for the read window and
+#' into `target_crs` for the grid, go through sf's PROJ, and between projected
+#' NAD83 pairs they are pinned the same way (#78). Left to PROJ, a datum step
+#' of about a metre moves an edge that lies that close to a cell boundary by
+#' a whole cell: on the bundled streams it changed 47 to 91 cells of a 30 m
+#' DEM for 3 of 60 AOI positions, all outside the buffered AOI. For other
+#' pairs, and with `pipeline = ""`, those edges still follow sf's PROJ.
 #'
 #' For sub-10 m riparian-scale work where lidar coverage exists, query the
 #' `stac-elevation-bc` STAC catalog and pass an item's COG URL as `source`. See the

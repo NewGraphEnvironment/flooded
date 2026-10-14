@@ -19,3 +19,9 @@
 - `dem_st_transform()` helper; read window and grid transforms pinned via `dem_pipeline_nad83(aoi_crs, ·)`, a supplied pipeline inverted (`reverse = TRUE`) for the window when the AOI is in `target_crs`, `""` hands both to PROJ.
 - `test-fl_dem_aoi.R` 27/27 green. Added a supplied-pipeline identity test.
 - Mutation table (scratch copy): window pin → `""` reddens the reproject and crop tests (2, 4 failures); template pin → `""` reddens the third-CRS test (4); `reverse = FALSE` errors the new supplied-pipeline test and the #67 `pipeline` test.
+
+## Phase 3 — docs and record (2026-10-14)
+
+- roxygen `@param pipeline` and `@details` updated; `man/` regenerated.
+- `measure_window.R` + `logs/20261014_measure_window.log`: reproduces the plan-mode probe (3/60 positions; 49, 91, 47 cells; 0 inside the buffered AOI), sf PROJ 9.5.1 / terra PROJ 9.8.1.
+- `research/dem_reprojection.md` §2 paragraph; CLAUDE.md `fl_dem_aoi()` bullet.

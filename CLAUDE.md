@@ -99,7 +99,10 @@ tests/testthat/          — unit tests for each fl_* function (17 test files, 1
   (exact, scale 1) by up to ~10 m per cell and +0.37% of floodplain, which reads as toolchain drift
   and is not. Provenance records terra's GDAL/PROJ (`terra::gdal(lib = "all")`), not sf's.
   The crop stays the buffered AOI's bbox in the source CRS (+2 cells); cropping to the template
-  footprint read ~2× the bytes only to fill cells outside the AOI.
+  footprint read ~2× the bytes only to fill cells outside the AOI. The AOI's own transforms (read
+  window, and the grid for an AOI in a third CRS) are pinned the same way (#78): through sf's
+  default PROJ an edge within the datum step of a cell boundary flipped 47–91 edge cells for 3 of 60
+  AOI positions, none inside the buffered AOI.
   Enumerated over all 1,935 EPSG NAD83 projected CRSs (`planning/archive/2026-10-issue-67-fl-dem-aoi-grid/enumerate_pin.R`; `research/dem_reprojection.md`):
   no pinned case fails. In the NAD83(2011)/NSRS2007 Alaska zones PROJ 9.8.1's *own* choice sits
   3.5–88 m from the shift-free answer (deformation grids absent), so unpinned, a DEM there moves

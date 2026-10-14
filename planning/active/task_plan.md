@@ -40,14 +40,14 @@
       `pipeline = ""` expected-PROJ test.
 
 ## Phase 3: Docs and record
-- [ ] roxygen `@param pipeline`: a supplied string is also used, inverted, for the read window
+- [x] roxygen `@param pipeline`: a supplied string is also used, inverted, for the read window
       when the AOI is in `target_crs`. `@details`: replace the sf-PROJ caveat with the new
       behaviour, and keep the caveat for pairs outside projected NAD83. Then `devtools::document()`.
-- [ ] Save the probe as `planning/active/measure_window.R` and commit its log
+- [x] Save the probe as `planning/active/measure_window.R` and commit its log
       (`planning/active/logs/<date>_measure_window.log`)
-- [ ] `research/dem_reprojection.md`: a short "read window" paragraph under §2 with the measured
+- [x] `research/dem_reprojection.md`: a short "read window" paragraph under §2 with the measured
       3/60 and 0-inside-AOI figures. Bump the Verified line and add #78.
-- [ ] CLAUDE.md design-decision bullet on `fl_dem_aoi()`: one sentence saying the AOI transforms
+- [x] CLAUDE.md design-decision bullet on `fl_dem_aoi()`: one sentence saying the AOI transforms
       are pinned too (#78)
 
 ## Validation
