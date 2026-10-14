@@ -27,3 +27,12 @@ Found while working on #67.
 
 | Error | Resolution |
 |-------|------------|
+| `sf::gdal_utils("warp")` as the "GDAL alone" contrast | sf links GDAL 3.8.5, terra 3.13.0: a cross-version comparison. Use the `gdalwarp` CLI (3.13.0, same as terra) |
+| `reprex::reprex(outfile = NA)` re-run produced no new output | reprex refuses to overwrite `reprex_reprex.*`; delete them first |
+
+## Phase 1 — upstream search (2026-10-14)
+
+No rspatial/terra issue covers this (searched: nodata project, INT4U, NAflag, UInt32, 2^32,
+warp nodata NaN). Nearest: #2207 (crop to disk treats INT2U 65535 as NoData, fixed),
+#2030 (`values()` coerces INT4U > 2^31-1), #2166 / #2074 (`NAflag()` disagrees with the header;
+here `NAflag()` reports NaN while `describe()` shows 4294967295).

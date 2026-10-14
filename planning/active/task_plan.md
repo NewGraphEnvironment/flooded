@@ -51,12 +51,15 @@ exactly today's path. The same-CRS crop path (`return(terra::crop(...))`) never 
 source, so it is untouched. Report upstream as a draft only.
 
 ## Phase 1: Reproduce and draft upstream report
-- [ ] Minimal terra-only reprex (synthetic UInt32 GeoTIFF with nodata 4294967295, no flooded):
+- [x] Minimal terra-only reprex (synthetic UInt32 GeoTIFF with nodata 4294967295, no flooded):
       `project()` file-backed vs `* 1`, plus the `gdalwarp` contrast and the `datatype = "FLT8S"`
       and INT8U observations; record versions
-- [ ] Search rspatial/terra issues once more (open + closed: nodata / UInt32 / project / Float32)
-- [ ] Write the draft issue to `research/terra_uint32_nodata_project.md` (provenance header; the
-      reprex; what discriminates terra from GDAL). **Not posted** — shown to the user for approval
+- [x] Search rspatial/terra issues once more (open + closed: nodata / UInt32 / project / Float32)
+- [x] Write the draft issue to `planning/active/upstream_terra_draft.md` (reprex in
+      `reprex_terra_uint32.R`; what discriminates terra from GDAL). **Not posted** — shown to the
+      user for approval. *Revised:* the verdict goes in the existing topic file
+      `research/dem_reprojection.md` (§4), which already cited #76, not a new research file
+      (planning.md, "one topic file, revised in place"); lands with the Phase 3 fix it describes
 
 ## Phase 2: Tests first (fail on main)
 - [ ] `test-fl_dem_aoi.R`: whole-file UInt32 source (`dem.tif`, `buffer = 2000`,
