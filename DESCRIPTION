@@ -1,6 +1,6 @@
 Package: flooded
 Title: Portable Floodplain Delineation from DEM and Stream Network
-Version: 0.7.1
+Version: 0.7.2
 Date: 2026-10-14
 Authors@R: c(
     person("Allan", "Irvine", , "al@newgraphenvironment.com", role = c("aut", "cre"),

@@ -1,3 +1,16 @@
+# flooded 0.7.2
+
+* `fl_dem_aoi()` now returns `NA`, not the NoData rounded to Float32, where a reprojected integer
+  DEM reaches past the area read (#76). A UInt32 source such as the bundled `dem.tif` (NoData
+  4294967295) came back as 4294967296 m there whenever the crop was file-backed: a crop of the
+  whole file, or a subset crop that terra keeps on disk. Integer sources are now read through a
+  floating-point copy before `terra::project()`. Float sources such as MRDEM-30 take exactly the
+  old path, so their output is unchanged.
+  - The defect is terra's: `terra::project()` writes `NaN` only where cells still match the NoData
+    in Float32, and a NoData Float32 cannot hold exactly (UInt32 4294967295, Int32 2147483647,
+    INT8U's default) is stored rounded and survives as a value. `gdalwarp` from the same GDAL
+    build does not do this. See `research/dem_reprojection.md` §4.
+
 # flooded 0.7.1
 
 * `fl_dem_aoi()` now pins the AOI's own transforms the way 0.7.0 pinned the warp (#78): the read
