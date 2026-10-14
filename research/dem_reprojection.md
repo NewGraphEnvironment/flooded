@@ -105,17 +105,17 @@ So compare warps like for like, and re-derive a kept DEM through `fl_dem_aoi()`,
 
 `terra::project()` of a **file-backed** `INT4U` raster with NoData 4294967295 leaves the cells no
 source cell maps to at **4294967296**, that NoData rounded to Float32, in an output tagged
-`NoData=nan`, so they read back as data. As observed, cells beyond the source that still equal
+`NoData=nan`, so they read back as data. As observed, cells beyond the projected raster that still equal
 the NoData in Float32 are written as NaN (a file-backed `INT2U`, NoData 65535: all 45,116 NaN);
 the rounding is what defeats that match. terra's internals were not read. The bundled `dem.tif` is such a source:
 `fl_dem_aoi(streams, dem.tif, buffer = 2000, target_crs = 3157)` returned 2^32 beyond the tile
 on 0.6.6 and every release since.
 
 It is terra's, not GDAL's: `gdalwarp` from the same GDAL 3.13.0 build, Float32 output, tags
-NoData 4.2949673e+09 and the fill is masked. What triggers it is an integer NoData that Float32
-cannot hold exactly, not the crop:
+NoData 4.2949673e+09 and the fill is masked. What triggers it is a file-backed raster whose
+integer NoData Float32 cannot hold exactly, whether or not the crop covers the whole file:
 
-| source | max beyond the source |
+| raster projected | max where the output reaches past it |
 |---|---|
 | `INT4U`, file-backed (whole-file crop, or any crop terra writes to disk) | 4294967296 |
 | `INT8U`, file-backed (terra's default NoData) | 1.8e19 |

@@ -99,7 +99,7 @@ source, so it is untouched. Report upstream as a draft only.
 
 ## Validation
 - [x] Tests pass
-- [ ] `/code-check` clean (each commit, or once over the branch with `/code-check branch`)
-- [ ] PWF checkboxes match landed work
+- [x] `/code-check` clean (`/code-check branch`: 4 rounds, 6 findings fixed; ended by enumeration)
+- [x] PWF checkboxes match landed work
 - [ ] `/planning-archive` on completion
 

@@ -32,3 +32,10 @@
   apart from its source. Enumerated every restatement in the diff; 2 disagreed, both confirmed:
   CLAUDE.md's test-block count (161 -> 166 with this branch) and the roxygen sentence, the one copy
   that dropped "file-backed" (an in-memory crop was always NA). Fixed; neither inside a prior fix
+- Round 4 (`review-round4.md`): 2 findings, the first **inside round 3's fix**: the new roxygen
+  said "past the source" where, on disk, the 2^32 cells are past the crop (probe: all 9,533 inside
+  dem.tif's footprint); CLAUDE.md's trap said "inside the tile, or in memory" where it needs "and".
+  Mechanism: "source" meant the file in our prose and the raster handed to `project()` in terra's.
+  Ended by enumeration: every added line in R/, man/, tests/, research/, CLAUDE.md with an extent
+  word (beyond / past / outside / footprint / source ends), 16 hits, each now names the crop, the
+  area read, the projected raster, or the file in a whole-file case. Tests 34/34
