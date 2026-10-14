@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">flooded</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -34,9 +34,17 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/NewGraphEnvironment/flooded/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/NewGraphEnvironment/flooded/blob/v0.7.2/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.2" id="flooded-072">flooded 0.7.2<a class="anchor" aria-label="anchor" href="#flooded-072"></a></h2>
+<ul><li>
+<code><a href="../reference/fl_dem_aoi.html">fl_dem_aoi()</a></code> now returns <code>NA</code>, not the NoData rounded to Float32, where a reprojected integer DEM reaches past the area read (<a href="https://github.com/NewGraphEnvironment/flooded/issues/76" class="external-link">#76</a>). A UInt32 source such as the bundled <code>dem.tif</code> (NoData
+<ol start="4294967295" style="list-style-type: decimal"><li>came back as 4294967296 m there whenever the crop was file-backed: a crop of the whole file, or a subset crop that terra keeps on disk. Integer sources are now read through a floating-point copy before <code><a href="https://rspatial.github.io/terra/reference/project.html" class="external-link">terra::project()</a></code>. Float sources such as MRDEM-30 take exactly the old path, so their output is unchanged.</li>
+</ol><ul><li>The defect is terra’s: <code><a href="https://rspatial.github.io/terra/reference/project.html" class="external-link">terra::project()</a></code> writes <code>NaN</code> only where cells still match the NoData in Float32, and a NoData Float32 cannot hold exactly (UInt32 4294967295, Int32 2147483647, INT8U’s default) is stored rounded and survives as a value. <code>gdalwarp</code> from the same GDAL build does not do this. See <code>research/dem_reprojection.md</code> §4.</li>
+</ul></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.7.1" id="flooded-071">flooded 0.7.1<a class="anchor" aria-label="anchor" href="#flooded-071"></a></h2>
 <ul><li>
