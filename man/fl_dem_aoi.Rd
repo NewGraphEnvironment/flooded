@@ -52,7 +52,9 @@ given; supply one only between CRSs whose axes are easting then northing,
 because a pipeline can meet a CRS's authority axis order (lat/lon, or
 northing first) and silently return \code{NA} or a misplaced raster. When
 \code{aoi} is in \code{target_crs}, a supplied string is also used, inverted, to
-carry the AOI into the source CRS for the read window.}
+carry the AOI into the source CRS for the read window, so it must be
+invertible. When \code{aoi} is in a third CRS, its transforms take the default
+pin, not the string. \code{""} hands the AOI's transforms to sf's PROJ as well.}
 }
 \value{
 A \code{SpatRaster} covering the buffered AOI. In the source CRS (and
@@ -103,8 +105,10 @@ into \code{target_crs} for the grid, go through sf's PROJ, and between projected
 NAD83 pairs they are pinned the same way (#78). Left to PROJ, a datum step
 of about a metre moves an edge that lies that close to a cell boundary by
 a whole cell: on the bundled streams it changed 47 to 91 cells of a 30 m
-DEM for 3 of 60 AOI positions, all outside the buffered AOI. For other
-pairs, and with \code{pipeline = ""}, those edges still follow sf's PROJ.
+DEM for 3 of 60 AOI positions, all outside the buffered AOI. Where the
+AOI's pair is not pinned (a geographic, northing-first or non-NAD83 CRS on
+either side) and with \code{pipeline = ""}, those edges still follow sf's PROJ,
+so record sf's PROJ too (\code{sf::sf_extSoftVersion()}).
 
 For sub-10 m riparian-scale work where lidar coverage exists, query the
 \code{stac-elevation-bc} STAC catalog and pass an item's COG URL as \code{source}. See the

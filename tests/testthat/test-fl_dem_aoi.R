@@ -165,10 +165,10 @@ test_that("fl_dem_aoi rejects an invalid res", {
 # A source in EPSG:3979 (NAD83(CSRS), MRDEM's CRS) whose value is its own x
 # coordinate. Bilinear sampling of a linear field is exact, so each output cell
 # holds the 3979 x of its centre under whatever operation projected it.
-x_field_3979 <- function(aoi, buffer, res = 10) {
-  bb <- sf::st_bbox(sf::st_transform(sf::st_buffer(aoi, buffer + 500), 3979))
+x_field_3979 <- function(aoi, buffer, res = 10, crs = 3979) {
+  bb <- sf::st_bbox(sf::st_transform(sf::st_buffer(aoi, buffer + 500), crs))
   r <- terra::rast(terra::ext(bb[["xmin"]], bb[["xmax"]], bb[["ymin"]], bb[["ymax"]]),
-                   resolution = res, crs = "EPSG:3979")
+                   resolution = res, crs = paste0("EPSG:", crs))
   r <- terra::init(r, "x")
   f <- tempfile(fileext = ".tif")
   terra::writeRaster(r, f, datatype = "FLT8S")
@@ -266,30 +266,74 @@ shift_east <- function(x, d) {
 }
 
 expect_same_dem <- function(a, b) {
-  expect_identical(as.vector(terra::ext(a)), as.vector(terra::ext(b)))
-  expect_identical(terra::values(a), terra::values(b))
+  testthat::expect_identical(as.vector(terra::ext(a)), as.vector(terra::ext(b)))
+  testthat::expect_identical(terra::values(a), terra::values(b))
 }
 
 # The streams moved east by d metres put an edge of the buffered AOI within
 # 1.3 m of a cell boundary of x_field_3979(aoi, 100, res = 30), so under
-# mock_sf_datum_shift() the current code reads or crops a different column or
-# row. Found by searching d = 0:29 against flooded 0.7.0 (#78); `third` is the
-# UTM 10N AOI's, at offsets where the template grid, not the window, moves.
-window_offsets <- list(reproject = c(12, 21), crop = c(12, 22), third = c(8, 18))
+# mock_sf_datum_shift() 0.7.0 reads or crops a different column or row, or (for
+# `third` and `wgs84_source`, with the AOI in NAD83(CSRS) / UTM 10N) snaps the
+# grid differently. Found by searching d = 0:29 against 0.7.0 (#78);
+# `wgs84_source` are offsets where the grid itself moves, which the first fix
+# left unpinned when the source -> target pair had no pin. The offsets are
+# specific to the mock's +1.3 m: the real PROJ 9.5.1 / 9.8.1 split here is
+# about (+0.7, -1.05) m. The fixture's origin comes from a plain transform on
+# purpose, so origin and plain window move together on any PROJ.
+window_offsets <- list(
+  reproject = c(12, 21), crop = c(12, 22), third = c(8, 18), wgs84_source = c(1, 18)
+)
+
+# NAD83(CSRS) / UTM 10N, the CSRS flavour of AOI that PROJ versions disagree on
+# going into BC Albers. Converted shift-free so the AOI itself is fixed.
+to_csrs_utm <- function(x) {
+  suppressWarnings(sf::st_transform(
+    x, sf::st_crs(3157)$wkt,
+    pipeline = flooded:::dem_pipeline_nad83(sf::st_crs(3005), sf::st_crs(3157))
+  ))
+}
+
+snapped_ext <- function(x, res) {
+  bb <- sf::st_bbox(x)
+  c(floor(bb[c("xmin", "ymin")] / res), ceiling(bb[c("xmax", "ymax")] / res))
+}
 
 test_that("the mock shifts an unpinned transform, so the offsets reach a cell boundary (#78)", {
   aoi <- sf::st_read(testdata_path("streams.gpkg"), quiet = TRUE)
   r <- terra::rast(x_field_3979(aoi, 100, res = 30))
-  pin <- flooded:::dem_pipeline_nad83(sf::st_crs(3005), sf::st_crs(3979))
   crop_ext <- function(a) {
     as.vector(terra::ext(terra::crop(r, terra::ext(sf::st_bbox(a)[c(1, 3, 2, 4)]), snap = "out")))
   }
+  # What 0.7.0 read: the plain transform, unmocked against mocked
   for (d in c(window_offsets$reproject, window_offsets$crop)) {
     buf <- sf::st_buffer(shift_east(aoi, d), 100)
-    pinned <- suppressWarnings(sf::st_transform(buf, sf::st_crs(3979)$wkt, pipeline = pin))
-    shifted <- with_sf_datum_shift(sf::st_transform(buf, 3979))
-    expect_false(identical(crop_ext(pinned), crop_ext(shifted)), info = paste("offset", d))
+    expect_false(identical(crop_ext(sf::st_transform(buf, 3979)),
+                           crop_ext(with_sf_datum_shift(sf::st_transform(buf, 3979)))),
+                 info = paste("offset", d))
   }
+  # For a CSRS AOI, the grid edge snaps differently or the window crops differently
+  moved <- function(buf, to, res) {
+    !identical(snapped_ext(sf::st_transform(buf, to), res),
+               snapped_ext(with_sf_datum_shift(sf::st_transform(buf, to)), res))
+  }
+  r_res <- terra::res(r)[1]
+  for (d in window_offsets$third) {
+    buf <- sf::st_buffer(to_csrs_utm(shift_east(aoi, d)), 100)
+    window_moved <- !identical(crop_ext(sf::st_transform(buf, 3979)),
+                               crop_ext(with_sf_datum_shift(sf::st_transform(buf, 3979))))
+    expect_true(moved(buf, 3005, r_res) || window_moved, info = paste("offset", d))
+  }
+  r_wgs <- terra::rast(x_field_3979(aoi, 100, res = 30, crs = 32610))
+  for (d in window_offsets$wgs84_source) {
+    buf <- sf::st_buffer(to_csrs_utm(shift_east(aoi, d)), 100)
+    expect_true(moved(buf, 3005, terra::res(r_wgs)[1]), info = paste("offset", d))
+  }
+  # And it reaches sf::st_transform as flooded calls it
+  buf <- sf::st_buffer(aoi, 100)
+  expect_false(identical(
+    sf::st_bbox(flooded:::dem_st_transform(buf, sf::st_crs(3979), "")),
+    sf::st_bbox(with_sf_datum_shift(flooded:::dem_st_transform(buf, sf::st_crs(3979), "")))
+  ))
 })
 
 test_that("fl_dem_aoi reads the same source window whichever PROJ sf links (#78)", {
@@ -317,30 +361,82 @@ test_that("fl_dem_aoi crops on the source grid the same whichever PROJ sf links 
 test_that("fl_dem_aoi inverts a supplied pipeline for the read window (#78)", {
   aoi <- sf::st_read(testdata_path("streams.gpkg"), quiet = TRUE)
   src <- x_field_3979(aoi, 100, res = 30)
-  given <- flooded:::dem_pipeline_nad83(sf::st_crs(3979), sf::st_crs(3005))
+  r <- terra::rast(src)
+  # Differs from the default pin by more than a cell, so a window from the pin
+  # would sit one or two cells off this one
+  given <- paste(flooded:::dem_pipeline_nad83(sf::st_crs(3979), sf::st_crs(3005)),
+                 "+step +proj=affine +xoff=45 +yoff=45")
 
   for (d in window_offsets$reproject) {
+    buf <- sf::st_buffer(shift_east(aoi, d), 100)
+    win <- sf::st_bbox(suppressWarnings(
+      sf::st_transform(buf, sf::st_crs(3979)$wkt, pipeline = given, reverse = TRUE)
+    ))
+    bb <- sf::st_bbox(buf)
+    res <- terra::res(r)[1]  # terra fits the fixture's 30 m to its extent
+    pad <- 2 * max(terra::res(r))
+    tmpl <- terra::rast(
+      terra::ext(floor(bb[["xmin"]] / res) * res, ceiling(bb[["xmax"]] / res) * res,
+                 floor(bb[["ymin"]] / res) * res, ceiling(bb[["ymax"]] / res) * res),
+      resolution = res, crs = sf::st_crs(3005)$wkt
+    )
+    expected <- terra::project(
+      terra::crop(r, terra::ext(win[["xmin"]] - pad, win[["xmax"]] + pad,
+                                win[["ymin"]] - pad, win[["ymax"]] + pad), snap = "out"),
+      tmpl, method = "bilinear", pipeline = given
+    )
     a <- shift_east(aoi, d)
-    expect_same_dem(fl_dem_aoi(a, source = src, buffer = 100),
+    expect_same_dem(fl_dem_aoi(a, source = src, buffer = 100, pipeline = given), expected)
+    expect_same_dem(fl_dem_aoi(a, source = src, buffer = 100, pipeline = given),
                     with_sf_datum_shift(fl_dem_aoi(a, source = src, buffer = 100, pipeline = given)))
   }
+})
+
+test_that("fl_dem_aoi stops clearly when a supplied pipeline cannot be inverted (#78)", {
+  aoi <- sf::st_read(testdata_path("streams.gpkg"), quiet = TRUE)
+  src <- x_field_3979(aoi, 100, res = 30)
+  # urm5 has no inverse
+  no_inverse <- paste(flooded:::dem_pipeline_nad83(sf::st_crs(3979), sf::st_crs(3005)),
+                      "+step +proj=urm5 +n=0.9 +alpha=2 +q=4")
+  expect_error(fl_dem_aoi(aoi, source = src, buffer = 100, pipeline = no_inverse),
+               "could not be inverted")
+
+  # Degrees out, but sf feeds the inverse lat/lon in authority order
+  to_degrees <- paste(
+    "+proj=pipeline +step +inv +proj=lcc +lat_0=49 +lon_0=-95 +lat_1=49 +lat_2=77",
+    "+x_0=0 +y_0=0 +ellps=GRS80 +step +proj=unitconvert +xy_in=rad +xy_out=deg"
+  )
+  aoi_ll <- sf::st_transform(aoi, 4269)
+  expect_error(
+    fl_dem_aoi(aoi_ll, source = src, buffer = 100, res = 3e-4, pipeline = to_degrees),
+    "could not be inverted"
+  )
 })
 
 test_that("fl_dem_aoi places the grid the same for an AOI in a third CRS, whichever PROJ sf links (#78)", {
   aoi <- sf::st_read(testdata_path("streams.gpkg"), quiet = TRUE)
   src <- x_field_3979(aoi, 100, res = 30)
-  # NAD83 / UTM zone 10N: neither the source's CRS nor the target's
-  to_utm <- function(x) {
-    suppressWarnings(sf::st_transform(
-      x, sf::st_crs(26910)$wkt,
-      pipeline = flooded:::dem_pipeline_nad83(sf::st_crs(3005), sf::st_crs(26910))
-    ))
-  }
 
+  # NAD83(CSRS) / UTM 10N: neither the source's CRS nor the target's
   for (d in window_offsets$third) {
-    a <- to_utm(shift_east(aoi, d))
+    a <- to_csrs_utm(shift_east(aoi, d))
     expect_same_dem(fl_dem_aoi(a, source = src, buffer = 100, target_crs = 3005),
                     with_sf_datum_shift(fl_dem_aoi(a, source = src, buffer = 100, target_crs = 3005)))
+  }
+})
+
+test_that("fl_dem_aoi pins an AOI's grid when the source -> target pair has no pin (#78)", {
+  aoi <- sf::st_read(testdata_path("streams.gpkg"), quiet = TRUE)
+  # WGS 84 / UTM 10N source: WGS 84 -> NAD83 is not pinned, CSRS AOI -> NAD83 is
+  src <- x_field_3979(aoi, 100, res = 30, crs = 32610)
+
+  # The read window (CSRS -> WGS 84) has no pin, so only the grid is compared
+  for (d in window_offsets$wgs84_source) {
+    a <- to_csrs_utm(shift_east(aoi, d))
+    expect_identical(
+      as.vector(terra::ext(fl_dem_aoi(a, source = src, buffer = 100, target_crs = 3005))),
+      as.vector(terra::ext(with_sf_datum_shift(fl_dem_aoi(a, source = src, buffer = 100, target_crs = 3005))))
+    )
   }
 })
 
@@ -355,6 +451,13 @@ test_that("fl_dem_aoi pipeline = \"\" leaves the read window to sf's PROJ too (#
   )
 
   expect_false(identical(as.vector(terra::ext(plain)), as.vector(terra::ext(shifted))))
+
+  # And on the reproject path
+  aoi <- sf::st_read(testdata_path("streams.gpkg"), quiet = TRUE)
+  a <- shift_east(aoi, window_offsets$reproject[1])
+  plain <- fl_dem_aoi(a, source = src, buffer = 100, pipeline = "")
+  shifted <- with_sf_datum_shift(fl_dem_aoi(a, source = src, buffer = 100, pipeline = ""))
+  expect_false(identical(terra::values(plain), terra::values(shifted)))
 })
 
 test_that("fl_dem_aoi leaves the operation to PROJ outside projected NAD83 pairs", {

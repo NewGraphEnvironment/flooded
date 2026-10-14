@@ -70,6 +70,13 @@ A wider pad cannot remove it: any window edge can sit that close to a boundary. 
 whole template footprint, about 2x the bytes, would. A supplied `pipeline` is inverted
 (`reverse = TRUE`) for the window when the AOI is in `target_crs`.
 
+**Measured against the fix, with a real PROJ split:** every unpinned sf transform routed through
+terra's PROJ 9.8.1 (+0.71, −1.05 m here), the same 60 positions through `fl_dem_aoi()` itself.
+0.7.0 changed the DEM at 3 of 60 (dx = 3.5, 21.5, 28.5: the probe's three), the fix at **0 of 60**
+(`measure_window_real_proj.R`, log `logs/20261014_measure_window_real_proj.log`). On sf's own PROJ
+9.5.1 the fix is output-neutral: six call shapes identical to 0.7.0. A WGS 84 source still leaves
+the read window to sf's PROJ (CSRS or NAD83 to WGS 84 has no pin); the grid is pinned there.
+
 **Why geographic and northing-first CRSs are excluded.** A supplied pipeline meets a CRS's
 authority axis order (lat/lon; or northing first, as in EPSG:2953 and the Illinois ICS83 zones) on
 some library paths and east/north on others. The result is an all-NA raster or one ~7,700 km
@@ -94,9 +101,11 @@ So compare warps like for like, and re-derive a kept DEM through `fl_dem_aoi()`,
 
 - With template + pin, a DEM from `fl_dem_aoi()` reproduces across GDAL 3.8.5 ↔ 3.13.0 and PROJ
   9.5.1 ↔ 9.8.1 to within 0.12 mm per cell. The warper was shown that way; terra on GDAL 3.8.5 was
-  not run.
-- Record terra's GDAL and PROJ (`terra::gdal(lib = "all")`), not sf's, with any kept DEM
-  (floodplains#117).
+  not run. Until #78 that held for **terra's** PROJ only: the AOI's transforms went through sf's,
+  and moved edge cells. Since #78 it holds for both where the AOI's pairs are projected NAD83.
+- Record terra's GDAL and PROJ (`terra::gdal(lib = "all")`) with any kept DEM (floodplains#117),
+  and sf's PROJ (`sf::sf_extSoftVersion()`) too when the AOI's CRS pair is not pinned
+  (geographic, northing-first or non-NAD83 on either side).
 - The first diagnosis, "the GDAL version", was wrong. Its comparison changed GDAL and PROJ
   together, and a later +0.35% "residual drift" was warp settings. Both are kept in the archive's
   `findings.md` as the record of how the cause was found.

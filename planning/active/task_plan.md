@@ -50,6 +50,18 @@
 - [x] CLAUDE.md design-decision bullet on `fl_dem_aoi()`: one sentence saying the AOI transforms
       are pinned too (#78)
 
+## Phase 4: Plan-review fixes (review-1.md)
+- [x] B1: keep the raw `pipeline` argument so a non-pinnable source -> target pair does not unpin the AOI's grid; test with a WGS 84 source and a CSRS AOI (red on 734deb4, green now)
+- [x] G1: supplied-pipeline test with a shifted string against an independently built result
+- [x] G2: a supplied pipeline that cannot be inverted (no inverse; lat/lon axis order) stops with a clear error
+- [x] G3/D1/D2: roxygen says a third-CRS AOI takes the default pin, `""` covers the AOI transforms, which pairs stay unpinned, record sf's PROJ then
+- [x] G4/A1: guard compares unmocked-plain vs mocked-plain, covers every offset set, and checks the mock reaches flooded's namespace
+- [x] G5: third-CRS AOI switched to NAD83(CSRS) / UTM 10N (3157)
+- [x] G6: `pipeline = ""` checked on the reproject path too
+- [x] Acceptance 1: `measure_window_real_proj.R` — unpinned sf transforms through terra's PROJ 9.8.1: 0.7.0 3/60, branch 0/60
+- [x] Acceptance 2: six call shapes identical to 0.7.0 on this machine (sf PROJ 9.5.1)
+- [x] D3/D4: research Consequences and CLAUDE.md provenance qualified
+
 ## Validation
 - [ ] `devtools::test()` passes; `lintr::lint_package()` clean
 - [ ] `/code-check branch` clean (three-round floor)

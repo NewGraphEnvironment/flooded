@@ -39,7 +39,9 @@
 #'   because a pipeline can meet a CRS's authority axis order (lat/lon, or
 #'   northing first) and silently return `NA` or a misplaced raster. When
 #'   `aoi` is in `target_crs`, a supplied string is also used, inverted, to
-#'   carry the AOI into the source CRS for the read window.
+#'   carry the AOI into the source CRS for the read window, so it must be
+#'   invertible. When `aoi` is in a third CRS, its transforms take the default
+#'   pin, not the string. `""` hands the AOI's transforms to sf's PROJ as well.
 #'
 #' @return A `SpatRaster` covering the buffered AOI. In the source CRS (and
 #'   `res` unset or equal to the source's) it is a crop on the source grid.
@@ -82,8 +84,10 @@
 #' NAD83 pairs they are pinned the same way (#78). Left to PROJ, a datum step
 #' of about a metre moves an edge that lies that close to a cell boundary by
 #' a whole cell: on the bundled streams it changed 47 to 91 cells of a 30 m
-#' DEM for 3 of 60 AOI positions, all outside the buffered AOI. For other
-#' pairs, and with `pipeline = ""`, those edges still follow sf's PROJ.
+#' DEM for 3 of 60 AOI positions, all outside the buffered AOI. Where the
+#' AOI's pair is not pinned (a geographic, northing-first or non-NAD83 CRS on
+#' either side) and with `pipeline = ""`, those edges still follow sf's PROJ,
+#' so record sf's PROJ too (`sf::sf_extSoftVersion()`).
 #'
 #' For sub-10 m riparian-scale work where lidar coverage exists, query the
 #' `stac-elevation-bc` STAC catalog and pass an item's COG URL as `source`. See the
@@ -164,18 +168,34 @@ fl_dem_aoi <- function(aoi, source = NULL, buffer = 2000, target_crs = NULL,
   # The AOI's own transforms are pinned like the warp. Left to sf's PROJ, a
   # metre-scale datum step moves the read window and the grid edges, and an
   # edge within that of a cell boundary reads or snaps one cell differently
-  # (#78). `pipeline = ""` hands these to PROJ too.
+  # (#78). `pipeline = ""` hands these to PROJ too. Read from the argument as
+  # given: `pipeline` itself is later replaced by the source -> target pin.
+  pipeline_arg <- pipeline
   aoi_pipeline <- function(to) {
-    if (identical(pipeline, "")) "" else dem_pipeline_nad83(aoi_crs, to)
+    if (identical(pipeline_arg, "")) "" else dem_pipeline_nad83(aoi_crs, to)
   }
   # A supplied pipeline runs source -> target; inverted, it is AOI -> source
   # whenever the AOI is in target_crs
-  user_pipeline <- !is.null(pipeline) && nzchar(pipeline) && aoi_crs == target_crs
-  aoi_buf_in_r <- dem_st_transform(
-    aoi_buf, r_crs,
-    pipeline = if (user_pipeline) pipeline else aoi_pipeline(r_crs),
-    reverse = user_pipeline
-  )
+  user_pipeline <- !is.null(pipeline_arg) && nzchar(pipeline_arg) &&
+    aoi_crs == target_crs
+  not_inverted <- function(why) {
+    stop("`pipeline` could not be inverted to carry the AOI into the source ",
+         "CRS for the read window (", why, "). A supplied pipeline must be ",
+         "invertible and run between CRSs whose axes are easting then northing.",
+         call. = FALSE)
+  }
+  aoi_buf_in_r <- if (user_pipeline) {
+    tryCatch(
+      dem_st_transform(aoi_buf, r_crs, pipeline = pipeline_arg, reverse = TRUE),
+      error = function(e) e
+    )
+  } else {
+    dem_st_transform(aoi_buf, r_crs, pipeline = aoi_pipeline(r_crs))
+  }
+  if (inherits(aoi_buf_in_r, "error")) not_inverted(conditionMessage(aoi_buf_in_r))
+  if (user_pipeline && !all(is.finite(sf::st_bbox(aoi_buf_in_r)))) {
+    not_inverted("non-finite coordinates")
+  }
 
   # Same CRS, source cell size: crop on the source grid, nothing to choose
   if (r_crs == target_crs &&

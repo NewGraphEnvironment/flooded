@@ -25,3 +25,12 @@
 - roxygen `@param pipeline` and `@details` updated; `man/` regenerated.
 - `measure_window.R` + `logs/20261014_measure_window.log`: reproduces the plan-mode probe (3/60 positions; 49, 91, 47 cells; 0 inside the buffered AOI), sf PROJ 9.5.1 / terra PROJ 9.8.1.
 - `research/dem_reprojection.md` §2 paragraph; CLAUDE.md `fl_dem_aoi()` bullet.
+
+## Phase 4 — plan-review fixes (2026-10-14)
+
+- Plan review (background Plan agent) returned 1 blocker, 6 gaps; recorded with dispositions in `review-1.md`.
+- B1 reproduced before fixing; its first offsets (2, 9) turned out to move the unpinnable CSRS -> WGS 84 window, not the grid. Re-searched for grid-moving offsets (1, 18); the B1 test is red on 734deb4 and green now.
+- `x_field_3979(res = 30)` is really ~30.05 m (terra fits res to the extent); the independent expected result uses the fixture's own res.
+- `measure_window_real_proj.R`: 0.7.0 3/60 (dx = 3.5, 21.5, 28.5), branch 0/60, under terra's PROJ 9.8.1 for unpinned sf transforms.
+- Six call shapes identical, 0.7.0 vs branch, on sf PROJ 9.5.1.
+- Test file: 0 failed, 0 errors on the branch; every #78 test red or erroring on 0.7.0.
