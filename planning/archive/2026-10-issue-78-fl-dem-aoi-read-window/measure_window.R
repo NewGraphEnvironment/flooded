@@ -5,7 +5,7 @@
 # NAD83 -> NAD83(CSRS) route via WGS 84 (`projinfo -s EPSG:3005 -t EPSG:3979`,
 # operation 1, 5 m), written out so sf's PROJ 9.5.1 can run it.
 #
-# Run from the package root: Rscript planning/active/measure_window.R
+# Run from the package root: Rscript planning/archive/2026-10-issue-78-fl-dem-aoi-read-window/measure_window.R
 pkgload::load_all(quiet = TRUE)
 
 wgs84_route <- paste(

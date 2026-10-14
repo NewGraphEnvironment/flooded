@@ -63,8 +63,8 @@
 - [x] D3/D4: research Consequences and CLAUDE.md provenance qualified
 
 ## Validation
-- [ ] `devtools::test()` passes; `lintr::lint_package()` clean
-- [ ] `/code-check branch` clean (three-round floor)
-- [ ] PWF checkboxes match landed work
-- [ ] `/planning-archive`, then `/gh-pr-push`
+- [x] `devtools::test()` passes; `lintr::lint_package()` clean
+- [x] `/code-check branch` clean (three-round floor)
+- [x] PWF checkboxes match landed work
+- [x] `/planning-archive`, then `/gh-pr-push`
 

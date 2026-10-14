@@ -4,7 +4,7 @@
 # Counts AOI positions (60, 0.5 m steps) where it does not, for the package
 # tree given as the first argument (0.7.0 vs this branch).
 #
-# Rscript planning/active/measure_window_real_proj.R <package dir>
+# Rscript planning/archive/2026-10-issue-78-fl-dem-aoi-read-window/measure_window_real_proj.R <package dir>
 pkg <- commandArgs(TRUE)[1]
 suppressMessages(pkgload::load_all(pkg, quiet = TRUE))
 library(testthat)
