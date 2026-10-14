@@ -293,6 +293,18 @@ to_csrs_utm <- function(x) {
   ))
 }
 
+# Where a third-CRS AOI's grid belongs, worked out here: the buffered AOI's
+# bbox carried into the target shift-free, snapped outward to multiples of res
+pinned_grid_ext <- function(aoi, buffer, to, res) {
+  buf <- sf::st_buffer(aoi, buffer)
+  bb <- sf::st_bbox(suppressWarnings(sf::st_transform(
+    buf, sf::st_crs(to)$wkt,
+    pipeline = flooded:::dem_pipeline_nad83(sf::st_crs(aoi), sf::st_crs(to))
+  )))
+  c(floor(bb[["xmin"]] / res) * res, ceiling(bb[["xmax"]] / res) * res,
+    floor(bb[["ymin"]] / res) * res, ceiling(bb[["ymax"]] / res) * res)
+}
+
 snapped_ext <- function(x, res) {
   bb <- sf::st_bbox(x)
   c(floor(bb[c("xmin", "ymin")] / res), ceiling(bb[c("xmax", "ymax")] / res))
@@ -427,8 +439,14 @@ test_that("fl_dem_aoi places the grid the same for an AOI in a third CRS, whiche
   src <- x_field_3979(aoi, 100, res = 30)
 
   # NAD83(CSRS) / UTM 10N: neither the source's CRS nor the target's
+  res <- terra::res(terra::rast(src))[1]
   for (d in window_offsets$third) {
     a <- to_csrs_utm(shift_east(aoi, d))
+    # Where it lands, not only that the mock leaves it alone: a wrong pipeline
+    # gives the same misplaced, all-NA raster with and without the mock
+    got <- fl_dem_aoi(a, source = src, buffer = 100, target_crs = 3005)
+    expect_equal(unname(as.vector(terra::ext(got))), pinned_grid_ext(a, 100, 3005, res), tolerance = 0)
+    expect_gt(terra::global(!is.na(got), "sum")[[1]], 0.5 * terra::ncell(got))
     expect_same_dem(fl_dem_aoi(a, source = src, buffer = 100, target_crs = 3005),
                     with_sf_datum_shift(fl_dem_aoi(a, source = src, buffer = 100, target_crs = 3005)))
   }
@@ -440,8 +458,11 @@ test_that("fl_dem_aoi pins an AOI's grid when the source -> target pair has no p
   src <- x_field_3979(aoi, 100, res = 30, crs = 32610)
 
   # The read window (CSRS -> WGS 84) has no pin, so only the grid is compared
+  res <- terra::res(terra::rast(src))[1]
   for (d in window_offsets$wgs84_source) {
     a <- to_csrs_utm(shift_east(aoi, d))
+    got <- fl_dem_aoi(a, source = src, buffer = 100, target_crs = 3005)
+    expect_equal(unname(as.vector(terra::ext(got))), pinned_grid_ext(a, 100, 3005, res), tolerance = 0)
     expect_identical(
       as.vector(terra::ext(fl_dem_aoi(a, source = src, buffer = 100, target_crs = 3005))),
       as.vector(terra::ext(with_sf_datum_shift(fl_dem_aoi(a, source = src, buffer = 100, target_crs = 3005))))
