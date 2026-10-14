@@ -1,0 +1,91 @@
+# Task: fl_dem_aoi(): a whole-file UInt32 source reprojects its nodata as 4294967296, not NA (#76)
+
+## Problem
+
+`inst/testdata/dem.tif` is UInt32 with nodata 4294967295. When `terra::crop()` covers the whole source it returns the file-backed raster unchanged, and `terra::project()` of that raster fills cells beyond the source with **4294967296** instead of NA. A Float32 nodata of 4294967295 rounds to 2^32, so the nodata test probably compares against the rounded value. A crop that is a real subset is in memory and comes back NA.
+
+```r
+r <- terra::rast(system.file("testdata/dem.tif", package = "flooded"))
+terra::minmax(terra::project(r, "EPSG:3157"))            # max 4294967296
+terra::minmax(terra::project(r * 1, "EPSG:3157"))        # max 1062 (in memory)
+```
+
+Measured with terra 1.9.50 / GDAL 3.13.0. It is not new: `fl_dem_aoi(streams, source = dem.tif, buffer = 2000, target_crs = 3157)` gives max 4294967296 on 0.6.6 and on the #67 branch alike. MRDEM-30 is Float32, so the default source is unaffected.
+
+
+## Context (from plan-mode exploration)
+
+`inst/testdata/dem.tif` is UInt32, nodata 4294967295. When `fl_dem_aoi()` reprojects it,
+cells beyond the source come back **4294967296** (2^32) instead of NA, so a DEM that does not
+cover the buffered AOI hands `fl_valley_confine()` a 4,300 km cliff. MRDEM-30 (Float32) is
+unaffected.
+
+Measured during planning (terra 1.9.50, GDAL 3.13.0 / PROJ 9.8.1):
+
+| case | max |
+|---|---|
+| `project(r, "EPSG:3157")`, whole file | 4294967296 (45,116 cells) |
+| `project(r * 1, ...)` | 1062 |
+| `fl_dem_aoi(streams, dem.tif, buffer = 2000, target_crs = 3157)` | 4294967296 |
+| same, `buffer = 100` (subset crop, in memory) | 905 |
+| **same `buffer = 100` under `terraOptions(todisk = TRUE)`** | **4294967296** |
+| `project(..., datatype = "FLT8S")` | 1061.93 |
+| source rewritten INT2U / INT4S / FLT4S | fine |
+| source rewritten INT8U | 1.8e19 (same bug) |
+| `gdalwarp -ot Float32` of dem.tif (no terra) | nodata honoured, max 1062 |
+| setting `NAflag(r) <- 4294967295` first | still 2^32 |
+
+So: it is **terra's**, not GDAL's — terra writes a Float32 output tagged `NoData=nan` but fills
+unmapped cells with the source nodata cast to Float32 (2^32). It hits any file-backed raster
+whose integer nodata is not exactly representable in Float32. The issue's "whole-file crop"
+framing is one trigger; a real subset crop that terra writes to disk (large AOI, low memory)
+is another, so the fix must key on **datatype**, not on whether the crop is in memory.
+terra's NEWS through 1.9-54 (GitHub HEAD) lists no fix; no existing upstream issue found for
+4294967295.
+
+**Approach:** in `fl_dem_aoi()`, before `terra::project()`, read an integer-typed source crop
+through a float copy (`r_clip * 1`): terra maps the nodata to NA on read, and the copy (in
+memory or a Float32 temp file with NaN nodata) projects correctly — verified under
+`todisk = TRUE` and for INT8U. Integer types only, so MRDEM-30 and other float sources take
+exactly today's path. The same-CRS crop path (`return(terra::crop(...))`) never fills beyond the
+source, so it is untouched. Report upstream as a draft only.
+
+## Phase 1: Reproduce and draft upstream report
+- [ ] Minimal terra-only reprex (synthetic UInt32 GeoTIFF with nodata 4294967295, no flooded):
+      `project()` file-backed vs `* 1`, plus the `gdalwarp` contrast and the `datatype = "FLT8S"`
+      and INT8U observations; record versions
+- [ ] Search rspatial/terra issues once more (open + closed: nodata / UInt32 / project / Float32)
+- [ ] Write the draft issue to `research/terra_uint32_nodata_project.md` (provenance header; the
+      reprex; what discriminates terra from GDAL). **Not posted** — shown to the user for approval
+
+## Phase 2: Tests first (fail on main)
+- [ ] `test-fl_dem_aoi.R`: whole-file UInt32 source (`dem.tif`, `buffer = 2000`,
+      `target_crs = 3157`) returns NA beyond the source — some NA cells, max below 2000
+- [ ] Same with a subset crop under `terra::terraOptions(todisk = TRUE)` (restored on exit) —
+      the case the in-memory-copy idea would miss
+- [ ] Values unchanged where data exist: cells of the `buffer = 100` result (subset crop, the
+      path that was already right) equal the coincident cells of the `buffer = 2000` result
+      (grids share multiples of `res`), away from the 2-cell read-pad edge
+- [ ] Confirm all new tests red on main (`NOT_CRAN=true`, count `failed | error`)
+
+## Phase 3: Fix
+- [ ] `R/fl_dem_aoi.R`: after the `r_clip` crop, `if (grepl("^INT", terra::datatype(r_clip)))
+      r_clip <- r_clip * 1` with a short comment citing #76 and the upstream draft
+- [ ] Mutation check: remove the line → Phase 2 tests red; restore → green
+- [ ] Existing `fl_dem_aoi` tests and full suite green; `lintr::lint_package()` clean
+- [ ] `devtools::document()` if roxygen touched (a one-sentence `@details` note that integer
+      sources are read through a float copy)
+
+## Phase 4: Docs
+- [ ] NEWS.md bullet under a new dev heading (version bump left to `/gh-pr-merge`)
+- [ ] CLAUDE.md "Test-data traps": bundled `dem.tif` is UInt32 / nodata 4294967295, and terra
+      projects a file-backed one with 2^32 fill (#76) — so a reprojection test on it must look
+      beyond the source footprint
+- [ ] `research/README.md` index row for the new file (create the README if absent)
+
+## Validation
+- [ ] Tests pass
+- [ ] `/code-check` clean (each commit, or once over the branch with `/code-check branch`)
+- [ ] PWF checkboxes match landed work
+- [ ] `/planning-archive` on completion
+
