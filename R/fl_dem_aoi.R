@@ -154,7 +154,21 @@ fl_dem_aoi <- function(aoi, source = NULL, buffer = 2000, target_crs = NULL,
   r_crs <- sf::st_crs(terra::crs(r))
   r_res <- terra::res(r)
 
-  aoi_buf_in_r <- if (r_crs == aoi_crs) aoi_buf else sf::st_transform(aoi_buf, r_crs)
+  # The AOI's own transforms are pinned like the warp. Left to sf's PROJ, a
+  # metre-scale datum step moves the read window and the grid edges, and an
+  # edge within that of a cell boundary reads or snaps one cell differently
+  # (#78). `pipeline = ""` hands these to PROJ too.
+  aoi_pipeline <- function(to) {
+    if (identical(pipeline, "")) "" else dem_pipeline_nad83(aoi_crs, to)
+  }
+  # A supplied pipeline runs source -> target; inverted, it is AOI -> source
+  # whenever the AOI is in target_crs
+  user_pipeline <- !is.null(pipeline) && nzchar(pipeline) && aoi_crs == target_crs
+  aoi_buf_in_r <- dem_st_transform(
+    aoi_buf, r_crs,
+    pipeline = if (user_pipeline) pipeline else aoi_pipeline(r_crs),
+    reverse = user_pipeline
+  )
 
   # Same CRS, source cell size: crop on the source grid, nothing to choose
   if (r_crs == target_crs &&
@@ -169,22 +183,10 @@ fl_dem_aoi <- function(aoi, source = NULL, buffer = 2000, target_crs = NULL,
   # snapped outward to multiples of `res`. Left to choose, GDAL derives the
   # origin and cell size itself from the transformed source edges, so the grid
   # moved whenever the datum operation did (#67).
-  aoi_buf_in_t <- if (target_crs == aoi_crs) {
-    aoi_buf
-  } else if (aoi_crs == r_crs && nzchar(pipeline)) {
-    # sf warns when a pipeline is not among PROJ's own candidates, which is
-    # the point of pinning one
-    withCallingHandlers(
-      sf::st_transform(aoi_buf, target_crs$wkt, pipeline = pipeline),
-      warning = function(w) {
-        if (grepl("pipeline not found", conditionMessage(w), fixed = TRUE)) {
-          invokeRestart("muffleWarning")
-        }
-      }
-    )
-  } else {
-    sf::st_transform(aoi_buf, target_crs)
-  }
+  aoi_buf_in_t <- dem_st_transform(
+    aoi_buf, target_crs,
+    pipeline = if (aoi_crs == r_crs) pipeline else aoi_pipeline(target_crs)
+  )
   bb <- sf::st_bbox(aoi_buf_in_t)
   tmpl <- terra::rast(
     terra::ext(
@@ -209,6 +211,22 @@ fl_dem_aoi <- function(aoi, source = NULL, buffer = 2000, target_crs = NULL,
   )
 
   terra::project(r_clip, tmpl, method = "bilinear", pipeline = pipeline)
+}
+
+# Transform `x` to the crs `to` through `pipeline` ("" lets PROJ choose).
+dem_st_transform <- function(x, to, pipeline, reverse = FALSE) {
+  if (sf::st_crs(x) == to) return(x)
+  if (!nzchar(pipeline)) return(sf::st_transform(x, to))
+  # sf warns when a pipeline is not among PROJ's own candidates, which is the
+  # point of pinning one
+  withCallingHandlers(
+    sf::st_transform(x, to$wkt, pipeline = pipeline, reverse = reverse),
+    warning = function(w) {
+      if (grepl("pipeline not found", conditionMessage(w), fixed = TRUE)) {
+        invokeRestart("muffleWarning")
+      }
+    }
+  )
 }
 
 # The coordinate operation between two NAD83 realizations on GRS80 (NAD83,

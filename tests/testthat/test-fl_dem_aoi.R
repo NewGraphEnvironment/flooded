@@ -314,6 +314,18 @@ test_that("fl_dem_aoi crops on the source grid the same whichever PROJ sf links 
   }
 })
 
+test_that("fl_dem_aoi inverts a supplied pipeline for the read window (#78)", {
+  aoi <- sf::st_read(testdata_path("streams.gpkg"), quiet = TRUE)
+  src <- x_field_3979(aoi, 100, res = 30)
+  given <- flooded:::dem_pipeline_nad83(sf::st_crs(3979), sf::st_crs(3005))
+
+  for (d in window_offsets$reproject) {
+    a <- shift_east(aoi, d)
+    expect_same_dem(fl_dem_aoi(a, source = src, buffer = 100),
+                    with_sf_datum_shift(fl_dem_aoi(a, source = src, buffer = 100, pipeline = given)))
+  }
+})
+
 test_that("fl_dem_aoi places the grid the same for an AOI in a third CRS, whichever PROJ sf links (#78)", {
   aoi <- sf::st_read(testdata_path("streams.gpkg"), quiet = TRUE)
   src <- x_field_3979(aoi, 100, res = 30)

@@ -24,19 +24,19 @@
       what this run shows.
 
 ## Phase 2: Implementation (`R/fl_dem_aoi.R`)
-- [ ] Internal helper `dem_st_transform(x, to, pipeline, reverse = FALSE)`: return `x` if the CRS
+- [x] Internal helper `dem_st_transform(x, to, pipeline, reverse = FALSE)`: return `x` if the CRS
       already matches; use plain `sf::st_transform()` when `pipeline` is `""`; otherwise transform
       to `to$wkt` with the pipeline, muffling only sf's "pipeline not found" warning (moved from
       the existing inline handler).
-- [ ] Resolve one operation per AOI transform:
+- [x] Resolve one operation per AOI transform:
   - read window, AOI → source CRS: `""` if the user passed `""`. Otherwise the user's pipeline
     with `reverse = TRUE` when a string was supplied and the AOI is in `target_crs`. Otherwise
     `dem_pipeline_nad83(aoi_crs, r_crs)`, which is itself `""` outside projected NAD83 pairs.
   - grid, AOI → target CRS: as now when the AOI is in the source CRS. Otherwise
     `dem_pipeline_nad83(aoi_crs, target_crs)`, unless the user passed `""`.
-- [ ] Move the `aoi_buf_in_r` computation onto the helper. The early-return crop and `r_clip`
+- [x] Move the `aoi_buf_in_r` computation onto the helper. The early-return crop and `r_clip`
       both use it.
-- [ ] Phase 1 tests green. The whole `test-fl_dem_aoi.R` file stays green, including the
+- [x] Phase 1 tests green. The whole `test-fl_dem_aoi.R` file stays green, including the
       `pipeline = ""` expected-PROJ test.
 
 ## Phase 3: Docs and record

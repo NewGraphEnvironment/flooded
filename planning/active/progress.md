@@ -13,3 +13,9 @@
 - Mock `mock_sf_datum_shift()` (via `local_mocked_bindings(.package = "sf")`) verified to reach `sf::st_transform` from flooded, and to shift once (sfc results only; `st_transform.sf` re-enters the mock for its geometry).
 - First offset search used a source with a different origin from the test fixture, so its offsets missed every boundary and the identity tests passed on 0.7.0: offsets are a property of the fixture grid. Re-searched on `x_field_3979(aoi, 100, res = 30)`: reproject 12,21,22,23; crop 12,21,22,23; third-CRS 8,12,18,21,22,23 (d = 0:29).
 - Against 0.7.0: sensitivity test green, three identity tests red (2, 4, 4 failures), `pipeline = ""` escape hatch green.
+
+## Phase 2 — implementation (2026-10-14)
+
+- `dem_st_transform()` helper; read window and grid transforms pinned via `dem_pipeline_nad83(aoi_crs, ·)`, a supplied pipeline inverted (`reverse = TRUE`) for the window when the AOI is in `target_crs`, `""` hands both to PROJ.
+- `test-fl_dem_aoi.R` 27/27 green. Added a supplied-pipeline identity test.
+- Mutation table (scratch copy): window pin → `""` reddens the reproject and crop tests (2, 4 failures); template pin → `""` reddens the third-CRS test (4); `reverse = FALSE` errors the new supplied-pipeline test and the #67 `pipeline` test.
