@@ -76,7 +76,11 @@ fl_dem_aoi(
   as given; supply one only between CRSs whose axes are easting then
   northing, because a pipeline can meet a CRS's authority axis order
   (lat/lon, or northing first) and silently return `NA` or a misplaced
-  raster.
+  raster. When `aoi` is in `target_crs`, a supplied string is also used,
+  inverted, to carry the AOI into the source CRS for the read window, so
+  it must be invertible. When `aoi` is in a third CRS, its transforms
+  take the default pin, not the string. `""` hands the AOI's transforms
+  to sf's PROJ as well.
 
 ## Value
 
@@ -116,9 +120,18 @@ reproduces terra on GDAL 3.13.0 to within 0.2 mm per cell (#67). The
 widened with scale) differ from terra's by up to ~10 m per cell, so
 re-derive a kept DEM through `fl_dem_aoi()`, not `gdalwarp`, and record
 terra's GDAL and PROJ versions (`terra::gdal(lib = "all")`) with it.
-When `aoi` is not already in `target_crs`, its bounding box is
-transformed through sf's PROJ, so an edge lying within a datum shift of
-a multiple of `res` can snap one cell differently on another machine.
+
+The AOI's own transforms, into the source CRS for the read window and
+into `target_crs` for the grid, go through sf's PROJ, and between
+projected NAD83 pairs they are pinned the same way (#78). Left to PROJ,
+a datum step of about a metre moves an edge that lies that close to a
+cell boundary by a whole cell: on the bundled streams it changed 47 to
+91 cells of a 30 m DEM for 3 of 60 AOI positions, all outside the
+buffered AOI. Where the AOI's pair is not pinned (a geographic,
+northing-first or non-NAD83 CRS on either side) and with
+`pipeline = ""`, those edges still follow sf's PROJ, so record sf's PROJ
+too
+([`sf::sf_extSoftVersion()`](https://r-spatial.github.io/sf/reference/sf_extSoftVersion.html)).
 
 For sub-10 m riparian-scale work where lidar coverage exists, query the
 `stac-elevation-bc` STAC catalog and pass an item's COG URL as `source`.
