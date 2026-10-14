@@ -64,7 +64,11 @@
 #' against GDAL 3.13.0 / PROJ 9.8.1) because the datum operation below moved
 #' (#67).
 #' Cells outside the buffered AOI can come back `NA`, where the grid's corners
-#' reach past the area read from the source.
+#' reach past the area read from the source. An integer source is reprojected
+#' through a floating-point copy, so those cells are `NA` whatever its NoData
+#' value: projected directly from a file (a crop of the whole source, or one
+#' terra keeps on disk), terra writes a NoData such as UInt32 4294967295 as
+#' 4294967296, a value, wherever the output reaches past the area read (#76).
 #'
 #' The cell values depend on the coordinate operation, and left to PROJ that
 #' choice follows its EPSG database: between MRDEM-30's NAD83(CSRS) and BC
@@ -237,6 +241,13 @@ fl_dem_aoi <- function(aoi, source = NULL, buffer = 2000, target_crs = NULL,
                bs[["ymin"]] - pad, bs[["ymax"]] + pad),
     snap = "out"
   )
+  # terra::project() of a file-backed integer raster writes cells beyond that
+  # raster as NaN only when they match its NoData in the Float32 output. A
+  # NoData Float32 cannot hold exactly (UInt32 4294967295, Int32 2147483647)
+  # is stored rounded, no longer matches, and comes back as data: 4294967296 m
+  # (#76). A float copy carries NA instead. An in-memory crop reports datatype "" and is already
+  # fine. On disk the copy is Float32: integers above 2^24 lose precision.
+  if (any(grepl("^INT", terra::datatype(r_clip)))) r_clip <- r_clip * 1
 
   terra::project(r_clip, tmpl, method = "bilinear", pipeline = pipeline)
 }

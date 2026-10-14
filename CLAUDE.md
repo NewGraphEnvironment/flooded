@@ -47,7 +47,7 @@ vignettes/
   valley-confinement.Rmd — full walkthrough with bundled test data
   stac-dem.Rmd           — STAC lidar vs bundled 10 m; 10 m runs live, lidar results cached
   pars-floodplain.Rmd    — Parsnip River WSG using fl_dem_aoi() + cached outputs
-tests/testthat/          — unit tests for each fl_* function (18 test files, 161 test_that blocks)
+tests/testthat/          — unit tests for each fl_* function (18 test files, 166 test_that blocks)
 ```
 
 ## Key Patterns
@@ -185,6 +185,12 @@ tests/testthat/          — unit tests for each fl_* function (18 test files, 1
   `fl_valley_confine()`'s cleanup through `fl_patch_rm()`, so run an NA test on both paths:
   `size_threshold = 1` removes no patch, and the default removes some (69) on the bundled tile
   (`vc_both_paths()` in `test-fl_valley_confine.R`).
+- **The bundled `dem.tif` is UInt32 with NoData 4294967295**, which terra's warp wrote as
+  4294967296 m wherever the output reached past a file-backed crop, until `fl_dem_aoi()` cast
+  integer sources to float (#76). A subset crop held in memory never showed it, so a
+  reprojection test whose crop is a subset of the tile and stays in memory cannot see that
+  class: crop the whole file (`buffer = 2000`) or force the crop to disk
+  (`terraOptions(todisk = TRUE)`), and compare against the same DEM written as Float32.
 - **Package defaults are not binding on this tile** — `max_width = 2000` / `cost_threshold = 2500`
   leave the criteria slack, so a coverage test at defaults can pass for the wrong reason. Squeeze
   `cost_threshold` (300 works) to make cleanup-added cells actually cross a boundary.
