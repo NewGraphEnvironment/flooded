@@ -66,8 +66,9 @@
 #' Cells outside the buffered AOI can come back `NA`, where the grid's corners
 #' reach past the area read from the source. An integer source is reprojected
 #' through a floating-point copy, so those cells are `NA` whatever its NoData
-#' value: projected directly, terra writes a NoData such as UInt32 4294967295
-#' as 4294967296, a value, wherever the output reaches past the source (#76).
+#' value: projected directly from a file (a crop of the whole source, or one
+#' terra keeps on disk), terra writes a NoData such as UInt32 4294967295 as
+#' 4294967296, a value, wherever the output reaches past the source (#76).
 #'
 #' The cell values depend on the coordinate operation, and left to PROJ that
 #' choice follows its EPSG database: between MRDEM-30's NAD83(CSRS) and BC

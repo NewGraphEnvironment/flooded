@@ -28,3 +28,7 @@
   archive path `/planning-archive` would not create. Archive slug fixed now as
   `2026-10-issue-76-fl-dem-aoi-integer-nodata`; archive under exactly that name. Round 2 also
   probed more NoData values (16777217, 1e8+1 -> rounded; 4294967040 -> NaN), consistent with §4
+- Round 3 (`review-round3.md`): mechanism named — prose restating a fact decided elsewhere, written
+  apart from its source. Enumerated every restatement in the diff; 2 disagreed, both confirmed:
+  CLAUDE.md's test-block count (161 -> 166 with this branch) and the roxygen sentence, the one copy
+  that dropped "file-backed" (an in-memory crop was always NA). Fixed; neither inside a prior fix
