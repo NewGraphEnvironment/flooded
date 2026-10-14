@@ -110,13 +110,15 @@ output `NoData=nan`, so the fill reads back as data. The bundled `dem.tif` is su
 on 0.6.6 and every release since.
 
 It is terra's, not GDAL's: `gdalwarp` from the same GDAL 3.13.0 build, Float32 output, tags
-NoData 4.2949673e+09 and the fill is masked. What triggers it is the **datatype**, not the crop:
+NoData 4.2949673e+09 and the fill is masked. What triggers it is an integer NoData that Float32
+cannot hold exactly, not the crop:
 
 | source | max beyond the source |
 |---|---|
 | `INT4U`, file-backed (whole-file crop, or any crop terra writes to disk) | 4294967296 |
-| `INT8U`, file-backed | 1.8e19 |
-| `INT2U`, `INT4S`, `FLT4S` | `NA` |
+| `INT8U`, file-backed (terra's default NoData) | 1.8e19 |
+| `INT4S` with NoData 2147483647 | 2147483648 |
+| `INT4S` with NoData −2147483648, `INT2U`, `FLT4S` | `NA` |
 | the same `INT4U` values in memory (`x * 1`), or `datatype = "FLT8S"` | `NA` |
 
 The issue first read it as a whole-file crop effect, because a subset crop is usually in memory.

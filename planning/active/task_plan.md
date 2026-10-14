@@ -87,8 +87,10 @@ source, so it is untouched. Report upstream as a draft only.
 - [x] `devtools::document()`: one `@details` sentence on integer sources
 
 ## Phase 4: Docs
-- [ ] NEWS.md bullet under a new dev heading (version bump left to `/gh-pr-merge`)
-- [ ] CLAUDE.md "Test-data traps": bundled `dem.tif` is UInt32 / nodata 4294967295, and terra
+- [x] *Revised:* no NEWS edit on the branch. `/gh-pr-merge` writes the NEWS entry from the PR
+      body at release (0.7.1's came that way), and a dev heading would trip its
+      development-header path. NEWS-ready text goes in the PR body's Summary
+- [x] CLAUDE.md "Test-data traps": bundled `dem.tif` is UInt32 / nodata 4294967295, and terra
       projects a file-backed one with 2^32 fill (#76) — so a reprojection test on it must look
       beyond the source footprint
 - [x] `research/README.md` index row: the existing `dem_reprojection.md` row now names #76

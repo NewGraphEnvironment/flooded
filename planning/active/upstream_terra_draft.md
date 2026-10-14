@@ -17,8 +17,9 @@ The same values held in memory (`x * 1`), or a `datatype = "FLT8S"` output, give
 NoData appear to come from different sources in terra's warp: the fill from the source's NoData
 cast to the output type, the tag from `NaN`.
 
-The same happens with an `INT8U` source (fill 18446744073709551616). `INT2U` and `INT4S` sources
-are unaffected; their NoData values are exact in Float32. Setting `NAflag(x) <- 4294967295` first
+The same happens with an `INT8U` source at terra's default NoData (fill 18446744073709551616)
+and with an `INT4S` source whose NoData is 2147483647 (fill 2147483648). `INT2U` (65535) and
+`INT4S` with NoData -2147483648 are unaffected; those NoData values are exact in Float32. Setting `NAflag(x) <- 4294967295` first
 does not change it. `NAflag(x)` reports `NaN` for this file, though `describe()` shows
 `NoData Value=4294967295` (possibly related to #2166 / #2074).
 
