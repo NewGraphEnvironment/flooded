@@ -33,8 +33,8 @@ Found while working on #67.
 ## Phase 1 — upstream search (2026-10-14)
 
 No rspatial/terra issue covers this (searched: nodata project, INT4U, NAflag, UInt32, 2^32,
-warp nodata NaN). Nearest: #2207 (crop to disk treats INT2U 65535 as NoData, fixed),
-#2030 (`values()` coerces INT4U > 2^31-1), #2166 / #2074 (`NAflag()` disagrees with the header;
+warp nodata NaN). Nearest: rspatial/terra#2207 (crop to disk treats INT2U 65535 as NoData, fixed),
+rspatial/terra#2030 (`values()` coerces INT4U > 2^31-1), rspatial/terra#2166 / rspatial/terra#2074 (`NAflag()` disagrees with the header;
 here `NAflag()` reports NaN while `describe()` shows 4294967295).
 | New tests errored "could not find function expect_same_dem" | the helper is defined later in the file; #76 block moved to the end |
 | INT8U test copy passed on main | `NAflag = NA` gave it nodata 0; `dem_as()` now passes NAflag only when given (terra's INT8U default is 18446744073709550514) |

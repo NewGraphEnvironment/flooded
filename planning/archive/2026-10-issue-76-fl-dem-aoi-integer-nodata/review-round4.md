@@ -1,7 +1,7 @@
 # Code-check round 4 — #76 branch (reviewer, 2026-10-14)
 
 Probed in temp copies of the branch (d899ad9) and of main (`git archive 277018b`),
-terra 1.9.50 / GDAL 3.13.0. Scripts in the session scratchpad (`r4/p1.R` to `p3.R`).
+terra 1.9.50 / GDAL 3.13.0. Probe scripts were session-local and not kept.
 
 ## Findings
 
@@ -64,4 +64,3 @@ terra 1.9.50 / GDAL 3.13.0. Scripts in the session scratchpad (`r4/p1.R` to `p3.
   superseded, which `progress.md`'s round-1 entry records.
 - Accepted tradeoffs not re-raised.
 
-/Users/airvine/Projects/repo/flooded/planning/active/review-round4.md

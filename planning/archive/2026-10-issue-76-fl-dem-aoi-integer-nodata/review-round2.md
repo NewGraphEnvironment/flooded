@@ -44,4 +44,3 @@
   uncast is correct; the `res = 30` same-CRS path goes through `project()` and is covered.
 - Accepted tradeoffs (NEWS, withr, global `datatype = "INT4U"`, draft not posted) not re-raised.
 
-/Users/airvine/Projects/repo/flooded/planning/active/review-round2.md
