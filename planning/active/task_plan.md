@@ -5,21 +5,21 @@
 
 
 ## Phase 1: Tests first (red on the current code)
-- [ ] Bump `testthat (>= 3.1.5)` → `(>= 3.2.0)` in DESCRIPTION, for `local_mocked_bindings(.package = "sf")`
-- [ ] Test helper `mock_sf_datum_shift()`: mocks `sf::st_transform` so a call **with no
+- [x] Bump `testthat (>= 3.1.5)` → `(>= 3.2.0)` in DESCRIPTION, for `local_mocked_bindings(.package = "sf")`
+- [x] Test helper `mock_sf_datum_shift()`: mocks `sf::st_transform` so a call **with no
       `pipeline`** returns the real result shifted +1.3 m in x and y. This simulates an sf whose
       PROJ picks a datum step. Calls with a pipeline pass through unchanged.
-- [ ] Test: the read window does not follow sf's PROJ. Use the x-field 3979 source at 30 m and
+- [x] Test: the read window does not follow sf's PROJ. Use the x-field 3979 source at 30 m and
       the hard-coded AOI offsets the probe found. First assert the shift moves a `snap = "out"`
       crop of the window at those offsets (so the test can tell if its data stops reaching the
       edge). Then `fl_dem_aoi()` with the mock must be `identical()` to `fl_dem_aoi()` without it.
-- [ ] Test: same, for the early-return path (target = source CRS, AOI in 3005). The crop extent
+- [x] Test: same, for the early-return path (target = source CRS, AOI in 3005). The crop extent
       and values must be identical with and without the mock.
-- [ ] Test: third-CRS AOI (EPSG:26910 NAD83 / UTM 10N → target 3005, source 3979). The grid extent
+- [x] Test: third-CRS AOI (EPSG:26910 NAD83 / UTM 10N → target 3005, source 3979). The grid extent
       must be identical with and without the mock.
-- [ ] Test: `pipeline = ""` still hands the window to PROJ, so the mock **does** change the
+- [x] Test: `pipeline = ""` still hands the window to PROJ, so the mock **does** change the
       result: the escape hatch stays live.
-- [ ] Run the new tests against the current code and record them red. Mutation check: if the
+- [x] Run the new tests against the current code and record them red. Mutation check: if the
       mock does not reach `sf::st_transform` through `sf::`, the tests cannot fire, and that is
       what this run shows.
 

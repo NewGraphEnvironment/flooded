@@ -7,3 +7,9 @@
 - Created branch `78-fl-dem-aoi-the-source-read-window-is-sti` off main
 - Scaffolded PWF baseline from issue #78 with approved phases
 - Next: start Phase 1
+
+## Phase 1 — tests (2026-10-14)
+
+- Mock `mock_sf_datum_shift()` (via `local_mocked_bindings(.package = "sf")`) verified to reach `sf::st_transform` from flooded, and to shift once (sfc results only; `st_transform.sf` re-enters the mock for its geometry).
+- First offset search used a source with a different origin from the test fixture, so its offsets missed every boundary and the identity tests passed on 0.7.0: offsets are a property of the fixture grid. Re-searched on `x_field_3979(aoi, 100, res = 30)`: reproject 12,21,22,23; crop 12,21,22,23; third-CRS 8,12,18,21,22,23 (d = 0:29).
+- Against 0.7.0: sensitivity test green, three identity tests red (2, 4, 4 failures), `pipeline = ""` escape hatch green.

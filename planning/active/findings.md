@@ -50,3 +50,5 @@ expected offset).
 | Error | Resolution |
 |-------|------------|
 | `sf_proj_pipelines: is.character(target_crs) is not TRUE` when `st_transform(x, 3979, pipeline=)` | pass the target as WKT (`sf::st_crs(3979)$wkt`) whenever a pipeline is given |
+| Identity tests green on 0.7.0 with offsets from a search | offsets depend on the source grid's origin; search on the exact test fixture |
+| `pipeline = ""` test green for the wrong reason (source built from the shifted AOI) | build the source from the unshifted AOI, then shift |
