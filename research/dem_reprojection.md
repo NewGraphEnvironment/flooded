@@ -101,7 +101,7 @@ So compare warps like for like, and re-derive a kept DEM through `fl_dem_aoi()`,
 ## 4. Integer nodata through terra's warp (#76)
 
 **Verified:** 2026-10-14, terra 1.9.50 / GDAL 3.13.0 / PROJ 9.8.1 · **Produced by:**
-`planning/archive/2026-10-issue-76-fl-dem-aoi-a-whole-file-uint32-source-re/reprex_terra_uint32.R`
+`planning/archive/2026-10-issue-76-fl-dem-aoi-integer-nodata/reprex_terra_uint32.R`
 
 `terra::project()` of a **file-backed** `INT4U` raster with NoData 4294967295 leaves the cells no
 source cell maps to at **4294967296**, that NoData rounded to Float32, in an output tagged

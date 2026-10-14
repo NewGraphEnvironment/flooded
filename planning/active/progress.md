@@ -24,3 +24,7 @@
   beyond the source): the prose's causal chain ("fill = NoData cast, tag = NaN, so ...") was wrong;
   the fill is matched to the NoData by value and Float32 rounding defeats the match. Fixed in the
   code comment, test comment, research §4 and the upstream draft
+- Round 2 (`review-round2.md`): 1 finding (not inside round 1's fix): research §4 pointed at an
+  archive path `/planning-archive` would not create. Archive slug fixed now as
+  `2026-10-issue-76-fl-dem-aoi-integer-nodata`; archive under exactly that name. Round 2 also
+  probed more NoData values (16777217, 1e8+1 -> rounded; 4294967040 -> NaN), consistent with §4
