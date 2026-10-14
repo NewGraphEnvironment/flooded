@@ -98,6 +98,34 @@ floodplain. That difference is the settings, not the version:
 
 So compare warps like for like, and re-derive a kept DEM through `fl_dem_aoi()`, not `gdalwarp`.
 
+## 4. Integer nodata through terra's warp (#76)
+
+**Verified:** 2026-10-14, terra 1.9.50 / GDAL 3.13.0 / PROJ 9.8.1 · **Produced by:**
+`planning/archive/2026-10-issue-76-fl-dem-aoi-a-whole-file-uint32-source-re/reprex_terra_uint32.R`
+
+`terra::project()` of a **file-backed** `INT4U` raster with NoData 4294967295 fills the cells no
+source cell maps to with **4294967296**, that NoData rounded to Float32, and tags the Float32
+output `NoData=nan`, so the fill reads back as data. The bundled `dem.tif` is such a source:
+`fl_dem_aoi(streams, dem.tif, buffer = 2000, target_crs = 3157)` returned 2^32 beyond the tile
+on 0.6.6 and every release since.
+
+It is terra's, not GDAL's: `gdalwarp` from the same GDAL 3.13.0 build, Float32 output, tags
+NoData 4.2949673e+09 and the fill is masked. What triggers it is the **datatype**, not the crop:
+
+| source | max beyond the source |
+|---|---|
+| `INT4U`, file-backed (whole-file crop, or any crop terra writes to disk) | 4294967296 |
+| `INT8U`, file-backed | 1.8e19 |
+| `INT2U`, `INT4S`, `FLT4S` | `NA` |
+| the same `INT4U` values in memory (`x * 1`), or `datatype = "FLT8S"` | `NA` |
+
+The issue first read it as a whole-file crop effect, because a subset crop is usually in memory.
+Under `terraOptions(todisk = TRUE)` the subset crop (`buffer = 100`) gives 2^32 as well, so a
+fix keyed on "in memory" would have missed large AOIs. `fl_dem_aoi()` reads an integer crop
+through a float copy before projecting. MRDEM-30 and other float sources are untouched. A
+draft upstream report is in the same archive (`upstream_terra_draft.md`); posting it is
+pending approval.
+
 ## Consequences
 
 - With template + pin, a DEM from `fl_dem_aoi()` reproduces across GDAL 3.8.5 ↔ 3.13.0 and PROJ

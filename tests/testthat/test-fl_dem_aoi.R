@@ -653,3 +653,17 @@ test_that("fl_dem_aoi returns NA beyond other integer sources whose nodata Float
     expect_same_dem(fl_dem_aoi(aoi, source = src, buffer = 2000, target_crs = 3157), ref)
   }
 })
+
+test_that("fl_dem_aoi reprojects a multi-layer integer source layer by layer (#76)", {
+  aoi <- sf::st_read(testdata_path("streams.gpkg"), quiet = TRUE)
+  r <- terra::rast(testdata_path("dem.tif"))
+  src <- tempfile(fileext = ".tif")
+  terra::writeRaster(c(r, r), src, datatype = "INT4U")
+  ref <- fl_dem_aoi(aoi, source = dem_as("FLT4S"), buffer = 2000, target_crs = 3157)
+
+  result <- fl_dem_aoi(aoi, source = src, buffer = 2000, target_crs = 3157)
+
+  expect_equal(terra::nlyr(result), 2)
+  expect_identical(terra::values(result)[, 1], terra::values(ref)[, 1])
+  expect_identical(terra::values(result)[, 2], terra::values(ref)[, 1])
+})

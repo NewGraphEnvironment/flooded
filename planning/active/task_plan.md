@@ -76,19 +76,23 @@ source, so it is untouched. Report upstream as a draft only.
       0 errors, in all 4 blocks
 
 ## Phase 3: Fix
-- [ ] `R/fl_dem_aoi.R`: before `terra::project()`, `if (any(grepl("^INT", terra::datatype(r_clip))))
-      r_clip <- r_clip * 1` (`any()`: review #1, multi-layer sources) with a short comment citing #76 and the upstream draft
-- [ ] Mutation check: remove the line → Phase 2 tests red; restore → green
+- [x] `R/fl_dem_aoi.R`: before `terra::project()`, `if (any(grepl("^INT", terra::datatype(r_clip))))
+      r_clip <- r_clip * 1` (`any()`: review #1, multi-layer sources), comment citing #76
+- [x] *Added (review #1):* multi-layer INT4U test; without `any()` it errors
+- [x] Mutation check (in a copy of the tree): cast removed -> all 5 #76 blocks red; `any()`
+      removed -> multi-layer block errors; restored -> 34/34 blocks green
 - [ ] Existing `fl_dem_aoi` tests and full suite green; `lintr::lint_package()` clean
-- [ ] `devtools::document()` if roxygen touched (a one-sentence `@details` note that integer
-      sources are read through a float copy)
+      (`fl_dem_aoi` tests: 34/34; lint: nothing new beyond the `testdata_path` false positive
+      the other test files already carry)
+- [x] `devtools::document()`: one `@details` sentence on integer sources
 
 ## Phase 4: Docs
 - [ ] NEWS.md bullet under a new dev heading (version bump left to `/gh-pr-merge`)
 - [ ] CLAUDE.md "Test-data traps": bundled `dem.tif` is UInt32 / nodata 4294967295, and terra
       projects a file-backed one with 2^32 fill (#76) — so a reprojection test on it must look
       beyond the source footprint
-- [ ] `research/README.md` index row for the new file (create the README if absent)
+- [x] `research/README.md` index row: the existing `dem_reprojection.md` row now names #76
+      (§4 added; landed with the Phase 3 fix it describes)
 
 ## Validation
 - [ ] Tests pass

@@ -85,7 +85,10 @@ version runs it, and neighbouring AOIs share one alignment. Before flooded
 against GDAL 3.13.0 / PROJ 9.8.1) because the datum operation below moved
 (#67).
 Cells outside the buffered AOI can come back \code{NA}, where the grid's corners
-reach past the area read from the source.
+reach past the area read from the source. An integer source is reprojected
+through a floating-point copy, so those cells are \code{NA} whatever its NoData
+value: projected directly, terra writes a NoData such as UInt32 4294967295
+as 4294967296, a value, wherever the output reaches past the source (#76).
 
 The cell values depend on the coordinate operation, and left to PROJ that
 choice follows its EPSG database: between MRDEM-30's NAD83(CSRS) and BC
