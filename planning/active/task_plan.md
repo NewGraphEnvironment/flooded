@@ -62,18 +62,22 @@ source, so it is untouched. Report upstream as a draft only.
       (planning.md, "one topic file, revised in place"); lands with the Phase 3 fix it describes
 
 ## Phase 2: Tests first (fail on main)
-- [ ] `test-fl_dem_aoi.R`: whole-file UInt32 source (`dem.tif`, `buffer = 2000`,
+- [x] `test-fl_dem_aoi.R`: whole-file UInt32 source (`dem.tif`, `buffer = 2000`,
       `target_crs = 3157`) returns NA beyond the source — some NA cells, max below 2000
-- [ ] Same with a subset crop under `terra::terraOptions(todisk = TRUE)` (restored on exit) —
+- [x] Same with a subset crop under `terra::terraOptions(todisk = TRUE)` (restored on exit) —
       the case the in-memory-copy idea would miss
-- [ ] Values unchanged where data exist: cells of the `buffer = 100` result (subset crop, the
-      path that was already right) equal the coincident cells of the `buffer = 2000` result
-      (grids share multiples of `res`), away from the 2-cell read-pad edge
-- [ ] Confirm all new tests red on main (`NOT_CRAN=true`, count `failed | error`)
+- [x] *Revised (review #3, #5):* values unchanged where data exist — every test compares, cell for
+      cell, against the same DEM stored as Float32 (`dem_as("FLT4S")`), a source that never takes
+      the cast. Replaces the buffer-100 vs buffer-2000 comparison, which was green on main and
+      needed an AOI mask
+- [x] *Added (review #2):* the same-CRS, `res`-differs path (`res = 30`, `buffer = 2000`)
+- [x] *Added (review #4):* INT8U (terra's default nodata) and INT4S with nodata 2^31 - 1
+- [x] Confirm all new tests red on main (`NOT_CRAN=true`, count `failed | error`): 8 failures,
+      0 errors, in all 4 blocks
 
 ## Phase 3: Fix
-- [ ] `R/fl_dem_aoi.R`: after the `r_clip` crop, `if (grepl("^INT", terra::datatype(r_clip)))
-      r_clip <- r_clip * 1` with a short comment citing #76 and the upstream draft
+- [ ] `R/fl_dem_aoi.R`: before `terra::project()`, `if (any(grepl("^INT", terra::datatype(r_clip))))
+      r_clip <- r_clip * 1` (`any()`: review #1, multi-layer sources) with a short comment citing #76 and the upstream draft
 - [ ] Mutation check: remove the line → Phase 2 tests red; restore → green
 - [ ] Existing `fl_dem_aoi` tests and full suite green; `lintr::lint_package()` clean
 - [ ] `devtools::document()` if roxygen touched (a one-sentence `@details` note that integer

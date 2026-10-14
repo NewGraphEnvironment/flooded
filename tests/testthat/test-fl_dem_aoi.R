@@ -592,3 +592,64 @@ test_that("fl_dem_aoi fetches MRDEM-30 via /vsicurl/", {
   expect_identical(terra::res(result), c(30, 30))
   expect_identical(unname(as.vector(terra::ext(result)) %% 30), rep(0, 4))
 })
+
+# dem.tif is UInt32 with nodata 4294967295. terra::project() of a file-backed
+# copy fills cells beyond the source with that nodata rounded to Float32
+# (4294967296) and tags the output NoData = NaN, so the fill reads as data
+# (#76). Any integer nodata Float32 cannot hold does the same. The same DEM
+# stored as Float32 never takes that path, so it is the reference: the result
+# must be identical, NA where the source ends included.
+dem_as <- function(datatype, ...) {
+  f <- tempfile(fileext = ".tif")
+  terra::writeRaster(terra::rast(testdata_path("dem.tif")), f, datatype = datatype, ...)
+  f
+}
+
+test_that("fl_dem_aoi returns NA, not 2^32, beyond a whole-file UInt32 source (#76)", {
+  aoi <- sf::st_read(testdata_path("streams.gpkg"), quiet = TRUE)
+  src <- testdata_path("dem.tif")
+  expect_identical(terra::datatype(terra::rast(src)), "INT4U")
+
+  # buffer = 2000 reaches past dem.tif, so the crop is the whole file
+  result <- fl_dem_aoi(aoi, source = src, buffer = 2000, target_crs = 3157)
+
+  expect_gt(terra::global(is.na(result), "sum")[[1]], 0)
+  expect_lte(terra::global(result, "max", na.rm = TRUE)[[1]], 1062)
+  expect_same_dem(
+    result, fl_dem_aoi(aoi, source = dem_as("FLT4S"), buffer = 2000, target_crs = 3157)
+  )
+})
+
+test_that("fl_dem_aoi returns NA beyond a UInt32 subset crop that terra writes to disk (#76)", {
+  aoi <- sf::st_read(testdata_path("streams.gpkg"), quiet = TRUE)
+  old <- terra::terraOptions(print = FALSE)$todisk
+  terra::terraOptions(todisk = TRUE)
+  on.exit(terra::terraOptions(todisk = old), add = TRUE)
+
+  # buffer = 100 is a real subset of dem.tif: in memory it was always NA, on
+  # disk (a large AOI) it took the 2^32 path too
+  result <- fl_dem_aoi(aoi, source = testdata_path("dem.tif"), buffer = 100, target_crs = 3157)
+
+  expect_gt(terra::global(is.na(result), "sum")[[1]], 0)
+  expect_same_dem(
+    result, fl_dem_aoi(aoi, source = dem_as("FLT4S"), buffer = 100, target_crs = 3157)
+  )
+})
+
+test_that("fl_dem_aoi returns NA beyond a UInt32 source resampled in its own CRS (#76)", {
+  aoi <- sf::st_read(testdata_path("streams.gpkg"), quiet = TRUE)
+
+  expect_same_dem(
+    fl_dem_aoi(aoi, source = testdata_path("dem.tif"), buffer = 2000, res = 30),
+    fl_dem_aoi(aoi, source = dem_as("FLT4S"), buffer = 2000, res = 30)
+  )
+})
+
+test_that("fl_dem_aoi returns NA beyond other integer sources whose nodata Float32 cannot hold (#76)", {
+  aoi <- sf::st_read(testdata_path("streams.gpkg"), quiet = TRUE)
+  ref <- fl_dem_aoi(aoi, source = dem_as("FLT4S"), buffer = 2000, target_crs = 3157)
+
+  for (src in c(dem_as("INT8U"), dem_as("INT4S", NAflag = 2147483647))) {
+    expect_same_dem(fl_dem_aoi(aoi, source = src, buffer = 2000, target_crs = 3157), ref)
+  }
+})
