@@ -186,9 +186,8 @@ fl_valley_join <- function(valleys, attributed, segments, group, cols = NULL) {
 
   # --- Claims: (group, cell) pairs, and the integrity check ---
   keys <- attributed[[group]]
-  lvls <- unique(keys)
-  lvls <- c(sort(lvls[!is.na(lvls)], method = "radix"), lvls[is.na(lvls)][1])
-  lvls <- lvls[!(is.na(lvls) & !anyNA(keys))]
+  lvls <- unique(keys[!is.na(keys)])
+  lvls <- c(sort(lvls, method = "radix"), keys[is.na(keys)][1L][anyNA(keys)])
 
   if (nrow(attributed) > 0L) {
     # small = FALSE: a polygon covering no cell centre claims nothing (terra then

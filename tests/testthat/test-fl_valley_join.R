@@ -274,13 +274,39 @@ test_that("segments in another CRS are transformed, and empty geometries skipped
   expect_equal(jn_at(out$nearest, f$r, 45, 55, "grp"), "B")
 })
 
+test_that("a group split over several rows of attributed counts once per cell", {
+  f <- jn_two()
+  ref <- fl_valley_join(f$r, f$a, f$s, group = "grp")
+  a2 <- rbind(f$a, jn_attr(list(c(0, 30, 0, 100)), "A"))   # a second, overlapping A row
+
+  out <- fl_valley_join(f$r, a2, f$s, group = "grp")
+
+  expect_equal(out$ties, 0L)
+  expect_equal(out, ref)
+})
+
+test_that("a logical group column is not taken as an attribute", {
+  r <- jn_grid()
+  a <- jn_attr(list(c(0, 60, 0, 100), c(40, 100, 0, 100)), c(FALSE, TRUE), group = "main")
+  s <- jn_segs(cbind(grp = c(FALSE, TRUE), data.frame(x0 = c(5, 95), y0 = 0, x1 = c(5, 95),
+                                                      y1 = 100, flag = c(FALSE, TRUE))),
+               group = "main")
+
+  out <- fl_valley_join(r, a, s, group = "main")
+
+  expect_named(out$any, c("cell", "flag"))
+  expect_equal(jn_at(out$nearest, r, 45, 55, "main"), FALSE)
+})
+
 test_that("a polygon covering no cell centre claims no cell", {
   f <- jn_two()
   sliver <- jn_attr(list(c(1, 2, 1, 2)), "C")
   s <- rbind(f$s, jn_segs(data.frame(grp = "C", x0 = 1, y0 = 1, x1 = 2, y1 = 2, flag = TRUE)))
 
-  out <- fl_valley_join(f$r, rbind(f$a, sliver), s, group = "grp")
+  expect_no_warning(out <- fl_valley_join(f$r, rbind(f$a, sliver), s, group = "grp"))
 
+  expect_equal(out$check[["attributed_cells"]], 100L)
+  expect_equal(out$check[["extra"]], 0L)
   expect_false(jn_at(out$any, f$r, 5, 5, "flag"))
   expect_false("C" %in% out$nearest$grp)
 })
