@@ -69,7 +69,7 @@ sections in a fixed order, and nothing another file already keeps.
       `devtools::document()`. Script and log go in the archive.
 
 ## Validation
-- [ ] Tests pass; `devtools::check()` (Authors@R, `.Rbuildignore`, `inst/NOTICE.md`); `lintr`; `pkgdown::build_site()` renders the README figure and the grouped
+- [x] Tests pass; `devtools::check()` (Authors@R, `.Rbuildignore`, `inst/NOTICE.md`); `lintr`; `pkgdown::build_site()` renders the README figure and the grouped
       reference
 - [ ] `/code-check branch`, with reviewers enumerating every published claim (README,
       DESCRIPTION, About, caption) against the code path a run takes

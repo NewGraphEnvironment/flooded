@@ -32,7 +32,7 @@ pak::pak("NewGraphEnvironment/flooded")
 ```
 
 flooded is under active development and its functions change between releases (see
-[NEWS](NEWS.md)). Pin a release for reproducible work:
+[NEWS](https://github.com/NewGraphEnvironment/flooded/blob/main/NEWS.md)). Pin a release for reproducible work:
 `pak::pak("NewGraphEnvironment/flooded@vX.Y.Z")`.
 
 A run needs an elevation raster in a projected CRS with metre units, and stream lines that carry
@@ -116,9 +116,9 @@ Land cover change: fresh (network) &rarr; flooded (floodplains) &rarr; drift (la
 
 ## Citation
 
-Cite flooded from [`CITATION.cff`](CITATION.cff), or with "Cite this repository" on GitHub.
+Cite flooded from [`CITATION.cff`](https://github.com/NewGraphEnvironment/flooded/blob/main/CITATION.cff), or with "Cite this repository" on GitHub.
 
 ## License
 
-MIT (see [`LICENSE`](LICENSE)). Adapted code is attributed in [`LICENSE.note`](LICENSE.note), and
-the licences of the data bundled with the package are in [`inst/NOTICE.md`](inst/NOTICE.md).
+MIT (see [`LICENSE`](LICENSE)). Adapted code is attributed in [`LICENSE.note`](https://github.com/NewGraphEnvironment/flooded/blob/main/LICENSE.note), and
+the licences of the data bundled with the package are in [`inst/NOTICE.md`](https://github.com/NewGraphEnvironment/flooded/blob/main/inst/NOTICE.md).

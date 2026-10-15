@@ -111,6 +111,17 @@ The New Graph website will describe this package from its README (NewGraphEnviro
   pars-floodplain.Rmd and CLAUDE.md as the measurement.
 - All six runs gave 456,075 valley cells, identical to each other.
 
+## Validation (2026-10-15)
+
+- `devtools::check(--no-manual)`: 0 errors, 0 warnings, 2 NOTEs, both pre-existing on main
+  (`CITATION.cff` and `pkgdown/` at top level, plus a gitignored local `Rplots.pdf`). No NOTE for
+  `LICENSE.note` or `inst/NOTICE.md`. Tests OK (152 s), examples OK, vignettes rebuild OK.
+- lintr: 5 style lints, all on vignette lines this branch does not touch.
+- `pkgdown::build_site()`: figure served from `reference/figures/readme-pars.png`; six reference
+  sections. README links to `NEWS.md`, `CITATION.cff`, `LICENSE.note` and `inst/NOTICE.md` were
+  relative, which pkgdown leaves pointing at pages it does not publish, so they are absolute
+  GitHub links now. Site warnings are the existing `\@ref` labels (#43).
+
 ## Errors Encountered
 
 | Error | Resolution |
