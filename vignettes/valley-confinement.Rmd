@@ -497,10 +497,10 @@ attr(by_stream, "fl_fallback_cells")
 ## Performance
 
 On the Parsnip River watershed group (a 3,749 x 3,761 cell grid at 30 m, 8,436
-stream segments), one `fl_valley_confine()` call took 83 to 122 s of wall time on
-an Apple M1 Max with terra 1.9.50. Setting `terra::terraOptions(threads = )` to 1
-or 8 made no difference beyond that spread; see the Performance section of
-`?fl_valley_confine`.
+stream segments), one `fl_valley_confine()` call took 108 to 134 s of CPU time on
+an Apple M1 Max with terra 1.9.50, with other work on the machine. Setting
+`terra::terraOptions(threads = )` to 1 or 8 made no difference beyond that spread;
+see the Performance section of `?fl_valley_confine`.
 
 ## Summary
 

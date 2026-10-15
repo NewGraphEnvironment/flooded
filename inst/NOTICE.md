@@ -27,6 +27,11 @@ Database Contents License.
 ## Data flooded produces
 
 The valley rasters and floodplain polygons in `inst/vignette-data/` (`pars_valleys.tif`, layer
-`floodplain` of `pars.gpkg`, `stac_valleys_*.tif`) are flooded's own output. The
+`floodplain` of `pars.gpkg`, `stac_valleys_*.tif`) and the README figure
+(`man/figures/readme-pars.png`) are made by flooded from the data above: the streams chosen by
+bcfishpass access and stream order, and the upstream area, precipitation and channel width that
+set the flood surface, come from the bcfishpass database. They contain information from
+bcfishpass, which is made available under the Open Database License 1.0. The
 `stac_valleys_*.tif` rasters were computed from BC provincial lidar and resampled to the bundled
-10 m grid. The lidar itself is not redistributed.
+10 m grid; the lidar itself is not redistributed. The README figure also draws a hillshade of
+MRDEM-30 and Freshwater Atlas lakes and wetlands.

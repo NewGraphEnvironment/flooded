@@ -13,3 +13,4 @@
 - Plan review returned (review-plan.md); NOTICE split for bcfishpass ODbL and moved to inst/; #85 extended
 - Phase 3: README rewritten in readme.md order; DESCRIPTION Title/Description/fnd; citation workflow roles; CITATION.cff regenerated; soul#426 filed; links and exports checked
 - Phase 4: reference index grouped; threads timing (no measurable effect) replaces the stale note in roxygen, two vignettes and CLAUDE.md
+- /code-check round 1 (62 claims, 54 hold): 8 findings fixed — STAC lidar claim scoped to the vignette, "without crossing much steep ground", "flags" not attributes, natural barriers, 5 km reach, CPU time + load in the timing text, ODbL notice for produced data, NOTICE linked from Data and methods

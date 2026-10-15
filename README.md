@@ -6,24 +6,24 @@
 
 > Map floodplains from an elevation model and a stream network.
 
-flooded maps floodplains and unconfined valley bottoms from an elevation model and a stream
-network with the Valley Confinement Algorithm, keeping ground that is gentle, near a stream,
-reachable from it without climbing, and low relative to it. It classifies terrain and does not
-simulate floods, so its output is a screening map, not a field-validated floodplain. Floodplain
-that a coarse elevation model maps and 1 m lidar excludes, mostly on steep ground, is where to look
-for roads, rail grades, dykes or fill that may cut a floodplain off from its river, and so where
+flooded maps floodplains and unconfined valley bottoms from an elevation model and a stream network
+with the Valley Confinement Algorithm, keeping ground that is gentle, near a stream, reachable from
+it without crossing much steep ground, and low relative to it. It classifies terrain and does not
+simulate floods, so its output is a screening map, not a field-validated floodplain. In the STAC
+vignette, floodplain that 25 m elevation data maps and 1 m lidar excludes marks where to look for
+roads, rail grades, dykes or fill that may cut a floodplain off from its river, and so where
 reconnection could be planned.
 
 It fetches an elevation model for an area, maps three preset flood levels from active channel to
 valley bottom, and attributes one floodplain to each watercourse that shares it, carrying
-per-reach attributes such as fish habitat onto the ground beside each reach.
+per-reach flags such as fish habitat onto the ground beside each reach.
 
 <img src="man/figures/readme-pars.png" alt="Map of the Parsnip River watershed group over a grey hillshade. A blue floodplain follows the Parsnip River and its larger tributaries along the valley floors, with lakes and wetlands in the south-east; the mountain slopes between them carry none." width="100%" />
 
 *The floodplain at flood factor 4 in the Parsnip River watershed group, British Columbia, mapped
 at 30 m from the MRDEM-30 elevation model with lakes and wetlands included. Only streams of order
-3 and up that bull trout can reach were modelled, so smaller streams and those above barriers have
-no floodplain here.*
+3 and up that bull trout can reach were modelled, so smaller streams and those above natural
+barriers to bull trout have no floodplain here.*
 
 ## Installation
 
@@ -41,7 +41,7 @@ MRDEM-30, covers Canada and is read over the internet with no credentials.
 
 ## Example
 
-A 6 km reach of the Bulkley River is bundled with the package. At the default flood level
+A 5 km reach of the Bulkley River is bundled with the package. At the default flood level
 (flood factor 6, valley bottom), its floodplain attributed to each watercourse:
 
 ```r
@@ -108,9 +108,10 @@ Land cover change: fresh (network) &rarr; flooded (floodplains) &rarr; drift (la
   ([methodology](https://github.com/NewGraphEnvironment/flooded/blob/main/inst/notes/methodology.md)).
 - NRCan's [MRDEM-30](https://open.canada.ca/data/en/dataset/18752265-bda3-498c-a4ba-9dfe68cb98da),
   the elevation model fetched by default.
-- In the bundled data and vignettes: the BC Freshwater Atlas, stream attributes from bcfishpass
-  (upstream area, precipitation, channel width, fish access), and BC lidar from the
-  `stac-elevation-bc` catalogue.
+- In the bundled data and vignettes: the provincial 25 m TRIM DEM, the BC Freshwater Atlas, stream
+  attributes from bcfishpass (upstream area, precipitation, channel width, fish access), and BC
+  lidar from the `stac-elevation-bc` catalogue. Every bundled dataset and its licence is listed in
+  [`inst/NOTICE.md`](https://github.com/NewGraphEnvironment/flooded/blob/main/inst/NOTICE.md).
 - What the model maps, what a flood factor means, and what can be claimed from the output:
   [floodplain interpretation](https://github.com/NewGraphEnvironment/flooded/blob/main/inst/notes/floodplain_interpretation.md).
 

@@ -225,7 +225,7 @@ would otherwise carve donut holes around.
 
 `flooded::fl_valley_confine()` runs the full VCA pipeline on the cached
 DEM, streams, and waterbodies. On the Parsnip River Watershed Group at 30 m (~14 Mcells) it took
-83 to 122 s on an Apple M1 Max, whether terra ran 1 thread or 8.
+108 to 134 s of CPU time on an Apple M1 Max, whether terra ran 1 thread or 8.
 
 ```{r vca, eval = FALSE}
 valleys <- flooded::fl_valley_confine(

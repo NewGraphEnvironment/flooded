@@ -130,10 +130,11 @@ habitat assembly (Simon Norris, Apache 2.0).
 
 On the Parsnip River watershed group's cached inputs (a 3,749 x 3,761 cell
 grid at 30 m, 8,436 stream segments and 664 waterbodies, \code{flood_factor = 4}),
-one call took 83 to 122 s of wall time on an Apple M1 Max (10 cores) with
-flooded 0.8.1 and terra 1.9.50. terra's \code{threads} option, which defaults to
-16, made no difference beyond that spread: three runs each at
-\code{terra::terraOptions(threads = 1)} and \code{threads = 8} overlapped (#81).
+one call took 108 to 134 s of CPU time on an Apple M1 Max (10 cores) with
+flooded 0.8.1 and terra 1.9.50 (83 to 122 s of wall time, which rose with
+other work on the machine, load average 6 to 16). terra's \code{threads} option,
+which defaults to 16, made no difference beyond that spread: three runs each
+at \code{terra::terraOptions(threads = 1)} and \code{threads = 8} overlapped (#81).
 }
 }
 \examples{
