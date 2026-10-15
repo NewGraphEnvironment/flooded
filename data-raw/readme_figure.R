@@ -76,7 +76,7 @@ plot(sf::st_geometry(aoi), col = NA, border = st_wsg$col, lwd = st_wsg$lwd,
 
 legend("topright", inset = c(0.015, 0.02), bty = "o", bg = "white",
        box.col = NA, cex = 0.9,
-       legend = c("Floodplain (functional, ff04)", "Lake", "Wetland",
+       legend = c("Floodplain (flood factor 4)", "Lake", "Wetland",
                   "Stream, order 3+ accessible to bull trout",
                   "Parsnip River watershed group"),
        fill = c(col_fp, col_lake, col_wet, NA, NA),

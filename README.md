@@ -1,8 +1,29 @@
 # flooded <img src="man/figures/logo.png" align="right" height="139" alt="flooded hex sticker" />
 
-> Portable floodplain delineation from DEM and stream network.
+<!-- badges: start -->
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+<!-- badges: end -->
 
-Delineate unconfined valleys and floodplain extent using the Valley Confinement Algorithm (VCA) — combining slope thresholding, cost-distance analysis, and flood surface modelling. Built on `terra` for R-native raster processing. Bring your own DEM and streams; works anywhere.
+> Map floodplains from an elevation model and a stream network.
+
+flooded maps floodplains and unconfined valley bottoms from an elevation model and a stream
+network with the Valley Confinement Algorithm, keeping ground that is gentle, near a stream,
+reachable from it without climbing, and low relative to it. It classifies terrain and does not
+simulate floods, so its output is a screening map, not a field-validated floodplain. Floodplain
+that a coarse elevation model maps and 1 m lidar excludes, mostly on steep ground, is where to look
+for roads, rail grades, dykes or fill that may cut a floodplain off from its river, and so where
+reconnection could be planned.
+
+It fetches an elevation model for an area, maps three preset flood levels from active channel to
+valley bottom, and attributes one floodplain to each watercourse that shares it, carrying
+per-reach attributes such as fish habitat onto the ground beside each reach.
+
+<img src="man/figures/readme-pars.png" alt="Map of the Parsnip River watershed group over a grey hillshade. A blue floodplain follows the Parsnip River and its larger tributaries along the valley floors, with lakes and wetlands in the south-east; the mountain slopes between them carry none." width="100%" />
+
+*The floodplain at flood factor 4 in the Parsnip River watershed group, British Columbia, mapped
+at 30 m from the MRDEM-30 elevation model with lakes and wetlands included. Only streams of order
+3 and up that bull trout can reach were modelled, so smaller streams and those above barriers have
+no floodplain here.*
 
 ## Installation
 
@@ -10,87 +31,94 @@ Delineate unconfined valleys and floodplain extent using the Valley Confinement 
 pak::pak("NewGraphEnvironment/flooded")
 ```
 
+flooded is under active development and its functions change between releases (see
+[NEWS](NEWS.md)). Pin a release for reproducible work:
+`pak::pak("NewGraphEnvironment/flooded@vX.Y.Z")`.
+
+A run needs an elevation raster in a projected CRS with metre units, and stream lines that carry
+upstream area in hectares; mean annual precipitation is optional. The default elevation model,
+MRDEM-30, covers Canada and is read over the internet with no credentials.
+
 ## Example
+
+A 6 km reach of the Bulkley River is bundled with the package. At the default flood level
+(flood factor 6, valley bottom), its floodplain attributed to each watercourse:
 
 ```r
 library(flooded)
 
-dem <- terra::rast("dem.tif")
-streams <- sf::st_read("streams.gpkg")
+dem <- terra::rast(system.file("testdata/dem.tif", package = "flooded"))
+streams <- sf::st_read(system.file("testdata/streams.gpkg", package = "flooded"), quiet = TRUE)
 
-# delineate valleys — one call
 valleys <- fl_valley_confine(
   dem, streams,
   area_field = "upstream_area_ha",
-  precip = precip_r  # mean annual precipitation (mm) — critical for depth
+  precip = fl_stream_rasterize(streams, dem, field = "map_upstream")
 )
 
-# convert to polygons for GIS
-valleys_poly <- fl_valley_poly(valleys)
-sf::st_write(valleys_poly, "valleys.gpkg")
+by_river <- fl_valley_attribute(valleys, streams, group = "gnis_name", dem = dem)
+by_river$area_ha <- round(as.numeric(sf::st_area(by_river)) / 1e4)
+sf::st_drop_geometry(by_river)[, c("gnis_name", "area_ha")]
+#>            gnis_name area_ha
+#> 1      Bulkley River     264
+#> 2      Cesford Creek     112
+#> 3    Richfield Creek     130
+#> 4 Robert Hatch Creek      50
+#> 5               <NA>      99
 ```
 
-See the [Valley confinement vignette](https://newgraphenvironment.github.io/flooded/articles/valley-confinement.html) for a full walkthrough with bundled test data, and the [function reference](https://newgraphenvironment.github.io/flooded/reference/) for individual components.
+Rows overlap where two watercourses share valley floor; the whole floodplain here is 287 ha.
 
-## Bankfull regression
+## Learn more
 
-The flood model uses the VCA bankfull regression to estimate flood depth at stream cells:
-
-```
-area_km2       = upstream_area_ha / 100
-precip_cm      = precip_mm / 10
-
-bankfull_width = (area_km2 ^ 0.280) * 0.196 * (precip_cm ^ 0.355)
-bankfull_depth = bankfull_width ^ 0.607 * 0.145
-flood_depth    = bankfull_depth * flood_factor
-```
-
-`upstream_area` (hectares) is required. `precip` (mean annual precipitation, mm) is optional and
-defaults to `NULL`, which drops the precipitation term — but supplying it matters: omitting it
-underestimates flood depth by ~2.4x. Both are converted internally to the km2 and cm/yr the
-published coefficients expect.
-
-## Resolution and restoration
-
-`flooded` is DEM-agnostic — any source works. But resolution changes what you can see. At 25 m (e.g. the provincial TRIM DEM), raised features are smeared into the ground around them, and the floodplain's shape is coarse. At 1 m lidar, anthropogenic features emerge as narrow lines and patches: roads, railway grades, dykes, and agricultural fill, whose steep sides a 25 m DEM smooths away and which can block lateral connectivity.
-
-The gap between coarse and fine results runs both ways — lidar mostly finds floodplain the coarse DEM misses — but the floodplain the coarse result maps and the fine one excludes is a diagnostic: it shows **where to look** for what may be preventing floodplain from functioning, and **where to act** — removing fill, breaching dykes, or installing crossings to reconnect floodplain. See the [STAC DEM vignette](https://newgraphenvironment.github.io/flooded/articles/stac-dem.html) for a worked example comparing 25 m TRIM with 1 m lidar on the Neexdzii Kwah (Bulkley River).
-
-## Performance
-
-Set `terra` threads before running the pipeline to enable multi-core processing:
-
-```r
-terra::terraOptions(threads = 12)  # adjust to your machine
-```
-
-On an Apple M4 Max, this cuts a ~2,700 km² watershed (27M cells at 10 m) from ~3.5 min to ~1 min.
+- [Valley confinement](https://newgraphenvironment.github.io/flooded/articles/valley-confinement.html):
+  the pipeline step by step on the bundled reach, the three flood levels, and whose floodplain is
+  whose.
+- [Bring your own DEM via STAC](https://newgraphenvironment.github.io/flooded/articles/stac-dem.html):
+  the same reach from the 25 m provincial model and from lidar, and the steep-sided grades and
+  fill that 1 m lidar resolves.
+- [Watershed-scale floodplain delineation](https://newgraphenvironment.github.io/flooded/articles/pars-floodplain.html):
+  a whole watershed group, the Parsnip, from a fetched elevation model.
+- [Function reference](https://newgraphenvironment.github.io/flooded/reference/).
 
 ## Ecosystem
 
-flooded is one piece of a larger watershed analysis workflow:
-
 | Package | Role |
 |---------|------|
-| [fresh](https://github.com/NewGraphEnvironment/fresh) | FWA-referenced spatial hydrology (network extraction, snapping) |
-| [breaks](https://github.com/NewGraphEnvironment/breaks) | Delineate sub-basins from break points on stream networks |
+| [fresh](https://github.com/NewGraphEnvironment/fresh) | Stream network modelling engine: segment, classify, cluster, aggregate |
+| [link](https://github.com/NewGraphEnvironment/link) | Intrinsic habitat models: develop, test and communicate |
 | **flooded** | Delineate floodplain extents from DEMs and stream networks (this package) |
 | [drift](https://github.com/NewGraphEnvironment/drift) | Track land cover change within floodplains over time |
+| [floodplains](https://github.com/NewGraphEnvironment/floodplains) | Floodplain and land cover change modelling for BC watershed groups |
+| [cd](https://github.com/NewGraphEnvironment/cd) | Climate departure analysis from ERA5-Land reanalysis |
+| [breaks](https://github.com/NewGraphEnvironment/breaks) | Delineate sub-basins from break points on stream networks |
 | [fly](https://github.com/NewGraphEnvironment/fly) | Estimate airphoto footprints and select optimal coverage for a study area |
-| [diggs](https://github.com/NewGraphEnvironment/diggs) | Interactive explorer for [fly](https://github.com/NewGraphEnvironment/fly) airphoto selections (Shiny app) |
+| [diggs](https://github.com/NewGraphEnvironment/diggs) | BC Historic Airphoto Explorer (interactive Shiny app) |
 
-Pipeline: fresh (network data) &rarr; breaks (sub-basins) &rarr; flooded (floodplains) &rarr; drift (land cover change)
+Land cover change: fresh (network) &rarr; flooded (floodplains) &rarr; drift (land cover change)
 
-## Origins
+## Data and methods it builds on
 
-Adapted from:
+- The Valley Confinement Algorithm of the [USDA VCA Toolbox](https://www.fs.usda.gov/rm/boise/AWAE/projects/valley_confinement.shtml),
+  with code adapted from [BlueGeo](https://github.com/bluegeo/bluegeo) (Devin Cairns, MIT) and the
+  lateral habitat model of [bcfishpass](https://github.com/smnorris/bcfishpass) (Simon Norris,
+  Apache 2.0).
+- The bankfull regression of Hall et al. (2007), which sets how far above each stream the flood
+  levels sit, and the flood-factor ranges of Nagel et al. (2014)
+  ([methodology](https://github.com/NewGraphEnvironment/flooded/blob/main/inst/notes/methodology.md)).
+- NRCan's [MRDEM-30](https://open.canada.ca/data/en/dataset/18752265-bda3-498c-a4ba-9dfe68cb98da),
+  the elevation model fetched by default.
+- In the bundled data and vignettes: the BC Freshwater Atlas, stream attributes from bcfishpass
+  (upstream area, precipitation, channel width, fish access), and BC lidar from the
+  `stac-elevation-bc` catalogue.
+- What the model maps, what a flood factor means, and what can be claimed from the output:
+  [floodplain interpretation](https://github.com/NewGraphEnvironment/flooded/blob/main/inst/notes/floodplain_interpretation.md).
 
-- [BlueGeo](https://github.com/bluegeo/bluegeo) by Devin Cairns (MIT) — Valley Confinement Algorithm
-- [USDA VCA Toolbox](https://www.fs.usda.gov/rm/boise/AWAE/projects/valley_confinement.shtml) — original method
-- [bcfishpass](https://github.com/smnorris/bcfishpass) by Simon Norris (Apache 2.0) — lateral habitat assembly
+## Citation
 
-See `LICENSE.note` for full attribution.
+Cite flooded from [`CITATION.cff`](CITATION.cff), or with "Cite this repository" on GitHub.
 
 ## License
 
-MIT
+MIT (see [`LICENSE`](LICENSE)). Adapted code is attributed in [`LICENSE.note`](LICENSE.note), and
+the licences of the data bundled with the package are in [`inst/NOTICE.md`](inst/NOTICE.md).

@@ -76,9 +76,31 @@ The New Graph website will describe this package from its README (NewGraphEnviro
   subject; every prominent feature is in the legend. The caption must say floodplain is mapped
   only along the streams drawn (order 3+ accessible to bull trout).
 
+## Plan review folded in (2026-10-15; `review-plan.md`)
+
+- B2 confirmed: bcfishpass `LICENSE` puts its database under ODbL 1.0 with DbCL for contents,
+  so NOTICE splits FWA geometry (OGL-BC) from bcfishpass attributes (ODbL/DbCL); `map_upstream`
+  (ClimateBC) added to #85's unchecked list.
+- G1: NOTICE moved to `inst/NOTICE.md` (ships with the data, no top-level NOTE); the pkgdown
+  allowlist change reverted; `LICENSE.note` removed from `.Rbuildignore` so the MIT and Apache
+  notices ship.
+- G3/G4: Citation points at `CITATION.cff`; NGE Ltd. added as `fnd` only, because `LICENSE`
+  names Allan Irvine as copyright holder (operator's call). cffr with `c("aut","cre","fnd")`
+  lists exactly Irvine and NGE Ltd. Convention gap filed as soul#426.
+- B1: the opening says where to look, as `stac-dem.Rmd`'s barrier section does; the example
+  names its default level (flood factor 6, valley bottom), the figure's legend says flood
+  factor 4 without "functional", and the caption says unmodelled streams have no floodplain.
+
+## README counts after Phase 3
+
+- 480 prose words / 118 lines (baseline 406 / 96). Forecast, stated before the rewrite in the
+  review's Ac1 sense: ~450-500, since `readme.md` adds Learn more, Data and methods, Citation
+  and the caption while Performance and Bankfull regression leave.
+
 ## Errors Encountered
 
 | Error | Resolution |
 |-------|------------|
+| `\"aut\"` written into the single-quoted `Rscript -e` in the citation workflow | single quotes pass `\"` through literally; plain `"` inside, checked by running the workflow's own command |
 | Hillshade invisible under the valley raster | `terra::plot(col = c(NA, fill))` paints 0 cells white; plot `ifel(valleys == 1, 1, NA)` instead |
 | PNG had an alpha channel (`hasAlpha: yes`) | `png(type = "quartz")` (macOS default) writes alpha; `type = "cairo"` does not |

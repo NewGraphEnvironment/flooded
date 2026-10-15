@@ -1,7 +1,6 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^LICENSE\.md$
-^LICENSE\.note$
 ^CLAUDE\.md$
 ^data-raw$
 ^dev$

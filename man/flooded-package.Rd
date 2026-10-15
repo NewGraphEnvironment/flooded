@@ -4,11 +4,11 @@
 \name{flooded-package}
 \alias{flooded}
 \alias{flooded-package}
-\title{flooded: Portable Floodplain Delineation from DEM and Stream Network}
+\title{flooded: Map Floodplains from an Elevation Model and a Stream Network}
 \description{
 \if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
 
-Delineate floodplains from digital elevation models and stream networks using the Valley Confinement Algorithm (VCA). Combines slope thresholding, cost-distance analysis, and flood surface modelling to identify unconfined valleys. Ported from the bcfishpass lateral habitat pipeline (Python) with origins in the USDA VCA Toolbox and BlueGeo.
+Maps floodplains and unconfined valley bottoms from a digital elevation model and a stream network with the Valley Confinement Algorithm (VCA), keeping ground that is gentle, near a stream, reachable from it without climbing, and low relative to it. It classifies terrain and does not simulate floods, so its output is a screening map, not a field-validated floodplain. Fetches an elevation model for an area, maps preset flood levels, and attributes one floodplain to each watercourse that shares it, carrying per-reach attributes onto the ground beside each reach. Ported from the bcfishpass lateral habitat pipeline (Python) with origins in the USDA VCA Toolbox and BlueGeo. Under active development.
 }
 \seealso{
 Useful links:
@@ -29,6 +29,7 @@ Other contributors:
   \item Canadian Wildlife Federation (bcfishpass (Apache 2.0)) [copyright holder]
   \item Province of British Columbia (bcfishpass (Apache 2.0)) [copyright holder]
   \item New Graph Environment (bcfishpass (Apache 2.0)) [copyright holder]
+  \item New Graph Environment Ltd. [funder]
 }
 
 }

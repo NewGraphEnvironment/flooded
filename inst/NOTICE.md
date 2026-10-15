@@ -9,7 +9,9 @@ catalogue gives it. Licences were checked on 2026-10-15.
 
 | Files | Data | Catalogue | Licence |
 |---|---|---|---|
-| `inst/testdata/streams.gpkg`, `inst/testdata/waterbodies.gpkg`; layers `aoi`, `streams`, `waterbodies` and `named_streams` of `inst/vignette-data/pars.gpkg` | Freshwater Atlas streams, lakes, wetlands, named streams and watershed groups; the stream attributes (upstream area, upstream precipitation, channel width, fish access and habitat) come from [bcfishpass](https://github.com/smnorris/bcfishpass) | BC Data Catalogue | [Open Government Licence - British Columbia](https://www2.gov.bc.ca/gov/content/data/policy-standards/open-data/open-government-licence-bc) |
+| `inst/testdata/streams.gpkg`, `inst/testdata/waterbodies.gpkg`; layers `aoi`, `streams`, `waterbodies` and `named_streams` of `inst/vignette-data/pars.gpkg` | Freshwater Atlas stream, lake, wetland, named stream and watershed group geometry and identifiers | BC Data Catalogue | [Open Government Licence - British Columbia](https://www2.gov.bc.ca/gov/content/data/policy-standards/open-data/open-government-licence-bc) |
+| the stream attributes in `inst/testdata/streams.gpkg` and layer `streams` of `inst/vignette-data/pars.gpkg` (channel width, fish access, spawning, rearing, mapping codes, dams downstream) | Outputs of the [bcfishpass](https://github.com/smnorris/bcfishpass) database | bcfishpass | [Open Database License 1.0](https://opendatacommons.org/licenses/odbl/1-0/), contents under the [Database Contents License](https://opendatacommons.org/licenses/dbcl/1-0/) (bcfishpass `LICENSE`) |
+| column `map_upstream` of the same stream files | Mean annual precipitation upstream, from ClimateBC through bcfishpass | ClimateBC | Not yet confirmed: see [#85](https://github.com/NewGraphEnvironment/flooded/issues/85) |
 | `inst/testdata/dem.tif`, `inst/testdata/slope.tif` | Provincial 25 m TRIM DEM, resampled to 10 m, and the slope derived from it | Not found in the BC Data Catalogue | Not yet confirmed: see [#85](https://github.com/NewGraphEnvironment/flooded/issues/85) |
 | `inst/vignette-data/pars_dem.tif` | Medium Resolution Digital Elevation Model (MRDEM-30), CanElevation Series, Natural Resources Canada | open.canada.ca | [Open Government Licence - Canada](https://open.canada.ca/en/open-government-licence-canada) |
 | layer `railways` of `inst/vignette-data/pars.gpkg` | Railway Track Line | BC Data Catalogue | [Open Government Licence - Canada](https://open.canada.ca/en/open-government-licence-canada) |
@@ -18,7 +20,9 @@ catalogue gives it. Licences were checked on 2026-10-15.
 | layer `roads` of `inst/vignette-data/pars.gpkg` | Digital Road Atlas | BC Data Catalogue | Access Only: see [#85](https://github.com/NewGraphEnvironment/flooded/issues/85) |
 
 Contains information licensed under the Open Government Licence - British Columbia, and under
-the Open Government Licence - Canada.
+the Open Government Licence - Canada. The bcfishpass attributes are made available under the Open
+Database License; any rights in individual contents of the database are licensed under the
+Database Contents License.
 
 ## Data flooded produces
 

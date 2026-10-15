@@ -34,23 +34,23 @@ sections in a fixed order, and nothing another file already keeps.
       Alt text, plus a caption saying what it shows and what is not drawn.
 
 ## Phase 3: README, DESCRIPTION, About
-- [ ] Rewrite `README.md` in `readme.md` order: title, hex, badge and tagline; opening;
+- [x] Rewrite `README.md` in `readme.md` order: title, hex, badge and tagline; opening;
       figure; Installation (+ pin line); a tiny example on bundled data with output pasted
       from a real run against this tree (`load_all`); Learn more (valley-confinement, stac-dem,
       pars-floodplain, then reference); Ecosystem; Data and methods (VCA/BlueGeo/USDA,
       bcfishpass, Hall et al. regression, MRDEM-30, FWA); Citation; License (+ `LICENSE.note`).
       Keep the restoration value from "Resolution and restoration" in the opening.
-- [ ] Ecosystem table: fresh, link, flooded, drift, floodplains, cd, breaks, fly, diggs. Each
+- [x] Ecosystem table: fresh, link, flooded, drift, floodplains, cd, breaks, fly, diggs. Each
       role worded as in the fresh/link READMEs where one exists, otherwise from the repo's
       About.
-- [ ] DESCRIPTION `Title` and `Description` in step with the tagline and opening;
+- [x] DESCRIPTION `Title` and `Description` in step with the tagline and opening;
       `devtools::document()` (rebuilds `man/flooded-package.Rd`).
-- [ ] `gh repo edit --description` to the same tagline.
-- [ ] Authors@R: New Graph Environment Ltd. (`cph`, `fnd`).
+- [ ] `gh repo edit --description` to the same tagline, at merge (it is public at once; review O1)
+- [x] Authors@R: New Graph Environment Ltd. (`cph`, `fnd`).
       `update-citation-cff.yaml` passes `authors_roles = c("aut", "cre", "fnd")`.
       Regenerate `CITATION.cff` with that call and check that only Irvine and NGE are authors.
       File the soul issue (decision 4).
-- [ ] Mechanical checks: every function named is exported, and every link resolves (`curl -sI`).
+- [x] Mechanical checks: every function named is exported, and every link resolves (`curl -sI`).
 
 ## Phase 4: Reference index and timing note
 - [ ] `_pkgdown.yml` `reference:` sections by purpose:
@@ -61,11 +61,13 @@ sections in a fixed order, and nothing another file already keeps.
   - Pipeline steps: the rest
 
   Then `pkgdown::check_pkgdown()`.
-- [ ] Parsnip threads timing (decision 2); update the `fl_valley_confine()` roxygen Performance
-      section; `devtools::document()`. Script and log go in the archive.
+- [ ] Parsnip threads timing (decision 2): threads 1 vs 8 on this 10-core machine, wall time, a
+      fresh Rscript per repeat; update the `fl_valley_confine()` roxygen Performance section,
+      `valley-confinement.Rmd` Performance and `pars-floodplain.Rmd`'s timing line (review G6);
+      `devtools::document()`. Script and log go in the archive.
 
 ## Validation
-- [ ] Tests pass; `lintr`; `pkgdown::build_site()` renders the README figure and the grouped
+- [ ] Tests pass; `devtools::check()` (Authors@R, `.Rbuildignore`, `inst/NOTICE.md`); `lintr`; `pkgdown::build_site()` renders the README figure and the grouped
       reference
 - [ ] `/code-check branch`, with reviewers enumerating every published claim (README,
       DESCRIPTION, About, caption) against the code path a run takes
