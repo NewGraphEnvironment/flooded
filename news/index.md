@@ -1,5 +1,14 @@
 # Changelog
 
+## flooded 0.8.1
+
+- gdalcubes (Suggests) now installs from
+  `NewGraphEnvironment/gdalcubes@newgraph`, in step with drift
+  (NewGraphEnvironment/drift#104). That build is upstream 0.7.5 plus
+  fixes proposed as appelmar/gdalcubes#113-115, and the pin reverts to
+  `appelmar/gdalcubes` when those merge. Two packages naming different
+  sources for gdalcubes make pak fail when they install together.
+
 ## flooded 0.8.0
 
 - New

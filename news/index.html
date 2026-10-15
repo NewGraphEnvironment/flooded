@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">flooded</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -34,9 +34,13 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/NewGraphEnvironment/flooded/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/NewGraphEnvironment/flooded/blob/v0.8.1/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.8.1" id="flooded-081">flooded 0.8.1<a class="anchor" aria-label="anchor" href="#flooded-081"></a></h2>
+<ul><li>gdalcubes (Suggests) now installs from <code>NewGraphEnvironment/gdalcubes@newgraph</code>, in step with drift (NewGraphEnvironment/drift#104). That build is upstream 0.7.5 plus fixes proposed as appelmar/gdalcubes#113-115, and the pin reverts to <code>appelmar/gdalcubes</code> when those merge. Two packages naming different sources for gdalcubes make pak fail when they install together.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.8.0" id="flooded-080">flooded 0.8.0<a class="anchor" aria-label="anchor" href="#flooded-080"></a></h2>
 <ul><li>New <code><a href="../reference/fl_valley_join.html">fl_valley_join()</a></code> joins per-segment logical attributes (habitat flags, say) to valley cells by position (<a href="https://github.com/NewGraphEnvironment/flooded/issues/83" class="external-link">#83</a>). Each cell takes the nearest segment on each group that claims it in <code><a href="../reference/fl_valley_attribute.html">fl_valley_attribute()</a></code>’s output, and two answers come back: <code>nearest</code> gives every cell one owner, so per-reach areas add up to the floodplain, and <code>any</code> is <code>TRUE</code> where any claiming group’s nearest segment is. Joining on the group key instead credits a group’s whole floodplain with any flag found anywhere on it: on the Bulkley’s whole-network floodplain, 16,705 ha of sockeye spawning by key against 572 ha by position.</li>
