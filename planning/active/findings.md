@@ -97,6 +97,20 @@ The New Graph website will describe this package from its README (NewGraphEnviro
   review's Ac1 sense: ~450-500, since `readme.md` adds Learn more, Data and methods, Citation
   and the caption while Performance and Bankfull regression leave.
 
+## Threads timing (2026-10-15, `bench_threads.R`, `bench_threads.log`, `bench_threads_env.txt`)
+
+- Parsnip cached inputs, 3,749 x 3,761 at 30 m, flood_factor 4, Apple M1 Max (10 cores),
+  flooded 9d852e1 (0.8.1) from a frozen worktree, terra 1.9.50, GDAL 3.13.0; one Rscript per
+  repeat, interleaved.
+- threads 1: wall 85.6 / 119.5 / 115.4 s; threads 8: 88.7 / 122.2 / 82.6 s. CPU 108-134 s.
+  Load averages before each run 6-16 (other work on the machine). No difference beyond the
+  spread, so nothing is credited to threads.
+- terra 1.9.x defaults `threads` to 16 (terra NEWS), so the old advice to set it is moot here.
+  The old note (~3.5 -> ~1 min at 12 threads, M4 Max, 27M cells) dated from 0.0.0.9000
+  (`5e12c72`) and does not reproduce; rewritten in the roxygen, valley-confinement.Rmd,
+  pars-floodplain.Rmd and CLAUDE.md as the measurement.
+- All six runs gave 456,075 valley cells, identical to each other.
+
 ## Errors Encountered
 
 | Error | Resolution |

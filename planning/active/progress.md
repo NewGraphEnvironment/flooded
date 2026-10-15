@@ -12,3 +12,4 @@
 - Phase 2: `data-raw/readme_figure.R` -> `man/figures/readme-pars.png` (980 x 976, no alpha); reviewed at 700 px
 - Plan review returned (review-plan.md); NOTICE split for bcfishpass ODbL and moved to inst/; #85 extended
 - Phase 3: README rewritten in readme.md order; DESCRIPTION Title/Description/fnd; citation workflow roles; CITATION.cff regenerated; soul#426 filed; links and exports checked
+- Phase 4: reference index grouped; threads timing (no measurable effect) replaces the stale note in roxygen, two vignettes and CLAUDE.md

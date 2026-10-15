@@ -63,7 +63,7 @@ sections in a fixed order, and nothing another file already keeps.
   - Pipeline steps: the rest
 
   Then `pkgdown::check_pkgdown()`.
-- [ ] Parsnip threads timing (decision 2): threads 1 vs 8 on this 10-core machine, wall time, a
+- [x] Parsnip threads timing (decision 2): threads 1 vs 8 on this 10-core machine, wall time, a
       fresh Rscript per repeat; update the `fl_valley_confine()` roxygen Performance section,
       `valley-confinement.Rmd` Performance and `pars-floodplain.Rmd`'s timing line (review G6);
       `devtools::document()`. Script and log go in the archive.

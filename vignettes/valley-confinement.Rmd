@@ -496,17 +496,11 @@ attr(by_stream, "fl_fallback_cells")
 
 ## Performance
 
-Several `terra` operations inside `fl_valley_confine()` support multi-threading
-(focal filters, distance calculations, raster math). Set threads before running:
-
-```r
-terra::terraOptions(threads = 12)  # adjust to your machine
-```
-
-On an Apple M4 Max (16 cores, 12 performance), this reduced a Neexdzii Kwah
-run (~2,700 km², 27M cells, 1165 stream segments) from ~3.5 minutes to ~1 minute.
-The remaining time is dominated by `terra::costDist()` and `terra::interpIDW()`,
-which are single-threaded.
+On the Parsnip River watershed group (a 3,749 x 3,761 cell grid at 30 m, 8,436
+stream segments), one `fl_valley_confine()` call took 83 to 122 s of wall time on
+an Apple M1 Max with terra 1.9.50. Setting `terra::terraOptions(threads = )` to 1
+or 8 made no difference beyond that spread; see the Performance section of
+`?fl_valley_confine`.
 
 ## Summary
 

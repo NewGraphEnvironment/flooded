@@ -86,16 +86,12 @@
 #'
 #' ## Performance
 #'
-#' Several internal operations (focal filters, distance calculations, raster
-#' math) support multi-threading via [terra::terraOptions()]. Set threads
-#' before calling this function to speed up processing on large rasters:
-#'
-#' ```
-#' terra::terraOptions(threads = 12)
-#' ```
-#'
-#' On an Apple M4 Max (16 cores), 12 threads reduced runtime from ~3.5
-#' minutes to ~1 minute for a 27M-cell raster (~2,700 km² at 10 m).
+#' On the Parsnip River watershed group's cached inputs (a 3,749 x 3,761 cell
+#' grid at 30 m, 8,436 stream segments and 664 waterbodies, `flood_factor = 4`),
+#' one call took 83 to 122 s of wall time on an Apple M1 Max (10 cores) with
+#' flooded 0.8.1 and terra 1.9.50. terra's `threads` option, which defaults to
+#' 16, made no difference beyond that spread: three runs each at
+#' `terra::terraOptions(threads = 1)` and `threads = 8` overlapped (#81).
 #'
 #' @seealso [fl_stream_rasterize()] for how `area_field` is burned onto the
 #'   grid, and [fl_flood_surface()] for the regression that consumes it.
