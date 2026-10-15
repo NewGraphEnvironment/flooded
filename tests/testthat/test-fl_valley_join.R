@@ -263,6 +263,26 @@ test_that("segments in another CRS are transformed, and empty geometries skipped
   s <- rbind(f$s, sf::st_sf(grp = "A", flag = TRUE,
                             geometry = sf::st_sfc(sf::st_linestring(), crs = 3005)))
   expect_equal(fl_valley_join(f$r, f$a, s, group = "grp"), ref)
+
+  # A group whose only segment is empty has no segments: st_nearest_feature()
+  # would return NA for it rather than skip it.
+  s <- f$s
+  sf::st_geometry(s)[1] <- sf::st_linestring()
+  expect_message(out <- fl_valley_join(f$r, f$a, s, group = "grp"), "no segments")
+  expect_equal(out$no_segments, "A")
+  expect_true(is.na(jn_at(out$nearest, f$r, 15, 55, "flag")))
+  expect_equal(jn_at(out$nearest, f$r, 45, 55, "grp"), "B")
+})
+
+test_that("a polygon covering no cell centre claims no cell", {
+  f <- jn_two()
+  sliver <- jn_attr(list(c(1, 2, 1, 2)), "C")
+  s <- rbind(f$s, jn_segs(data.frame(grp = "C", x0 = 1, y0 = 1, x1 = 2, y1 = 2, flag = TRUE)))
+
+  out <- fl_valley_join(f$r, rbind(f$a, sliver), s, group = "grp")
+
+  expect_false(jn_at(out$any, f$r, 5, 5, "flag"))
+  expect_false("C" %in% out$nearest$grp)
 })
 
 test_that("keys that match no segment at all are flagged as a likely type mismatch", {

@@ -121,7 +121,8 @@ tests/testthat/          — unit tests for each fl_* function (19 test files, 1
   that *claims* it, never the nearest segment anywhere. `nearest` (one owner) is for areas; `any` is
   the connected view. The bundled tile cannot tell the two joins apart well (49 of 50 segments carry
   the same habitat flags), so its tests build flags from `stream_order` / `channel_width`, and a
-  reference copy of the floodplains implementation pins cell-for-cell equality and the 48 ties.
+  reference copy of the floodplains implementation pins cell-for-cell equality and an equal,
+  non-zero tie count (48 on the tile).
 - **Bankfull regression units are km2 and cm/yr, converted inside `fl_flood_surface()`** — callers
   still pass `upstream_area_ha` (hectares) and precipitation in **mm**. Through 0.4.1 those went into
   Hall's coefficients unconverted, making bankfull depth **3.5926x** too large, so `ff04` was really

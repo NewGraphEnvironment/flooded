@@ -191,7 +191,10 @@ fl_valley_join <- function(valleys, attributed, segments, group, cols = NULL) {
   lvls <- lvls[!(is.na(lvls) & !anyNA(keys))]
 
   if (nrow(attributed) > 0L) {
-    cb <- terra::cells(valleys, terra::vect(attributed), touches = FALSE)
+    # small = FALSE: a polygon covering no cell centre claims nothing (terra then
+    # returns a NaN cell), rather than the cell it overlaps.
+    cb <- terra::cells(valleys, terra::vect(attributed), touches = FALSE, small = FALSE)
+    cb <- cb[!is.na(cb[, "cell"]), , drop = FALSE]
     claim <- data.frame(cell = cb[, "cell"], rank = match(keys[cb[, "ID"]], lvls))
   } else {
     claim <- data.frame(cell = numeric(0), rank = integer(0))
