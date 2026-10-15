@@ -26,11 +26,11 @@ sections in a fixed order, and nothing another file already keeps.
       redistributes third-party data.
 
 ## Phase 2: README figure
-- [ ] `data-raw/readme_figure.R`: Parsnip floodplain from the cached `inst/vignette-data/`
+- [x] `data-raw/readme_figure.R`: Parsnip floodplain from the cached `inst/vignette-data/`
       (`pars_valleys.tif`, `pars.gpkg` aoi/streams/waterbodies), styled through gq
       (`floodplains`, `lake`, `streams_all`), following link's `data-raw/readme_figure.R`. It
       writes `man/figures/readme-pars.png` with an opaque background and needs no database.
-- [ ] Self-review the figure at its published width (~700 px) against cartography's 12 checks.
+- [x] Self-review the figure at its published width (~700 px) against cartography's 12 checks.
       Alt text, plus a caption saying what it shows and what is not drawn.
 
 ## Phase 3: README, DESCRIPTION, About

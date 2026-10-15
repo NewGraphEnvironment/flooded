@@ -66,7 +66,19 @@ The New Graph website will describe this package from its README (NewGraphEnviro
 - pkgdown renders root `NOTICE.md` as `NOTICE.html`, which the workflow's page gate rejects, so
   `NOTICE` is added to its allowlist deliberately.
 
+## README figure (2026-10-15)
+
+- gq styles used: `floodplains` (#1f78b4, alpha 0.5), `lake`, `wetland`,
+  `streams_all` (FWA single-line stream class), `watershed_group_boundary`. Roads are left
+  off (licence, #85; clutter).
+- Reviewed at 700 px against cartography's checks: legend top right and scale bar bottom left
+  sit over blank page; the hillshade is masked to the watershed group so the basin is the
+  subject; every prominent feature is in the legend. The caption must say floodplain is mapped
+  only along the streams drawn (order 3+ accessible to bull trout).
+
 ## Errors Encountered
 
 | Error | Resolution |
 |-------|------------|
+| Hillshade invisible under the valley raster | `terra::plot(col = c(NA, fill))` paints 0 cells white; plot `ifel(valleys == 1, 1, NA)` instead |
+| PNG had an alpha channel (`hasAlpha: yes`) | `png(type = "quartz")` (macOS default) writes alpha; `type = "cairo"` does not |
