@@ -122,6 +122,32 @@ The New Graph website will describe this package from its README (NewGraphEnviro
   relative, which pkgdown leaves pointing at pages it does not publish, so they are absolute
   GitHub links now. Site warnings are the existing `\@ref` labels (#43).
 
+## /code-check branch (2026-10-15)
+
+| Round | Claims | Findings | Fixed | Inside previous fix? |
+|---|---|---|---|---|
+| 1 | 62 | 8 | 8 | n/a |
+| 2 | 64 | 6 | 6 | yes, 4 (round 1's review text adopted as the new source) |
+| 3 | 92 (terminal enumeration, each verdict from code, data or a primary source) | 2 low | 2 | yes, wording precision (load range; figure layers) |
+
+Ended by round 3's enumeration; its two findings were confirmed directly against
+`bench_threads.log` and `readme_figure.R` and fixed. Subagents this task: 4 (plan review +
+3 rounds).
+
+## README simplification, measured
+
+- Body prose 406 -> 600 words (file 96 -> 125 lines, 582 -> 854 words). Forecast 450-500: missed
+  by ~100 words.
+- By section: opening + caption 221, Data and methods 133, Learn more 73, Installation 63,
+  Example 44, License 22, Ecosystem 13, Citation 11.
+- What held it: readme.md's required sections (Learn more, Data and methods, Citation, License,
+  what-a-run-needs) add ~300 words that the old README did not have, against ~250 removed
+  (Performance, Bankfull regression, Resolution and restoration). The review rounds then made
+  each claim state the code's definition (two distance criteria, natural barriers, flags,
+  "could not be separated from load"), which added qualifiers rather than removing claims.
+  Candidates to cut later: the Data and methods bundled-data bullet (NOTICE carries it) and the
+  caption's second sentence.
+
 ## Errors Encountered
 
 | Error | Resolution |

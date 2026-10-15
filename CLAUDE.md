@@ -56,7 +56,7 @@ tests/testthat/          — unit tests for each fl_* function
 - All exported functions prefixed `fl_`
 - `terra::rast` and `sf::st_read` for spatial I/O
 - `terra::terraOptions(threads = N)`: no speed-up could be shown on the Parsnip grid (terra 1.9.50 defaults
-  to 16; threads 1 vs 8 overlapped across 3 repeats at load average 6-16 on 10 cores, #81), so don't
+  to 16; threads 1 vs 8 overlapped across 3 repeats at 1-minute load average 6-17 on 10 cores, #81), so don't
   promise one without a measurement on an idle machine
 - Bankfull regression requires both `upstream_area` (ha) and `precip` (mm)
 - Optional `whitebox` dependency for advanced hydro operations

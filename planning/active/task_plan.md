@@ -71,11 +71,11 @@ sections in a fixed order, and nothing another file already keeps.
 ## Validation
 - [x] Tests pass; `devtools::check()` (Authors@R, `.Rbuildignore`, `inst/NOTICE.md`); `lintr`; `pkgdown::build_site()` renders the README figure and the grouped
       reference
-- [ ] `/code-check branch`, with reviewers enumerating every published claim (README,
+- [x] `/code-check branch`, with reviewers enumerating every published claim (README,
       DESCRIPTION, About, caption) against the code path a run takes
-- [ ] Word and line counts after, against the issue's aim (`writing.md`, "Measure the
+- [x] Word and line counts after, against the issue's aim (`writing.md`, "Measure the
       simplification")
-- [ ] PWF checkboxes match landed work
+- [x] PWF checkboxes match landed work
 - [ ] `/planning-archive`, then `/gh-pr-push`; the merge and the patch release are left to
       `/gh-pr-merge`
 

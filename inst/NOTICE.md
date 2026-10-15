@@ -34,4 +34,5 @@ surface, and the channel width that sets the channel buffer come from the bcfish
 bcfishpass, which is made available under the Open Database License 1.0. The
 `stac_valleys_*.tif` rasters were computed from BC provincial lidar and resampled to the bundled
 10 m grid; the lidar itself is not redistributed. The README figure also draws a hillshade of
-MRDEM-30 and Freshwater Atlas lakes and wetlands.
+MRDEM-30, and the bcfishpass-selected Freshwater Atlas streams, lakes, wetlands and watershed group
+boundary.
