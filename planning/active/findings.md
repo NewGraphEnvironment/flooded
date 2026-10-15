@@ -48,6 +48,24 @@ The New Graph website will describe this package from its README (NewGraphEnviro
   streams, waterbodies, railways, roads, reserves, parks, named_streams, floodplain.
 - gq registry layers available: `floodplains`, `lake`, `streams_all`, `watershed_group_boundary`.
 
+## Baseline counts (README.md at main 0.8.1, 2026-10-15)
+
+- File: 96 lines, 582 words. Body prose (outside code fences and tables): 406 words.
+
+## Bundled third-party data and licences (checked 2026-10-15)
+
+- `bcdata::bcdc_search()` per layer: FWA (streams, lakes, wetlands, named streams, watershed
+  groups) and BC Parks are OGL-BC; Railway Track Line and Indian Reserves and Band Names are
+  OGL-Canada; both Digital Road Atlas records are **Access Only**; no catalogue record found
+  for the 25 m TRIM DEM (only CDED 1:250k, OGL-BC). MRDEM-30 is OGL-Canada (open.canada.ca
+  CKAN API).
+- `whse_basemapping.transport_line` (DRA) ships as the `roads` layer of `pars.gpkg`
+  (8,304 features). Filed as #85, with the TRIM DEM gap; NOTICE.md cites it.
+- `NOTICE.md` names catalogues, not publishers: the railway record's licence is OGL-Canada
+  inside the BC catalogue, so "publisher" could not be stated without a further check.
+- pkgdown renders root `NOTICE.md` as `NOTICE.html`, which the workflow's page gate rejects, so
+  `NOTICE` is added to its allowlist deliberately.
+
 ## Errors Encountered
 
 | Error | Resolution |

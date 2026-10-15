@@ -17,11 +17,11 @@ sections in a fixed order, and nothing another file already keeps.
    (third-party `cph` holders are not authors); soul issue filed for the convention.
 
 ## Phase 1: Spec and inputs
-- [ ] Edit #81's body for the decisions above (summary not inventory, performance and
+- [x] Edit #81's body for the decisions above (summary not inventory, performance and
       regression out of the README, figure, `readme.md` order, the timing re-measure); add
       `fl_valley_join()`
-- [ ] Record README word and line counts before (body prose, and the file)
-- [ ] Find where the bundled `inst/testdata` and `inst/vignette-data` data come from
+- [x] Record README word and line counts before (body prose, and the file)
+- [x] Find where the bundled `inst/testdata` and `inst/vignette-data` data come from
       (`data-raw/testdata*.R`, `wsg_vignette_data.R`). Add a `NOTICE` only if the repo
       redistributes third-party data.
 

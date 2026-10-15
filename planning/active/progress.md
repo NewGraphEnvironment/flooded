@@ -6,3 +6,6 @@
 - Created branch `81-readme-add-dem-fetch-flood-factor-scenarios` off main (0.8.1)
 - Scaffolded PWF baseline from issue #81 with approved phases
 - Next: Phase 1
+- Phase 1: #81 body revised for the readme.md scope; README baseline 406 prose words / 96 lines;
+  data licences checked, NOTICE.md written, #85 filed (DRA roads Access Only; TRIM DEM licence
+  unconfirmed); pkgdown page gate allows NOTICE

@@ -64,7 +64,8 @@ jobs:
       # take.
       - name: Fail if an unexpected page reached the site
         run: |
-          allowed="404 authors index LICENSE LICENSE-text"
+          # NOTICE is published on purpose: it carries the data licences (#81).
+          allowed="404 authors index LICENSE LICENSE-text NOTICE"
           unexpected=""
           for f in docs/*.html docs/*.md; do
             [ -e "$f" ] || continue
