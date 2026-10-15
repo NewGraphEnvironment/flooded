@@ -1,7 +1,7 @@
 # Code-check round 3: fl_valley_join() (flooded#83) and the floodplains adapter
 
 Reviewer: round-3 subagent, 2026-10-14. Probes ran on a copy of the flooded tree under the session
-scratchpad (`r3.*/`, `pkgload::load_all()`); nothing in flooded, floodplains or floodplains-hj was
+temporary copy (`pkgload::load_all()`); nothing in flooded or floodplains was
 modified except this file.
 
 ## Mechanism
@@ -60,7 +60,7 @@ other, so the next edit to either reopens the gap. Where the mechanism reaches i
    unattributed even with `complete = TRUE`, so `missing > 0`. A qualifier ("normally zero") or a
    pointer to those cases would make it true.
 
-5. **[fragile]** `floodplains-hj/scripts/floodplain_lcc/fp_habitat_join.R`, `fp_hj_join_position()`
+5. **[fragile]** `floodplains/scripts/floodplain_lcc/fp_habitat_join.R`, `fp_hj_join_position()`
    capability check. `exists("fl_valley_join", ...)` is also TRUE for a dev install of this branch at
    f32176a. That commit's claims call is `terra::cells(..., touches = FALSE)`, with the default
    `small = TRUE`, and its version is the same 0.7.2. On such an install the position join would claim

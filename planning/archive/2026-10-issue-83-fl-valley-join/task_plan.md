@@ -61,17 +61,17 @@ Branch `83-join-per-segment-attributes-to-the-valle` off main.
 
 ## Phase 3: floodplains driver swap (separate repo, separate PR)
 - [x] Branch in a clean floodplains worktree (main has unrelated uncommitted config edits); replace only `fp_hj_join_range()` with `flooded::fl_valley_join()` — keep `fp_hj_grid_cells()`, `fp_hj_or_by_cell()`, `fp_hj_join_blk()`, `fp_hj_summ()` and the integrity stop (review #1); update `habitat_join-query.R` and `habitat_join-demo.R` (`$ties`, `length($no_segments)`)
-- [ ] Primary check, in session: old `fp_hj_join_range()` vs `fl_valley_join()` on the same inputs, `identical()` per-cell flags and equal ties, on every area (review #3)
+- [x] Primary check, in session: old `fp_hj_join_range()` vs `fl_valley_join()` on the same inputs, `identical()` per-cell flags and equal ties, on every area (review #3)
 - [x] Install the flooded branch into a scratch library; re-run `habitat_join-query.R` for morr, bulk, kisp, dunc, and the demo in a scratch copy
 - [x] Compare every ha / ties / no-segment / integrity figure to the committed logs (morr/bulk/kisp 2026-10-14, dunc 2026-10-12, demo 2026-10-11); commit the new (20261015) logs
-- [ ] Open floodplains PR referencing flooded#83; it depends on the flooded release, so note the minimum version
+- [x] Open floodplains PR referencing flooded#83; it depends on the flooded release, so note the minimum version
 
 ## Validation
 
 - [x] Tests pass
-- [ ] `/code-check` clean (each commit, or once over the branch with `/code-check branch`)
-- [ ] PWF checkboxes match landed work
-- [ ] `/planning-archive` on completion, then `/gh-pr-push` (flooded); merge and version bump left to `/gh-pr-merge`
+- [x] `/code-check` clean (each commit, or once over the branch with `/code-check branch`)
+- [x] PWF checkboxes match landed work
+- [x] `/planning-archive` on completion, then `/gh-pr-push` (flooded); merge and version bump left to `/gh-pr-merge`
 
 ## Verification end to end
 - `Rscript -e 'devtools::test()'` grep FAIL/ERROR; `devtools::run_examples()` for the new example.

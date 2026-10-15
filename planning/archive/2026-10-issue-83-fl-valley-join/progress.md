@@ -19,10 +19,10 @@
 ## Session 2026-10-14 (evening, PDT) — Phase 3 and review
 
 - Full suite: `[ FAIL 0 | WARN 0 | SKIP 0 | PASS 553 ]` (01:02Z).
-- floodplains swap in worktree `../floodplains-hj`, branch `habitat-join-fl-valley-join` off origin/main
+- floodplains swap in a separate floodplains worktree, branch `habitat-join-fl-valley-join` off origin/main
   8db7165: only `fp_hj_join_range()` replaced; new `fp_hj_join_position()` adapter (NA flags read as
   FALSE = the old semantics; asserts `fl_valley_join()` exists).
-- A/B (`scratchpad/ab.R`, old `fp_hj_join_range()` vs `fl_valley_join()`, same inputs, branch build
+- A/B (`ab_join_compare.R` in this archive, old `fp_hj_join_range()` vs `fl_valley_join()`, same inputs, branch build
   in a scratch library): per-cell nearest and any `identical()`, ties equal, on every species of
   DUNC (203,285 cells, 590 ties), MORR (532,577, 1,877), KISP (360,449, 385), BULK (733,324, 674).
   Per species the new join was faster (DUNC 25 s vs 34 s).
@@ -32,3 +32,22 @@
   identical, fig2 differs in 3 of 3.7 M pixel-channel values (render noise).
 - Code-check round 1: 4 findings, all fixed (b2c7dc3 + floodplains adapter). `terra::cells(small =
   TRUE)` claim leak and the empty-only group, each verified red against its defect.
+- Code-check branch (both repos in each round):
+
+  | Round | Findings | Fixed | Accepted | Inside previous fix? |
+  |---|---|---|---|---|
+  | 1 | 4 | 4 | 0 | — |
+  | 2 | 3 | 3 | 0 | yes (the r1 NaN-cell drop had no test; floodplains claims diverged from the r1 `small = FALSE`) |
+  | 3 | 5 | 5 | 0 | yes (test count re-stale; adapter capability check admitted a pre-fix dev install) |
+
+  Round 3 named the mechanism: one fact kept in two places with nothing comparing them (claim
+  rule, NA rule, hand-typed counts). Fixes made the second copy derive or disappear (CLAUDE.md
+  test count deleted; floodplains claims use the identical call; adapter floor `> 0.7.2`).
+  The loop ended by enumeration: a mutation table over every decision line of
+  `fl_valley_join()` (39 mutants + 2 for the r3 NaN fold); 38 red at first, the survivor
+  (`is.finite` in the tie count) pinned by a new test and verified red. Three reviewer rounds
+  plus one plan review: four subagents.
+- Final: flooded d6b8497 full suite `[ FAIL 0 | WARN 0 | SKIP 0 | PASS 578 ]`; lint clean for new
+  files. Final floodplains scripts re-ran all four queries and the demo; logs equal (timestamp,
+  version, run time only). floodplains PR NewGraphEnvironment/floodplains#135 (merge after the
+  flooded release; adapter refuses flooded <= 0.7.2).
