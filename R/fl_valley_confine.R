@@ -88,11 +88,11 @@
 #'
 #' On the Parsnip River watershed group's cached inputs (a 3,749 x 3,761 cell
 #' grid at 30 m, 8,436 stream segments and 664 waterbodies, `flood_factor = 4`),
-#' one call took 108 to 134 s of CPU time on an Apple M1 Max (10 cores) with
-#' flooded 0.8.1 and terra 1.9.50 (83 to 122 s of wall time, which rose with
-#' other work on the machine, load average 6 to 16). terra's `threads` option,
-#' which defaults to 16, made no difference beyond that spread: three runs each
-#' at `terra::terraOptions(threads = 1)` and `threads = 8` overlapped (#81).
+#' one call took 83 to 122 s of wall time on an Apple M1 Max (10 cores) with
+#' flooded 0.8.1 and terra 1.9.50, measured with other work on the machine
+#' (load average 6 to 16). Three runs each at `terra::terraOptions(threads = 1)`
+#' and `threads = 8` overlapped, so any effect of terra's `threads` option
+#' (default 16) could not be separated from that load (#81).
 #'
 #' @seealso [fl_stream_rasterize()] for how `area_field` is burned onto the
 #'   grid, and [fl_flood_surface()] for the regression that consumes it.

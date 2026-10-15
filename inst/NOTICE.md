@@ -10,9 +10,9 @@ catalogue gives it. Licences were checked on 2026-10-15.
 | Files | Data | Catalogue | Licence |
 |---|---|---|---|
 | `inst/testdata/streams.gpkg`, `inst/testdata/waterbodies.gpkg`; layers `aoi`, `streams`, `waterbodies` and `named_streams` of `inst/vignette-data/pars.gpkg` | Freshwater Atlas stream, lake, wetland, named stream and watershed group geometry and identifiers | BC Data Catalogue | [Open Government Licence - British Columbia](https://www2.gov.bc.ca/gov/content/data/policy-standards/open-data/open-government-licence-bc) |
-| the stream attributes in `inst/testdata/streams.gpkg` and layer `streams` of `inst/vignette-data/pars.gpkg` (channel width, fish access, spawning, rearing, mapping codes, dams downstream) | Outputs of the [bcfishpass](https://github.com/smnorris/bcfishpass) database | bcfishpass | [Open Database License 1.0](https://opendatacommons.org/licenses/odbl/1-0/), contents under the [Database Contents License](https://opendatacommons.org/licenses/dbcl/1-0/) (bcfishpass `LICENSE`) |
+| the stream attributes in `inst/testdata/streams.gpkg` and layer `streams` of `inst/vignette-data/pars.gpkg` (upstream area, channel width, gradient, fish access, spawning, rearing, mapping codes, dams downstream) | Outputs of the [bcfishpass](https://github.com/smnorris/bcfishpass) database | bcfishpass | [Open Database License 1.0](https://opendatacommons.org/licenses/odbl/1-0/), contents under the [Database Contents License](https://opendatacommons.org/licenses/dbcl/1-0/) (bcfishpass `LICENSE`) |
 | column `map_upstream` of the same stream files | Mean annual precipitation upstream, from ClimateBC through bcfishpass | ClimateBC | Not yet confirmed: see [#85](https://github.com/NewGraphEnvironment/flooded/issues/85) |
-| `inst/testdata/dem.tif`, `inst/testdata/slope.tif` | Provincial 25 m TRIM DEM, resampled to 10 m, and the slope derived from it | Not found in the BC Data Catalogue | Not yet confirmed: see [#85](https://github.com/NewGraphEnvironment/flooded/issues/85) |
+| `inst/testdata/dem.tif`, `inst/testdata/slope.tif` | Provincial 25 m TRIM DEM, resampled to 10 m, and the slope derived from it | Served by the BC Data Catalogue's WCS; no catalogue record or licence found | Not yet confirmed: see [#85](https://github.com/NewGraphEnvironment/flooded/issues/85) |
 | `inst/vignette-data/pars_dem.tif` | Medium Resolution Digital Elevation Model (MRDEM-30), CanElevation Series, Natural Resources Canada | open.canada.ca | [Open Government Licence - Canada](https://open.canada.ca/en/open-government-licence-canada) |
 | layer `railways` of `inst/vignette-data/pars.gpkg` | Railway Track Line | BC Data Catalogue | [Open Government Licence - Canada](https://open.canada.ca/en/open-government-licence-canada) |
 | layer `reserves` of `inst/vignette-data/pars.gpkg` | Indian Reserves and Band Names - Administrative Boundaries | BC Data Catalogue | [Open Government Licence - Canada](https://open.canada.ca/en/open-government-licence-canada) |
@@ -29,8 +29,8 @@ Database Contents License.
 The valley rasters and floodplain polygons in `inst/vignette-data/` (`pars_valleys.tif`, layer
 `floodplain` of `pars.gpkg`, `stac_valleys_*.tif`) and the README figure
 (`man/figures/readme-pars.png`) are made by flooded from the data above: the streams chosen by
-bcfishpass access and stream order, and the upstream area, precipitation and channel width that
-set the flood surface, come from the bcfishpass database. They contain information from
+bcfishpass access and stream order, the upstream area and precipitation that set the flood
+surface, and the channel width that sets the channel buffer come from the bcfishpass database. They contain information from
 bcfishpass, which is made available under the Open Database License 1.0. The
 `stac_valleys_*.tif` rasters were computed from BC provincial lidar and resampled to the bundled
 10 m grid; the lidar itself is not redistributed. The README figure also draws a hillshade of

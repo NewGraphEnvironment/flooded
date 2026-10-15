@@ -19,8 +19,8 @@ Authors@R: c(
     )
 Description: Maps floodplains and unconfined valley bottoms from a digital
     elevation model and a stream network with the Valley Confinement
-    Algorithm (VCA), keeping ground that is gentle, near a stream, reachable
-    from it without crossing much steep ground, and low relative to it. It
+    Algorithm (VCA), keeping ground that is gentle, near a stream in both
+    straight-line and slope-weighted distance, and low relative to it. It
     classifies terrain and does not simulate floods, so its output is a
     screening map, not a field-validated floodplain. Fetches an elevation
     model for an area, maps preset flood levels, and attributes one

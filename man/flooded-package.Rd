@@ -8,7 +8,7 @@
 \description{
 \if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
 
-Maps floodplains and unconfined valley bottoms from a digital elevation model and a stream network with the Valley Confinement Algorithm (VCA), keeping ground that is gentle, near a stream, reachable from it without crossing much steep ground, and low relative to it. It classifies terrain and does not simulate floods, so its output is a screening map, not a field-validated floodplain. Fetches an elevation model for an area, maps preset flood levels, and attributes one floodplain to each watercourse that shares it, carrying per-reach flags onto the ground beside each reach. Ported from the bcfishpass lateral habitat pipeline (Python) with origins in the USDA VCA Toolbox and BlueGeo. Under active development.
+Maps floodplains and unconfined valley bottoms from a digital elevation model and a stream network with the Valley Confinement Algorithm (VCA), keeping ground that is gentle, near a stream in both straight-line and slope-weighted distance, and low relative to it. It classifies terrain and does not simulate floods, so its output is a screening map, not a field-validated floodplain. Fetches an elevation model for an area, maps preset flood levels, and attributes one floodplain to each watercourse that shares it, carrying per-reach flags onto the ground beside each reach. Ported from the bcfishpass lateral habitat pipeline (Python) with origins in the USDA VCA Toolbox and BlueGeo. Under active development.
 }
 \seealso{
 Useful links:

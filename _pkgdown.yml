@@ -13,7 +13,7 @@ reference:
   contents:
   - fl_dem_aoi
 - title: Per watercourse
-  desc: Attribute one floodplain to each watercourse, and join per-reach attributes to it.
+  desc: Attribute one floodplain to each watercourse, and join per-reach flags to it.
   contents:
   - fl_valley_attribute
   - fl_valley_join

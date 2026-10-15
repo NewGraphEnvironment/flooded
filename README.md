@@ -7,11 +7,11 @@
 > Map floodplains from an elevation model and a stream network.
 
 flooded maps floodplains and unconfined valley bottoms from an elevation model and a stream network
-with the Valley Confinement Algorithm, keeping ground that is gentle, near a stream, reachable from
-it without crossing much steep ground, and low relative to it. It classifies terrain and does not
-simulate floods, so its output is a screening map, not a field-validated floodplain. In the STAC
-vignette, floodplain that 25 m elevation data maps and 1 m lidar excludes marks where to look for
-roads, rail grades, dykes or fill that may cut a floodplain off from its river, and so where
+with the Valley Confinement Algorithm, keeping ground that is gentle, near a stream in both
+straight-line and slope-weighted distance, and low relative to it. It classifies terrain and does
+not simulate floods, so its output is a screening map, not a field-validated floodplain. In the
+STAC vignette, floodplain that 25 m elevation data maps and 1 m lidar excludes marks where to look
+for roads, rail grades, dykes or fill that may cut a floodplain off from its river, and so where
 reconnection could be planned.
 
 It fetches an elevation model for an area, maps three preset flood levels from active channel to
@@ -75,8 +75,8 @@ Rows overlap where two watercourses share valley floor; the whole floodplain her
   the pipeline step by step on the bundled reach, the three flood levels, and whose floodplain is
   whose.
 - [Bring your own DEM via STAC](https://newgraphenvironment.github.io/flooded/articles/stac-dem.html):
-  the same reach from the 25 m provincial model and from lidar, and the steep-sided grades and
-  fill that 1 m lidar resolves.
+  the same reach from the 25 m provincial model and from lidar, and the steep ground 1 m lidar
+  resolves, where raised grades or fill may be.
 - [Watershed-scale floodplain delineation](https://newgraphenvironment.github.io/flooded/articles/pars-floodplain.html):
   a whole watershed group, the Parsnip, from a fetched elevation model.
 - [Function reference](https://newgraphenvironment.github.io/flooded/reference/).
