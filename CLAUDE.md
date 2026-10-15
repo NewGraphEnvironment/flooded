@@ -526,7 +526,7 @@ check is almost always to read the thing the prose describes.
   keeps finding them, list every quantified or inherited claim with a measured verdict
   (`code-check.md`, "A guard's scope, escape hatches, and remedies").
 
-*67 lines of evidence for this rule are in `conventions/agent-operations.md`.*
+*74 lines of evidence for this rule are in `conventions/agent-operations.md`.*
 
 ### "It can only be answered by testing" is a claim with an author
 
@@ -1512,6 +1512,9 @@ Verify an upload by comparing each object's ETag with its file, and for a multip
 
 ### A verification command can be shadowed by a shell function or alias
 - The shell is initialized from the user's profile, so `diff`, `grep`, `ls`, `cat` and friends may resolve to a wrapper rather than the binary you assume.
+
+### `pwd` keeps typed case; key on `env pwd -P`
+Key on `env pwd -P`.
 
 ### psql does not interpolate `:'var'` inside a dollar-quoted string, and `\quit N` exits 0
 Two traps in the same file type, both of which read perfectly and fail at run time.
