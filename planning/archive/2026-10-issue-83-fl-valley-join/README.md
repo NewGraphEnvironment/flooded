@@ -38,4 +38,4 @@ removed it. The loop ended on a mutation table over every decision line, not on 
 `scripts/floodplain_lcc/logs/20261015_habitat_join-query_*` (the re-run logs, PR #135);
 `review-*.md` here.
 
-Closed by: PR (this branch, `83-join-per-segment-attributes-to-the-valle`)
+Closed by: PR #84
