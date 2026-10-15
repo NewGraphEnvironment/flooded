@@ -33,6 +33,7 @@ R/
   fl_flood_trim.R       — remove disconnected patches
   fl_flood_depth.R      — flood depth lookup from cost-surface raster
   fl_valley_attribute.R — attribute a delineation to stream groups (per watercourse)
+  fl_valley_join.R      — join per-segment flags to valley cells by position (#83)
   fl_valley_poly.R      — raster → sf polygon conversion
   fl_cost_distance.R    — weighted cost-distance from streams
   fl_mask.R             — slope masking helper
@@ -47,7 +48,7 @@ vignettes/
   valley-confinement.Rmd — full walkthrough with bundled test data
   stac-dem.Rmd           — STAC lidar vs bundled 10 m; 10 m runs live, lidar results cached
   pars-floodplain.Rmd    — Parsnip River WSG using fl_dem_aoi() + cached outputs
-tests/testthat/          — unit tests for each fl_* function (18 test files, 166 test_that blocks)
+tests/testthat/          — unit tests for each fl_* function
 ```
 
 ## Key Patterns
@@ -114,6 +115,14 @@ tests/testthat/          — unit tests for each fl_* function (18 test files, 1
   whole-network delineation, never from re-running the VCA per watercourse. Per-group runs disagree
   with the whole-network run in *both* directions (measured; see `inst/notes/methodology.md`), which
   would make a river's floodplain depend on what else was in the run.
+- **Segment attributes join by position, never by group key** (`fl_valley_join()`, #83). A key join
+  gives a group's whole floodplain any flag found anywhere on its line (BULK sockeye spawning:
+  16,705 ha by blue line, 572 ha by position). Each cell takes the nearest segment on each group
+  that *claims* it, never the nearest segment anywhere. `nearest` (one owner) is for areas; `any` is
+  the connected view. The bundled tile cannot tell the two joins apart well (49 of 50 segments carry
+  the same habitat flags), so its tests build flags from `stream_order` / `channel_width`, and a
+  reference copy of the floodplains implementation pins cell-for-cell equality and an equal,
+  non-zero tie count (48 on the tile).
 - **Bankfull regression units are km2 and cm/yr, converted inside `fl_flood_surface()`** — callers
   still pass `upstream_area_ha` (hectares) and precipitation in **mm**. Through 0.4.1 those went into
   Hall's coefficients unconverted, making bankfull depth **3.5926x** too large, so `ff04` was really
