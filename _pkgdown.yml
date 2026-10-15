@@ -1,3 +1,39 @@
 url: https://newgraphenvironment.github.io/flooded/
 template:
   bootstrap: 5
+
+reference:
+- title: Delineate
+  desc: Map the floodplain from an elevation model and a stream network.
+  contents:
+  - fl_valley_confine
+  - fl_valley_poly
+  - fl_stream_rasterize
+- title: Get an elevation model
+  contents:
+  - fl_dem_aoi
+- title: Per watercourse
+  desc: Attribute one floodplain to each watercourse, and join per-reach attributes to it.
+  contents:
+  - fl_valley_attribute
+  - fl_valley_join
+- title: Flood levels and parameters
+  contents:
+  - fl_scenarios
+  - fl_params
+- title: Pipeline steps
+  desc: The steps `fl_valley_confine()` runs, for running or inspecting one on its own.
+  contents:
+  - fl_mask
+  - fl_mask_distance
+  - fl_cost_distance
+  - fl_flood_model
+  - fl_flood_surface
+  - fl_flood_depth
+  - fl_patch_rm
+- title: Raster helpers
+  desc: Combine, subtract or filter binary rasters outside `fl_valley_confine()`.
+  contents:
+  - fl_flood_assemble
+  - fl_flood_trim
+  - fl_patch_conn

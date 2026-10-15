@@ -53,7 +53,9 @@ sections in a fixed order, and nothing another file already keeps.
 - [x] Mechanical checks: every function named is exported, and every link resolves (`curl -sI`).
 
 ## Phase 4: Reference index and timing note
-- [ ] `_pkgdown.yml` `reference:` sections by purpose:
+- [x] `_pkgdown.yml` `reference:` sections by purpose (as built: `fl_stream_rasterize` under
+      Delineate; `fl_flood_assemble`, `fl_flood_trim`, `fl_patch_conn` are not called by
+      `fl_valley_confine()`, so they sit in their own "Raster helpers" section):
   - Delineate: `fl_valley_confine`, `fl_valley_poly`
   - Get a DEM: `fl_dem_aoi`
   - Per watercourse: `fl_valley_attribute`, `fl_valley_join`
