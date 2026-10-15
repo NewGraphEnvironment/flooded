@@ -1,3 +1,13 @@
+# flooded 0.8.0
+
+* New `fl_valley_join()` joins per-segment logical attributes (habitat flags, say) to valley cells
+  by position (#83). Each cell takes the nearest segment on each group that claims it in
+  `fl_valley_attribute()`'s output, and two answers come back: `nearest` gives every cell one
+  owner, so per-reach areas add up to the floodplain, and `any` is `TRUE` where any claiming
+  group's nearest segment is. Joining on the group key instead credits a group's whole floodplain
+  with any flag found anywhere on it: on the Bulkley's whole-network floodplain, 16,705 ha of
+  sockeye spawning by key against 572 ha by position.
+
 # flooded 0.7.2
 
 * `fl_dem_aoi()` now returns `NA`, not the NoData rounded to Float32, where a reprojected integer
