@@ -35,7 +35,9 @@
 #'     \item{`check`}{Named integer: `valley_cells`, `attributed_cells` (distinct
 #'       cells inside `attributed`), `missing` (valley cells no group claims) and
 #'       `extra` (claimed cells outside the valley). Both of the last two are
-#'       zero for a `complete = TRUE` attribution of the same delineation. The
+#'       zero when `attributed` covers the delineation, as
+#'       `fl_valley_attribute(complete = TRUE)` does unless no stream cell burns
+#'       for its fallback (it then reports the cells it left out). The
 #'       check sees only the union of the claims: a simplified or reprojected
 #'       copy of `attributed` can move cells between groups and still pass.}
 #'     \item{`ties`}{Integer. Cells whose two nearest claiming groups are
@@ -59,8 +61,9 @@
 #' - **`nearest`** gives the cell one owner, the claiming group whose nearest
 #'   segment is nearest. Every cell is counted once, so per-group or per-reach
 #'   areas add up to the floodplain: use it for areas. Exactly equal distances go
-#'   to the lowest key (numeric order for numbers, C-locale order for text, `NA`
-#'   last), and the number of such cells is returned as `ties`.
+#'   to the lowest key (numeric order for numbers, C-locale order for text, level
+#'   order for a factor, `NA` last), and the number of such cells is returned as
+#'   `ties`.
 #' - **`any`** is `TRUE` where any claiming group's nearest segment is `TRUE`:
 #'   ground connected to an attribute through at least one watercourse. A cell
 #'   can be counted under several groups' flags, so it does not partition.
@@ -185,7 +188,11 @@ fl_valley_join <- function(valleys, attributed, segments, group, cols = NULL) {
   segments <- segments[!sf::st_is_empty(sf::st_geometry(segments)), ]
 
   # --- Claims: (group, cell) pairs, and the integrity check ---
+  # match() tells NaN from NA; both are the one missing-key group here.
   keys <- attributed[[group]]
+  seg_keys <- segments[[group]]
+  if (is.double(keys)) keys[is.nan(keys)] <- NA
+  if (is.double(seg_keys)) seg_keys[is.nan(seg_keys)] <- NA
   lvls <- unique(keys[!is.na(keys)])
   lvls <- c(sort(lvls, method = "radix"), keys[is.na(keys)][1L][anyNA(keys)])
 
@@ -217,7 +224,7 @@ fl_valley_join <- function(valleys, attributed, segments, group, cols = NULL) {
   claim <- claim[claim$cell %in% valley_cells, ]
 
   # --- Per claiming group: its nearest segment to each cell ---
-  seg_rank <- match(segments[[group]], lvls)
+  seg_rank <- match(seg_keys, lvls)
   if (nrow(segments) > 0L && length(lvls) > 0L && all(is.na(seg_rank))) {
     warning("No segment's `", group, "` matches a key in `attributed`; check that ",
             "the two columns have the same type.", call. = FALSE)

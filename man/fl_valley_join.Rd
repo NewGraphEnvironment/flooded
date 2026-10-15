@@ -41,7 +41,9 @@ nearest segment is \code{TRUE}. The "connected to" view.}
 \item{\code{check}}{Named integer: \code{valley_cells}, \code{attributed_cells} (distinct
 cells inside \code{attributed}), \code{missing} (valley cells no group claims) and
 \code{extra} (claimed cells outside the valley). Both of the last two are
-zero for a \code{complete = TRUE} attribution of the same delineation. The
+zero when \code{attributed} covers the delineation, as
+\code{fl_valley_attribute(complete = TRUE)} does unless no stream cell burns
+for its fallback (it then reports the cells it left out). The
 check sees only the union of the claims: a simplified or reprojected
 copy of \code{attributed} can move cells between groups and still pass.}
 \item{\code{ties}}{Integer. Cells whose two nearest claiming groups are
@@ -72,8 +74,9 @@ returned:
 \item \strong{\code{nearest}} gives the cell one owner, the claiming group whose nearest
 segment is nearest. Every cell is counted once, so per-group or per-reach
 areas add up to the floodplain: use it for areas. Exactly equal distances go
-to the lowest key (numeric order for numbers, C-locale order for text, \code{NA}
-last), and the number of such cells is returned as \code{ties}.
+to the lowest key (numeric order for numbers, C-locale order for text, level
+order for a factor, \code{NA} last), and the number of such cells is returned as
+\code{ties}.
 \item \strong{\code{any}} is \code{TRUE} where any claiming group's nearest segment is \code{TRUE}:
 ground connected to an attribute through at least one watercourse. A cell
 can be counted under several groups' flags, so it does not partition.

@@ -150,6 +150,35 @@ test_that("ties order numeric keys numerically and put an NA key last", {
   expect_false(jn_at(out$nearest, r, 15, 55, "flag"))
 })
 
+test_that("NaN and NA keys are one missing-key group", {
+  r <- jn_grid()
+  a <- jn_attr(list(c(0, 60, 0, 100), c(40, 100, 0, 100)), c(NA, NaN), group = "blk")
+  s <- jn_segs(data.frame(grp = c(NaN, NA), x0 = c(5, 95), y0 = 0, x1 = c(5, 95), y1 = 100,
+                          flag = c(FALSE, TRUE)), group = "blk")
+
+  out <- fl_valley_join(r, a, s, group = "blk")
+
+  expect_equal(nrow(out$nearest), 100L)
+  expect_equal(out$check[["missing"]], 0L)
+  expect_true(all(is.na(out$nearest$blk)))
+  # One group, so both segments compete for every cell: nearer one wins.
+  expect_false(jn_at(out$nearest, r, 45, 55, "flag"))
+  expect_true(jn_at(out$nearest, r, 55, 55, "flag"))
+  expect_equal(out$ties, 0L)
+})
+
+test_that("ties on a factor key follow level order", {
+  r <- jn_grid()
+  k <- factor(c("A", "B"), levels = c("B", "A"))
+  a <- jn_attr(list(c(0, 60, 0, 100), c(40, 100, 0, 100)), k)
+  s <- jn_segs(data.frame(grp = k, x0 = c(5, 85), y0 = 0, x1 = c(5, 85), y1 = 100,
+                          flag = c(FALSE, TRUE)))
+
+  out <- suppressMessages(fl_valley_join(r, a, s, group = "grp"))
+
+  expect_equal(as.character(jn_at(out$nearest, r, 45, 55, "grp")), "B")
+})
+
 test_that("a claiming group with no segments is reported, owns no shared ground, leaves its own unknown", {
   # A claims x 0-60 and has no segments; B claims x 40-100.
   r <- jn_grid()
@@ -169,6 +198,21 @@ test_that("a claiming group with no segments is reported, owns no shared ground,
   expect_true(is.na(jn_at(out$nearest, r, 15, 55, "flag")))
   expect_true(is.na(jn_at(out$any, r, 15, 55, "flag")))
   expect_equal(out$ties, 0L)
+})
+
+test_that("ground shared only by groups without segments is not counted as a tie", {
+  # A and B claim the grid between them and share x 40-60; neither has a segment.
+  # The only segment belongs to C, which claims nothing (so key mismatch warns).
+  r <- jn_grid()
+  a <- jn_attr(list(c(0, 60, 0, 100), c(40, 100, 0, 100)), c("A", "B"))
+  s <- jn_segs(data.frame(grp = "C", x0 = 5, y0 = 0, x1 = 5, y1 = 100, flag = TRUE))
+
+  expect_warning(out <- suppressMessages(fl_valley_join(r, a, s, group = "grp")), "No segment")
+
+  expect_setequal(out$no_segments, c("A", "B"))
+  expect_equal(out$ties, 0L)
+  expect_equal(jn_at(out$nearest, r, 45, 55, "grp"), "A")
+  expect_true(is.na(jn_at(out$any, r, 45, 55, "flag")))
 })
 
 test_that("a valley cell no group claims gets no row and is reported as missing", {

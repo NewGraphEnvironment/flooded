@@ -48,7 +48,7 @@ vignettes/
   valley-confinement.Rmd — full walkthrough with bundled test data
   stac-dem.Rmd           — STAC lidar vs bundled 10 m; 10 m runs live, lidar results cached
   pars-floodplain.Rmd    — Parsnip River WSG using fl_dem_aoi() + cached outputs
-tests/testthat/          — unit tests for each fl_* function (19 test files, 183 test_that blocks)
+tests/testthat/          — unit tests for each fl_* function
 ```
 
 ## Key Patterns
