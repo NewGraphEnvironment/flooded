@@ -47,12 +47,11 @@ reach.
   resolution from the LidarBC point clouds in
   [stac-pointcloud-bc](https://www.newgraphenvironment.com/stac_pointcloud_bc/).
 - **Streams.** Lines carrying upstream area in hectares, such as the BC Freshwater Atlas network
-  modelled by [bcfishpass](https://smnorris.github.io/bcfishpass/) or
+  built with [fresh](https://www.newgraphenvironment.com/fresh/) and
   [link](https://www.newgraphenvironment.com/link/).
-- **Precipitation** (optional). Mean annual precipitation over each stream's upstream area.
-  [fwapg](https://smnorris.github.io/fwapg/) derives it from [ClimateBC](https://climatebc.ca/),
-  and bcfishpass carries it on its streams as `map_upstream`. Without it, bankfull depth comes
-  from upstream area alone.
+- **Precipitation** (optional). Mean annual precipitation over each stream's upstream area. In BC
+  the Freshwater Atlas network carries it on every segment. Without it, bankfull depth comes from
+  upstream area alone.
 
 ## Installation
 
@@ -135,10 +134,14 @@ Land cover change: fresh (network) &rarr; flooded (floodplains) &rarr; drift (la
   [USDA VCA Toolbox](https://www.fs.usda.gov/rm/boise/AWAE/projects/valley_confinement.shtml).
   Parameters and flood levels: [methodology](https://github.com/NewGraphEnvironment/flooded/blob/main/inst/notes/methodology.md).
   What the output can be used to claim: [floodplain interpretation](https://github.com/NewGraphEnvironment/flooded/blob/main/inst/notes/floodplain_interpretation.md).
+- [fwapg](https://smnorris.github.io/fwapg/) (Simon Norris): the BC Freshwater Atlas in
+  PostgreSQL, with upstream area and [ClimateBC](https://climatebc.ca/) mean annual precipitation
+  on every stream segment.
 - NRCan's [MRDEM-30](https://open.canada.ca/data/en/dataset/18752265-bda3-498c-a4ba-9dfe68cb98da)
   elevation model.
-- Bundled data: BC's 25 m TRIM DEM, the Freshwater Atlas, bcfishpass stream attributes, ClimateBC
-  precipitation and BC lidar, with licences in [`inst/NOTICE.md`](https://github.com/NewGraphEnvironment/flooded/blob/main/inst/NOTICE.md).
+- Bundled data: BC's 25 m TRIM DEM, the Freshwater Atlas, bcfishpass stream attributes and access,
+  ClimateBC precipitation and BC lidar, with licences in [`inst/NOTICE.md`](https://github.com/NewGraphEnvironment/flooded/blob/main/inst/NOTICE.md).
+  Moving it to our own link-built tables is [#87](https://github.com/NewGraphEnvironment/flooded/issues/87).
 
 ## Citation
 
