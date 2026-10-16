@@ -46,12 +46,13 @@ reach.
   [stac-elevation-bc](https://www.newgraphenvironment.com/stac_dem_bc/), or a DEM built at any
   resolution from the LidarBC point clouds in
   [stac-pointcloud-bc](https://www.newgraphenvironment.com/stac_pointcloud_bc/).
-- **Streams.** Lines carrying upstream area in hectares, such as the BC Freshwater Atlas network
-  built with [fresh](https://www.newgraphenvironment.com/fresh/) and
-  [link](https://www.newgraphenvironment.com/link/).
-- **Precipitation** (optional). Mean annual precipitation over each stream's upstream area. In BC
-  the Freshwater Atlas network carries it on every segment. Without it, bankfull depth comes from
-  upstream area alone.
+- **Streams.** Stream lines with upstream contributing area in hectares. In BC,
+  [fwapg](https://smnorris.github.io/fwapg/) adds it to the Freshwater Atlas; the atlas as
+  published in the BC Data Warehouse does not carry it. Elsewhere, any network with upstream area
+  works.
+- **Precipitation** (optional). Mean annual precipitation over each stream's upstream area. In BC,
+  fwapg carries it on every segment from [ClimateBC](https://climatebc.ca/). Without it, bankfull
+  depth comes from upstream area alone.
 
 ## Installation
 
