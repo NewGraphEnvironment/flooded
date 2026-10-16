@@ -1,4 +1,4 @@
 # License
 
     YEAR: 2026
-    COPYRIGHT HOLDER: Allan Irvine
+    COPYRIGHT HOLDER: New Graph Environment Ltd.

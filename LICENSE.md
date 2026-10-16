@@ -2,7 +2,7 @@
 
 MIT License
 
-Copyright (c) 2026 Allan Irvine
+Copyright (c) 2026 New Graph Environment Ltd.
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the
