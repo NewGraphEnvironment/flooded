@@ -140,9 +140,8 @@ would otherwise carve donut holes around.
 
 [`flooded::fl_valley_confine()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_confine.md)
 runs the full VCA pipeline on the cached DEM, streams, and waterbodies.
-On the Parsnip River Watershed Group at 30 m (~14 Mcells) it takes a
-couple of minutes single-threaded; `terra::terraOptions(threads = N)`
-parallelises the heavy raster ops.
+On the Parsnip River Watershed Group at 30 m (~14 Mcells) it took 83 to
+122 s of wall time on an Apple M1 Max, with other work on the machine.
 
 ``` r
 

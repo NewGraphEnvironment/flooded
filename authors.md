@@ -20,17 +20,19 @@
 - **New Graph Environment**. Copyright holder.  
   bcfishpass (Apache 2.0)
 
+- **New Graph Environment Ltd.**. Copyright holder, funder.
+
 ## Citation
 
 Source:
 [`DESCRIPTION`](https://github.com/NewGraphEnvironment/flooded/blob/main/DESCRIPTION)
 
-Irvine A (2026). *flooded: Portable Floodplain Delineation from DEM and
+Irvine A (2026). *flooded: Map Floodplains from an Elevation Model and a
 Stream Network*. R package version 0.8.1,
 <https://github.com/NewGraphEnvironment/flooded>.
 
     @Manual{,
-      title = {flooded: Portable Floodplain Delineation from DEM and Stream Network},
+      title = {flooded: Map Floodplains from an Elevation Model and a Stream Network},
       author = {Allan Irvine},
       year = {2026},
       note = {R package version 0.8.1},

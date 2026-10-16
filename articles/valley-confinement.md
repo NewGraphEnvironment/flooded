@@ -668,23 +668,14 @@ attr(by_stream, "fl_fallback_cells")
 
 ## Performance
 
-Several `terra` operations inside
+On the Parsnip River watershed group (a 3,749 x 3,761 cell grid at 30 m,
+8,436 stream segments), one
 [`fl_valley_confine()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_confine.md)
-support multi-threading (focal filters, distance calculations, raster
-math). Set threads before running:
-
-``` r
-
-terra::terraOptions(threads = 12)  # adjust to your machine
-```
-
-On an Apple M4 Max (16 cores, 12 performance), this reduced a Neexdzii
-Kwah run (~2,700 km², 27M cells, 1165 stream segments) from ~3.5 minutes
-to ~1 minute. The remaining time is dominated by
-[`terra::costDist()`](https://rspatial.github.io/terra/reference/costDist.html)
-and
-[`terra::interpIDW()`](https://rspatial.github.io/terra/reference/interpIDW.html),
-which are single-threaded.
+call took 83 to 122 s of wall time on an Apple M1 Max with terra 1.9.50,
+with other work on the machine. Whether
+`terra::terraOptions(threads = )` speeds it up could not be separated
+from that load; see the Performance section of
+[`?fl_valley_confine`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_confine.md).
 
 ## Summary
 

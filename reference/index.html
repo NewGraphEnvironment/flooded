@@ -37,7 +37,37 @@
     </div>
 
     <div class="section level2">
-      <h2 id="all-functions">All functions<a class="anchor" aria-label="anchor" href="#all-functions"></a></h2>
+      <h2 id="delineate">Delineate<a class="anchor" aria-label="anchor" href="#delineate"></a></h2>
+
+      <div class="section-desc"><p>Map the floodplain from an elevation model and a stream network.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="fl_valley_confine.html">fl_valley_confine()</a></code>
+
+        </dt>
+        <dd>Delineate unconfined valleys using the Valley Confinement Algorithm</dd>
+
+        <dt>
+
+          <code><a href="fl_valley_poly.html">fl_valley_poly()</a></code>
+
+        </dt>
+        <dd>Convert a binary valley raster to polygons</dd>
+
+        <dt>
+
+          <code><a href="fl_stream_rasterize.html">fl_stream_rasterize()</a></code>
+
+        </dt>
+        <dd>Rasterize a stream network onto a DEM grid</dd>
+      </dl></div><div class="section level2">
+      <h2 id="get-an-elevation-model">Get an elevation model<a class="anchor" aria-label="anchor" href="#get-an-elevation-model"></a></h2>
 
 
 
@@ -48,31 +78,86 @@
 
       <dl><dt>
 
-          <code><a href="fl_cost_distance.html">fl_cost_distance()</a></code>
-
-        </dt>
-        <dd>Accumulated cost distance from stream cells</dd>
-
-        <dt>
-
           <code><a href="fl_dem_aoi.html">fl_dem_aoi()</a></code>
 
         </dt>
         <dd>Fetch a DEM cropped to an AOI</dd>
+      </dl></div><div class="section level2">
+      <h2 id="per-watercourse">Per watercourse<a class="anchor" aria-label="anchor" href="#per-watercourse"></a></h2>
+
+      <div class="section-desc"><p>Attribute one floodplain to each watercourse, and join per-reach flags to it.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="fl_valley_attribute.html">fl_valley_attribute()</a></code>
+
+        </dt>
+        <dd>Attribute valley cells to the stream groups that produced them</dd>
 
         <dt>
 
-          <code><a href="fl_flood_assemble.html">fl_flood_assemble()</a></code>
+          <code><a href="fl_valley_join.html">fl_valley_join()</a></code>
 
         </dt>
-        <dd>Union multiple binary rasters</dd>
+        <dd>Join per-segment attributes to valley cells by position</dd>
+      </dl></div><div class="section level2">
+      <h2 id="flood-levels-and-parameters">Flood levels and parameters<a class="anchor" aria-label="anchor" href="#flood-levels-and-parameters"></a></h2>
+
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="fl_scenarios.html">fl_scenarios()</a></code>
+
+        </dt>
+        <dd>Load flood factor scenarios</dd>
 
         <dt>
 
-          <code><a href="fl_flood_depth.html">fl_flood_depth()</a></code>
+          <code><a href="fl_params.html">fl_params()</a></code>
 
         </dt>
-        <dd>Interpolate flood surface and compute depth above terrain</dd>
+        <dd>Load VCA parameter legend</dd>
+      </dl></div><div class="section level2">
+      <h2 id="pipeline-steps">Pipeline steps<a class="anchor" aria-label="anchor" href="#pipeline-steps"></a></h2>
+
+      <div class="section-desc"><p>The steps <code><a href="../reference/fl_valley_confine.html">fl_valley_confine()</a></code> runs, for running or inspecting one on its own.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="fl_mask.html">fl_mask()</a></code>
+
+        </dt>
+        <dd>Create a binary mask from a raster by thresholding</dd>
+
+        <dt>
+
+          <code><a href="fl_mask_distance.html">fl_mask_distance()</a></code>
+
+        </dt>
+        <dd>Binary mask by Euclidean distance from features</dd>
+
+        <dt>
+
+          <code><a href="fl_cost_distance.html">fl_cost_distance()</a></code>
+
+        </dt>
+        <dd>Accumulated cost distance from stream cells</dd>
 
         <dt>
 
@@ -90,38 +175,10 @@
 
         <dt>
 
-          <code><a href="fl_flood_trim.html">fl_flood_trim()</a></code>
+          <code><a href="fl_flood_depth.html">fl_flood_depth()</a></code>
 
         </dt>
-        <dd>Subtract mask layers from a binary raster</dd>
-
-        <dt>
-
-          <code><a href="fl_mask.html">fl_mask()</a></code>
-
-        </dt>
-        <dd>Create a binary mask from a raster by thresholding</dd>
-
-        <dt>
-
-          <code><a href="fl_mask_distance.html">fl_mask_distance()</a></code>
-
-        </dt>
-        <dd>Binary mask by Euclidean distance from features</dd>
-
-        <dt>
-
-          <code><a href="fl_params.html">fl_params()</a></code>
-
-        </dt>
-        <dd>Load VCA parameter legend</dd>
-
-        <dt>
-
-          <code><a href="fl_patch_conn.html">fl_patch_conn()</a></code>
-
-        </dt>
-        <dd>Keep only patches connected to anchor features</dd>
+        <dd>Interpolate flood surface and compute depth above terrain</dd>
 
         <dt>
 
@@ -129,54 +186,43 @@
 
         </dt>
         <dd>Remove small patches from a binary raster</dd>
+      </dl></div><div class="section level2">
+      <h2 id="raster-helpers">Raster helpers<a class="anchor" aria-label="anchor" href="#raster-helpers"></a></h2>
+
+      <div class="section-desc"><p>Combine, subtract or filter binary rasters outside <code><a href="../reference/fl_valley_confine.html">fl_valley_confine()</a></code>.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="fl_flood_assemble.html">fl_flood_assemble()</a></code>
+
+        </dt>
+        <dd>Union multiple binary rasters</dd>
 
         <dt>
 
-          <code><a href="fl_scenarios.html">fl_scenarios()</a></code>
+          <code><a href="fl_flood_trim.html">fl_flood_trim()</a></code>
 
         </dt>
-        <dd>Load flood factor scenarios</dd>
+        <dd>Subtract mask layers from a binary raster</dd>
 
         <dt>
 
-          <code><a href="fl_stream_rasterize.html">fl_stream_rasterize()</a></code>
+          <code><a href="fl_patch_conn.html">fl_patch_conn()</a></code>
 
         </dt>
-        <dd>Rasterize a stream network onto a DEM grid</dd>
-
-        <dt>
-
-          <code><a href="fl_valley_attribute.html">fl_valley_attribute()</a></code>
-
-        </dt>
-        <dd>Attribute valley cells to the stream groups that produced them</dd>
-
-        <dt>
-
-          <code><a href="fl_valley_confine.html">fl_valley_confine()</a></code>
-
-        </dt>
-        <dd>Delineate unconfined valleys using the Valley Confinement Algorithm</dd>
-
-        <dt>
-
-          <code><a href="fl_valley_join.html">fl_valley_join()</a></code>
-
-        </dt>
-        <dd>Join per-segment attributes to valley cells by position</dd>
-
-        <dt>
-
-          <code><a href="fl_valley_poly.html">fl_valley_poly()</a></code>
-
-        </dt>
-        <dd>Convert a binary valley raster to polygons</dd>
+        <dd>Keep only patches connected to anchor features</dd>
       </dl></div>
-  </main></div>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+    </nav></aside></div>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Allan Irvine.</p>
+  <p>Developed by Allan Irvine, New Graph Environment Ltd..</p>
 </div>
 
 <div class="pkgdown-footer-right">

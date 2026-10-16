@@ -191,12 +191,13 @@ habitat assembly (Simon Norris, Apache 2.0).</p><div class="section">
 <h3 id="performance">Performance<a class="anchor" aria-label="anchor" href="#performance"></a></h3>
 
 
-<p>Several internal operations (focal filters, distance calculations, raster
-math) support multi-threading via <code><a href="https://rspatial.github.io/terra/reference/terraOptions.html" class="external-link">terra::terraOptions()</a></code>. Set threads
-before calling this function to speed up processing on large rasters:</p>
-<p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>terra<span class="sc">::</span><span class="fu">terraOptions</span>(<span class="at">threads =</span> <span class="dv">12</span>)</span></code></pre><p></p></div>
-<p>On an Apple M4 Max (16 cores), 12 threads reduced runtime from ~3.5
-minutes to ~1 minute for a 27M-cell raster (~2,700 km² at 10 m).</p>
+<p>On the Parsnip River watershed group's cached inputs (a 3,749 x 3,761 cell
+grid at 30 m, 8,436 stream segments and 664 waterbodies, <code>flood_factor = 4</code>),
+one call took 83 to 122 s of wall time on an Apple M1 Max (10 cores) with
+flooded 0.8.1 and terra 1.9.50, with other work on the machine (1-minute
+load average 6 to 17 before each run). Three runs each at <code>terra::terraOptions(threads = 1)</code>
+and <code>threads = 8</code> overlapped, so any effect of terra's <code>threads</code> option
+(default 16) could not be separated from that load (#81).</p>
 </div>
 
     </div>
@@ -247,7 +248,7 @@ grid, and <code><a href="fl_flood_surface.html">fl_flood_surface()</a></code> fo
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Allan Irvine.</p>
+  <p>Developed by Allan Irvine, New Graph Environment Ltd..</p>
 </div>
 
 <div class="pkgdown-footer-right">

@@ -664,22 +664,19 @@ delineation exactly; the count is reported and stored on the result:</p>
 <div class="section level2">
 <h2 id="performance">Performance<a class="anchor" aria-label="anchor" href="#performance"></a>
 </h2>
-<p>Several <code>terra</code> operations inside
-<code><a href="../reference/fl_valley_confine.html">fl_valley_confine()</a></code> support multi-threading (focal filters,
-distance calculations, raster math). Set threads before running:</p>
-<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/terraOptions.html" class="external-link">terraOptions</a></span><span class="op">(</span>threads <span class="op">=</span> <span class="fl">12</span><span class="op">)</span>  <span class="co"># adjust to your machine</span></span></code></pre></div>
-<p>On an Apple M4 Max (16 cores, 12 performance), this reduced a
-Neexdzii Kwah run (~2,700 km², 27M cells, 1165 stream segments) from
-~3.5 minutes to ~1 minute. The remaining time is dominated by
-<code><a href="https://rspatial.github.io/terra/reference/costDist.html" class="external-link">terra::costDist()</a></code> and <code><a href="https://rspatial.github.io/terra/reference/interpIDW.html" class="external-link">terra::interpIDW()</a></code>,
-which are single-threaded.</p>
+<p>On the Parsnip River watershed group (a 3,749 x 3,761 cell grid at 30
+m, 8,436 stream segments), one <code><a href="../reference/fl_valley_confine.html">fl_valley_confine()</a></code> call
+took 83 to 122 s of wall time on an Apple M1 Max with terra 1.9.50, with
+other work on the machine. Whether
+<code>terra::terraOptions(threads = )</code> speeds it up could not be
+separated from that load; see the Performance section of
+<code><a href="../reference/fl_valley_confine.html">?fl_valley_confine</a></code>.</p>
 </div>
 <div class="section level2">
 <h2 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
 </h2>
 <p>Key tuning parameters from <code><a href="../reference/fl_params.html">fl_params()</a></code>:</p>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">params</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fl_params.html">fl_params</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span></span>
 <span>  <span class="va">params</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"parameter"</span>, <span class="st">"default"</span>, <span class="st">"unit"</span>, <span class="st">"effect"</span><span class="op">)</span><span class="op">]</span>,</span>
@@ -777,7 +774,7 @@ flood depth</td>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Allan Irvine.</p>
+  <p>Developed by Allan Irvine, New Graph Environment Ltd..</p>
 </div>
 
 <div class="pkgdown-footer-right">

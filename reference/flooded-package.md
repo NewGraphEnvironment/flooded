@@ -1,10 +1,15 @@
-# flooded: Portable Floodplain Delineation from DEM and Stream Network
+# flooded: Map Floodplains from an Elevation Model and a Stream Network
 
-Delineate floodplains from digital elevation models and stream networks
-using the Valley Confinement Algorithm (VCA). Combines slope
-thresholding, cost-distance analysis, and flood surface modelling to
-identify unconfined valleys. Ported from the bcfishpass lateral habitat
-pipeline (Python) with origins in the USDA VCA Toolbox and BlueGeo.
+Maps floodplains and unconfined valley bottoms from a digital elevation
+model and a stream network with the Valley Confinement Algorithm (VCA),
+keeping ground that is gentle, near a stream in both straight-line and
+slope-weighted distance, and low relative to it. It reads terrain rather
+than modelling flood flows, so it runs over whole watersheds for
+screening and planning. Fetches an elevation model for an area, maps
+preset flood levels, and attributes one floodplain to each watercourse
+that shares it, carrying per-reach flags onto the ground beside each
+reach. Ported from the bcfishpass lateral habitat pipeline (Python) with
+origins in the USDA VCA Toolbox and BlueGeo. Under active development.
 
 ## See also
 
@@ -36,3 +41,5 @@ Other contributors:
   holder\]
 
 - New Graph Environment (bcfishpass (Apache 2.0)) \[copyright holder\]
+
+- New Graph Environment Ltd. \[copyright holder, funder\]

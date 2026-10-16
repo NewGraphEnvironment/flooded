@@ -292,9 +292,8 @@ masks would otherwise carve donut holes around.</p>
 </h2>
 <p><code><a href="../reference/fl_valley_confine.html">flooded::fl_valley_confine()</a></code> runs the full VCA pipeline
 on the cached DEM, streams, and waterbodies. On the Parsnip River
-Watershed Group at 30 m (~14 Mcells) it takes a couple of minutes
-single-threaded; <code>terra::terraOptions(threads = N)</code>
-parallelises the heavy raster ops.</p>
+Watershed Group at 30 m (~14 Mcells) it took 83 to 122 s of wall time on
+an Apple M1 Max, with other work on the machine.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">valleys</span> <span class="op">&lt;-</span> <span class="fu">flooded</span><span class="fu">::</span><span class="fu"><a href="../reference/fl_valley_confine.html">fl_valley_confine</a></span><span class="op">(</span></span>
 <span>  dem <span class="op">=</span> <span class="va">dem</span>,</span>
@@ -370,7 +369,7 @@ of Agriculture, Forest Service, Rocky Mountain Research Station. <a href="https:
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Allan Irvine.</p>
+  <p>Developed by Allan Irvine, New Graph Environment Ltd..</p>
 </div>
 
 <div class="pkgdown-footer-right">
