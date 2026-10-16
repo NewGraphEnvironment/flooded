@@ -1,0 +1,4 @@
+flooded 9d852e1 Version: 0.8.1
+Apple M1 Max
+10
+terra 1.9.50 GDAL 3.13.0 R R version 4.5.2 (2025-10-31) 

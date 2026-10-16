@@ -7,18 +7,23 @@ cff-version: 1.2.0
 message: 'To cite package "flooded" in publications use:'
 type: software
 license: MIT
-title: 'flooded: Portable Floodplain Delineation from DEM and Stream Network'
+title: 'flooded: Map Floodplains from an Elevation Model and a Stream Network'
 version: 0.8.1
-abstract: Delineate floodplains from digital elevation models and stream networks
-  using the Valley Confinement Algorithm (VCA). Combines slope thresholding, cost-distance
-  analysis, and flood surface modelling to identify unconfined valleys. Ported from
-  the bcfishpass lateral habitat pipeline (Python) with origins in the USDA VCA Toolbox
-  and BlueGeo.
+abstract: Maps floodplains and unconfined valley bottoms from a digital elevation
+  model and a stream network with the Valley Confinement Algorithm (VCA), keeping
+  ground that is gentle, near a stream in both straight-line and slope-weighted distance,
+  and low relative to it. It classifies terrain and does not simulate floods, so its
+  output is a screening map, not a field-validated floodplain. Fetches an elevation
+  model for an area, maps preset flood levels, and attributes one floodplain to each
+  watercourse that shares it, carrying per-reach flags onto the ground beside each
+  reach. Ported from the bcfishpass lateral habitat pipeline (Python) with origins
+  in the USDA VCA Toolbox and BlueGeo. Under active development.
 authors:
 - family-names: Irvine
   given-names: Allan
   email: al@newgraphenvironment.com
   orcid: https://orcid.org/0000-0002-3495-2128
+- name: New Graph Environment Ltd.
 repository-code: https://github.com/NewGraphEnvironment/flooded
 url: https://newgraphenvironment.github.io/flooded/
 date-released: '2026-10-15'
