@@ -18,22 +18,34 @@ elevation model, modelled on streams of order 3 and up that bull trout can reach
 
 ## How it works
 
-flooded uses the Valley Confinement Algorithm, published by the US Forest Service (Nagel et al.
-2014) and ported to R from BlueGeo and bcfishpass. Ground counts as floodplain where it is:
+The Valley Confinement Algorithm (US Forest Service; Nagel et al. 2014) finds unconfined valley
+bottoms: valley floors wide and flat enough for a river to spread out and build a floodplain, as
+opposed to reaches held between valley walls. flooded ports it to R from BlueGeo and bcfishpass.
+Ground counts as floodplain where it is:
 
 - gently sloped (9% or less by default);
 - close to a stream, both in a straight line (1 km by default) and in a distance that counts
   steep ground as farther;
-- below a water level set at a multiple of bankfull depth above nearby streams, with bankfull
-  depth estimated from upstream area and, optionally, precipitation (Hall et al. 2007).
+- below a water level set at a multiple of bankfull depth above nearby streams. Bankfull depth
+  comes from each stream's upstream area and mean annual precipitation (Hall et al. 2007).
 
 That multiple is the flood factor. Three presets run from the active channel (2) through the
 functional floodplain (4) to the valley bottom (6). Small gaps are then filled and small patches
-dropped, and lakes and wetlands can be added.
+dropped, and lakes and wetlands can be added. Each part of a shared floodplain can be assigned to
+the streams it belongs to, carrying reach flags such as fish habitat onto the ground beside each
+reach.
 
-flooded can also fetch the elevation model for you, and it can say which streams each part of a
-shared floodplain belongs to, carrying reach flags such as fish habitat onto the ground beside
-each reach.
+## What it needs
+
+- **Elevation.** flooded fetches an elevation model for an area of interest, by default
+  Natural Resources Canada's MRDEM-30 (30 m, all of Canada, no login). Any elevation raster on a
+  projected grid in metres works, such as 1 m provincial lidar from
+  [stac-elevation-bc](https://images.a11s.one/).
+- **Streams.** Lines carrying upstream area in hectares, such as the BC Freshwater Atlas network
+  modelled by bcfishpass.
+- **Precipitation** (optional). Mean annual precipitation over each stream's upstream area. In
+  BC, bcfishpass carries it from ClimateBC. Without it, bankfull depth comes from upstream area
+  alone.
 
 ## Installation
 
@@ -43,10 +55,6 @@ pak::pak("NewGraphEnvironment/flooded")
 
 Functions still change between releases ([NEWS](https://github.com/NewGraphEnvironment/flooded/blob/main/NEWS.md)),
 so pin a version for repeatable work: `pak::pak("NewGraphEnvironment/flooded@vX.Y.Z")`.
-
-You need an elevation raster in metres (projected CRS) and stream lines with upstream area in
-hectares. Precipitation is optional. The default elevation model, MRDEM-30, covers Canada and needs
-no login.
 
 ## Example
 
@@ -114,8 +122,8 @@ Land cover change: fresh (network) &rarr; flooded (floodplains) &rarr; drift (la
   What the output can be used to claim: [floodplain interpretation](https://github.com/NewGraphEnvironment/flooded/blob/main/inst/notes/floodplain_interpretation.md).
 - NRCan's [MRDEM-30](https://open.canada.ca/data/en/dataset/18752265-bda3-498c-a4ba-9dfe68cb98da)
   elevation model.
-- Bundled data: BC's 25 m TRIM DEM, the Freshwater Atlas, bcfishpass stream attributes and BC
-  lidar, with licences in [`inst/NOTICE.md`](https://github.com/NewGraphEnvironment/flooded/blob/main/inst/NOTICE.md).
+- Bundled data: BC's 25 m TRIM DEM, the Freshwater Atlas, bcfishpass stream attributes, ClimateBC
+  precipitation and BC lidar, with licences in [`inst/NOTICE.md`](https://github.com/NewGraphEnvironment/flooded/blob/main/inst/NOTICE.md).
 
 ## Citation
 
