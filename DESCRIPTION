@@ -15,7 +15,7 @@ Authors@R: c(
            comment = "bcfishpass (Apache 2.0)"),
     person("New Graph Environment", role = "cph",
            comment = "bcfishpass (Apache 2.0)"),
-    person("New Graph Environment Ltd.", role = "fnd")
+    person("New Graph Environment Ltd.", role = c("cph", "fnd"))
     )
 Description: Maps floodplains and unconfined valley bottoms from a digital
     elevation model and a stream network with the Valley Confinement

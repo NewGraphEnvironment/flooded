@@ -29,7 +29,7 @@ Other contributors:
   \item Canadian Wildlife Federation (bcfishpass (Apache 2.0)) [copyright holder]
   \item Province of British Columbia (bcfishpass (Apache 2.0)) [copyright holder]
   \item New Graph Environment (bcfishpass (Apache 2.0)) [copyright holder]
-  \item New Graph Environment Ltd. [funder]
+  \item New Graph Environment Ltd. [copyright holder, funder]
 }
 
 }
