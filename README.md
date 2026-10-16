@@ -6,24 +6,34 @@
 
 > Map floodplains from an elevation model and a stream network.
 
-flooded maps floodplains and unconfined valley bottoms from an elevation model and a stream network
-with the Valley Confinement Algorithm, keeping ground that is gentle, near a stream in both
-straight-line and slope-weighted distance, and low relative to it. It classifies terrain and does
-not simulate floods, so its output is a screening map, not a field-validated floodplain. In the
-STAC vignette, floodplain that 25 m elevation data maps and 1 m lidar excludes marks where to look
-for roads, rail grades, dykes or fill that may cut a floodplain off from its river, and so where
-reconnection could be planned.
-
-It fetches an elevation model for an area, maps three preset flood levels from active channel to
-valley bottom, and attributes one floodplain to each watercourse that shares it, carrying
-per-reach flags such as fish habitat onto the ground beside each reach.
+flooded maps floodplains from terrain: the low, gently sloping ground beside streams. It reads
+terrain rather than modelling flood flows, so it runs over whole watersheds and is built for
+screening and planning. On 1 m lidar it also picks out raised ground across valley floors, such as
+road and rail grades, dykes and fill, that can cut a floodplain off from its river.
 
 <img src="man/figures/readme-pars.png" alt="Map of the Parsnip River watershed group over a grey hillshade. A blue floodplain follows the Parsnip River and its larger tributaries along the valley floors, with lakes and wetlands in the south-east; the mountain slopes between them carry none." width="100%" />
 
-*The floodplain at flood factor 4 in the Parsnip River watershed group, British Columbia, mapped
-at 30 m from the MRDEM-30 elevation model with lakes and wetlands included. Only streams of order
-3 and up that bull trout can reach were modelled, so smaller streams and those above natural
-barriers to bull trout have no floodplain here.*
+*Floodplain (flood factor 4) of the Parsnip River watershed group, BC, from the 30 m MRDEM-30
+elevation model, modelled on streams of order 3 and up that bull trout can reach.*
+
+## How it works
+
+flooded uses the Valley Confinement Algorithm, published by the US Forest Service (Nagel et al.
+2014) and ported to R from BlueGeo and bcfishpass. Ground counts as floodplain where it is:
+
+- gently sloped (9% or less by default);
+- close to a stream, both in a straight line (1 km by default) and in a distance that counts
+  steep ground as farther;
+- below a water level set at a multiple of bankfull depth above nearby streams, with bankfull
+  depth estimated from upstream area and, optionally, precipitation (Hall et al. 2007).
+
+That multiple is the flood factor. Three presets run from the active channel (2) through the
+functional floodplain (4) to the valley bottom (6). Small gaps are then filled and small patches
+dropped, and lakes and wetlands can be added.
+
+flooded can also fetch the elevation model for you, and it can say which streams each part of a
+shared floodplain belongs to, carrying reach flags such as fish habitat onto the ground beside
+each reach.
 
 ## Installation
 
@@ -31,18 +41,17 @@ barriers to bull trout have no floodplain here.*
 pak::pak("NewGraphEnvironment/flooded")
 ```
 
-flooded is under active development and its functions change between releases (see
-[NEWS](https://github.com/NewGraphEnvironment/flooded/blob/main/NEWS.md)). Pin a release for reproducible work:
-`pak::pak("NewGraphEnvironment/flooded@vX.Y.Z")`.
+Functions still change between releases ([NEWS](https://github.com/NewGraphEnvironment/flooded/blob/main/NEWS.md)),
+so pin a version for repeatable work: `pak::pak("NewGraphEnvironment/flooded@vX.Y.Z")`.
 
-A run needs an elevation raster in a projected CRS with metre units, and stream lines that carry
-upstream area in hectares; mean annual precipitation is optional. The default elevation model,
-MRDEM-30, covers Canada and is read over the internet with no credentials.
+You need an elevation raster in metres (projected CRS) and stream lines with upstream area in
+hectares. Precipitation is optional. The default elevation model, MRDEM-30, covers Canada and needs
+no login.
 
 ## Example
 
-A 5 km reach of the Bulkley River is bundled with the package. At the default flood level
-(flood factor 6, valley bottom), its floodplain attributed to each watercourse:
+A 5 km reach of the Bulkley River ships with the package. Its floodplain at the default flood
+factor (6), by stream:
 
 ```r
 library(flooded)
@@ -67,18 +76,17 @@ sf::st_drop_geometry(by_river)[, c("gnis_name", "area_ha")]
 #> 5               <NA>      99
 ```
 
-Rows overlap where two watercourses share valley floor; the whole floodplain here is 287 ha.
+Floodplain shared by two streams counts toward both, so the rows add up to more than the 287 ha
+total.
 
 ## Learn more
 
 - [Valley confinement](https://newgraphenvironment.github.io/flooded/articles/valley-confinement.html):
-  the pipeline step by step on the bundled reach, the three flood levels, and whose floodplain is
-  whose.
+  each step on the bundled reach, and the three flood levels.
 - [Bring your own DEM via STAC](https://newgraphenvironment.github.io/flooded/articles/stac-dem.html):
-  the same reach from the 25 m provincial model and from lidar, and the steep ground 1 m lidar
-  resolves, where raised grades or fill may be.
+  25 m provincial data against 1 m lidar.
 - [Watershed-scale floodplain delineation](https://newgraphenvironment.github.io/flooded/articles/pars-floodplain.html):
-  a whole watershed group, the Parsnip, from a fetched elevation model.
+  the whole Parsnip watershed group.
 - [Function reference](https://newgraphenvironment.github.io/flooded/reference/).
 
 ## Ecosystem
@@ -99,21 +107,15 @@ Land cover change: fresh (network) &rarr; flooded (floodplains) &rarr; drift (la
 
 ## Data and methods it builds on
 
-- The Valley Confinement Algorithm of the [USDA VCA Toolbox](https://www.fs.usda.gov/rm/boise/AWAE/projects/valley_confinement.shtml),
-  with code adapted from [BlueGeo](https://github.com/bluegeo/bluegeo) (Devin Cairns, MIT) and the
-  lateral habitat model of [bcfishpass](https://github.com/smnorris/bcfishpass) (Simon Norris,
-  Apache 2.0).
-- The bankfull regression of Hall et al. (2007), which sets how far above each stream the flood
-  levels sit, and the flood-factor ranges of Nagel et al. (2014)
-  ([methodology](https://github.com/NewGraphEnvironment/flooded/blob/main/inst/notes/methodology.md)).
-- NRCan's [MRDEM-30](https://open.canada.ca/data/en/dataset/18752265-bda3-498c-a4ba-9dfe68cb98da),
-  the elevation model fetched by default.
-- In the bundled data and vignettes: the provincial 25 m TRIM DEM, the BC Freshwater Atlas, stream
-  attributes from bcfishpass (upstream area, precipitation, channel width, fish access), and BC
-  lidar from the `stac-elevation-bc` catalogue. Every bundled dataset and its licence is listed in
-  [`inst/NOTICE.md`](https://github.com/NewGraphEnvironment/flooded/blob/main/inst/NOTICE.md).
-- What the model maps, what a flood factor means, and what can be claimed from the output:
-  [floodplain interpretation](https://github.com/NewGraphEnvironment/flooded/blob/main/inst/notes/floodplain_interpretation.md).
+- Code adapted from [BlueGeo](https://github.com/bluegeo/bluegeo) (Devin Cairns, MIT) and
+  [bcfishpass](https://github.com/smnorris/bcfishpass) (Simon Norris, Apache 2.0), following the
+  [USDA VCA Toolbox](https://www.fs.usda.gov/rm/boise/AWAE/projects/valley_confinement.shtml).
+  Parameters and flood levels: [methodology](https://github.com/NewGraphEnvironment/flooded/blob/main/inst/notes/methodology.md).
+  What the output can be used to claim: [floodplain interpretation](https://github.com/NewGraphEnvironment/flooded/blob/main/inst/notes/floodplain_interpretation.md).
+- NRCan's [MRDEM-30](https://open.canada.ca/data/en/dataset/18752265-bda3-498c-a4ba-9dfe68cb98da)
+  elevation model.
+- Bundled data: BC's 25 m TRIM DEM, the Freshwater Atlas, bcfishpass stream attributes and BC
+  lidar, with licences in [`inst/NOTICE.md`](https://github.com/NewGraphEnvironment/flooded/blob/main/inst/NOTICE.md).
 
 ## Citation
 
@@ -121,5 +123,5 @@ Cite flooded from [`CITATION.cff`](https://github.com/NewGraphEnvironment/floode
 
 ## License
 
-MIT (see [`LICENSE`](LICENSE)). Adapted code is attributed in [`LICENSE.note`](https://github.com/NewGraphEnvironment/flooded/blob/main/LICENSE.note), and
-the licences of the data bundled with the package are in [`inst/NOTICE.md`](https://github.com/NewGraphEnvironment/flooded/blob/main/inst/NOTICE.md).
+MIT (see [`LICENSE`](LICENSE)). Adapted code is credited in [`LICENSE.note`](https://github.com/NewGraphEnvironment/flooded/blob/main/LICENSE.note);
+data licences are in [`inst/NOTICE.md`](https://github.com/NewGraphEnvironment/flooded/blob/main/inst/NOTICE.md).
