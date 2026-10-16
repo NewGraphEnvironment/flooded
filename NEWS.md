@@ -1,3 +1,10 @@
+# flooded 0.8.2
+
+* The README now says what flooded maps and how: the Valley Confinement Algorithm and where it
+  comes from, what a run needs and where those inputs come from, a Parsnip figure, and a runnable
+  example (#81). The reference index is grouped by purpose, `inst/NOTICE.md` gives the licence of
+  each bundled dataset, and New Graph Environment Ltd. is copyright holder and funder.
+
 # flooded 0.8.1
 
 * gdalcubes (Suggests) now installs from `NewGraphEnvironment/gdalcubes@newgraph`, in step with drift (NewGraphEnvironment/drift#104). That build is upstream 0.7.5 plus fixes proposed as appelmar/gdalcubes#113-115, and the pin reverts to `appelmar/gdalcubes` when those merge. Two packages naming different sources for gdalcubes make pak fail when they install together.

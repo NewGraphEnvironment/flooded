@@ -6,7 +6,7 @@ Portable floodplain delineation from DEM and stream network using the Valley Con
 
 **Repository:** NewGraphEnvironment/flooded
 **Primary Language:** R (package)
-**Version:** 0.8.1
+**Version:** 0.8.2
 **License:** MIT
 
 ## Ecosystem

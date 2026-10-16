@@ -1,7 +1,7 @@
 Package: flooded
 Title: Map Floodplains from an Elevation Model and a Stream Network
-Version: 0.8.1
-Date: 2026-10-15
+Version: 0.8.2
+Date: 2026-10-16
 Authors@R: c(
     person("Allan", "Irvine", , "al@newgraphenvironment.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-3495-2128")),
