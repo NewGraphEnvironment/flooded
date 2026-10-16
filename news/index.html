@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">flooded</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -34,9 +34,13 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/NewGraphEnvironment/flooded/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/NewGraphEnvironment/flooded/blob/v0.8.2/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.8.2" id="flooded-082">flooded 0.8.2<a class="anchor" aria-label="anchor" href="#flooded-082"></a></h2>
+<ul><li>The README now says what flooded maps and how: the Valley Confinement Algorithm and where it comes from, what a run needs and where those inputs come from, a Parsnip figure, and a runnable example (<a href="https://github.com/NewGraphEnvironment/flooded/issues/81" class="external-link">#81</a>). The reference index is grouped by purpose, <code>inst/NOTICE.md</code> gives the licence of each bundled dataset, and New Graph Environment Ltd. is copyright holder and funder.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.8.1" id="flooded-081">flooded 0.8.1<a class="anchor" aria-label="anchor" href="#flooded-081"></a></h2>
 <ul><li>gdalcubes (Suggests) now installs from <code>NewGraphEnvironment/gdalcubes@newgraph</code>, in step with drift (NewGraphEnvironment/drift#104). That build is upstream 0.7.5 plus fixes proposed as appelmar/gdalcubes#113-115, and the pin reverts to <code>appelmar/gdalcubes</code> when those merge. Two packages naming different sources for gdalcubes make pak fail when they install together.</li>

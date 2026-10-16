@@ -25,16 +25,16 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/NewGraphEnvironment/flooded/blob/main/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/NewGraphEnvironment/flooded/blob/v0.8.2/DESCRIPTION)
 
 Irvine A (2026). *flooded: Map Floodplains from an Elevation Model and a
-Stream Network*. R package version 0.8.1,
+Stream Network*. R package version 0.8.2,
 <https://github.com/NewGraphEnvironment/flooded>.
 
     @Manual{,
       title = {flooded: Map Floodplains from an Elevation Model and a Stream Network},
       author = {Allan Irvine},
       year = {2026},
-      note = {R package version 0.8.1},
+      note = {R package version 0.8.2},
       url = {https://github.com/NewGraphEnvironment/flooded},
     }
