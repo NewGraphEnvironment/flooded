@@ -7,14 +7,17 @@
 > Map floodplains from an elevation model and a stream network.
 
 flooded maps floodplains from terrain: the low, gently sloping ground beside streams. It reads
-terrain rather than modelling flood flows, so it runs over whole watersheds and is built for
-screening and planning. On 1 m lidar it also picks out raised ground across valley floors, such as
-road and rail grades, dykes and fill, that can cut a floodplain off from its river.
+terrain rather than modelling flood flows, so it is quick to run over large areas for screening and
+planning. From a 30 m elevation model it maps the valley floors of a whole watershed group, as in
+the map below. From 1 m lidar it also picks out raised ground across a valley floor, such as road
+and rail grades, dykes and fill, that can cut a floodplain off from its river.
 
 <img src="man/figures/readme-pars.png" alt="Map of the Parsnip River watershed group over a grey hillshade. A blue floodplain follows the Parsnip River and its larger tributaries along the valley floors, with lakes and wetlands in the south-east; the mountain slopes between them carry none." width="100%" />
 
 *Floodplain (flood factor 4) of the Parsnip River watershed group, BC, from the 30 m MRDEM-30
-elevation model, modelled on streams of order 3 and up that bull trout can reach.*
+elevation model, modelled on streams of order 3 and up that bull trout can reach. How access is
+modelled: link's [Parsnip habitat and connectivity](https://www.newgraphenvironment.com/link/articles/pars-habitat-connectivity.html)
+article.*
 
 ## How it works
 
@@ -39,13 +42,17 @@ reach.
 
 - **Elevation.** flooded fetches an elevation model for an area of interest, by default
   Natural Resources Canada's MRDEM-30 (30 m, all of Canada, no login). Any elevation raster on a
-  projected grid in metres works, such as 1 m provincial lidar from
-  [stac-elevation-bc](https://images.a11s.one/).
+  projected grid in metres works, such as 1 m provincial lidar DEMs from
+  [stac-elevation-bc](https://www.newgraphenvironment.com/stac_dem_bc/), or a DEM built at any
+  resolution from the LidarBC point clouds in
+  [stac-pointcloud-bc](https://www.newgraphenvironment.com/stac_pointcloud_bc/).
 - **Streams.** Lines carrying upstream area in hectares, such as the BC Freshwater Atlas network
-  modelled by bcfishpass.
-- **Precipitation** (optional). Mean annual precipitation over each stream's upstream area. In
-  BC, bcfishpass carries it from ClimateBC. Without it, bankfull depth comes from upstream area
-  alone.
+  modelled by [bcfishpass](https://smnorris.github.io/bcfishpass/) or
+  [link](https://www.newgraphenvironment.com/link/).
+- **Precipitation** (optional). Mean annual precipitation over each stream's upstream area.
+  [fwapg](https://smnorris.github.io/fwapg/) derives it from [ClimateBC](https://climatebc.ca/),
+  and bcfishpass carries it on its streams as `map_upstream`. Without it, bankfull depth comes
+  from upstream area alone.
 
 ## Installation
 
@@ -101,22 +108,23 @@ total.
 
 | Package | Role |
 |---------|------|
-| [fresh](https://github.com/NewGraphEnvironment/fresh) | Stream network modelling engine: segment, classify, cluster, aggregate |
-| [link](https://github.com/NewGraphEnvironment/link) | Intrinsic habitat models: develop, test and communicate |
+| [fresh](https://www.newgraphenvironment.com/fresh/) | Stream network modelling engine: segment, classify, cluster, aggregate |
+| [link](https://www.newgraphenvironment.com/link/) | Intrinsic habitat models: develop, test and communicate |
+| [wet](https://www.newgraphenvironment.com/wet/) | Stream flow and water temperature for BC's Freshwater Atlas |
 | **flooded** | Delineate floodplain extents from DEMs and stream networks (this package) |
-| [drift](https://github.com/NewGraphEnvironment/drift) | Track land cover change within floodplains over time |
-| [floodplains](https://github.com/NewGraphEnvironment/floodplains) | Floodplain and land cover change modelling for BC watershed groups |
-| [cd](https://github.com/NewGraphEnvironment/cd) | Climate departure analysis from ERA5-Land reanalysis |
-| [breaks](https://github.com/NewGraphEnvironment/breaks) | Delineate sub-basins from break points on stream networks |
-| [fly](https://github.com/NewGraphEnvironment/fly) | Estimate airphoto footprints and select optimal coverage for a study area |
-| [diggs](https://github.com/NewGraphEnvironment/diggs) | BC Historic Airphoto Explorer (interactive Shiny app) |
+| [drift](https://www.newgraphenvironment.com/drift/) | Track land cover change within floodplains over time |
+| [floodplains](https://www.newgraphenvironment.com/floodplains/) | Floodplain and land cover change modelling for BC watershed groups |
+| [stac_floodplains_bc](https://www.newgraphenvironment.com/stac_floodplains_bc/) | STAC catalogue of floodplain land cover change in BC, 2017-2023, by watershed group |
+| [cd](https://www.newgraphenvironment.com/cd/) | Climate departure analysis from ERA5-Land reanalysis |
+| [fly](https://www.newgraphenvironment.com/fly/) | Estimate airphoto footprints and select optimal coverage for a study area |
 
 Land cover change: fresh (network) &rarr; flooded (floodplains) &rarr; drift (land cover change)
+&rarr; floodplains (watershed groups) &rarr; stac_floodplains_bc (published)
 
 ## Data and methods it builds on
 
 - Code adapted from [BlueGeo](https://github.com/bluegeo/bluegeo) (Devin Cairns, MIT) and
-  [bcfishpass](https://github.com/smnorris/bcfishpass) (Simon Norris, Apache 2.0), following the
+  [bcfishpass](https://smnorris.github.io/bcfishpass/) (Simon Norris, Apache 2.0), following the
   [USDA VCA Toolbox](https://www.fs.usda.gov/rm/boise/AWAE/projects/valley_confinement.shtml).
   Parameters and flood levels: [methodology](https://github.com/NewGraphEnvironment/flooded/blob/main/inst/notes/methodology.md).
   What the output can be used to claim: [floodplain interpretation](https://github.com/NewGraphEnvironment/flooded/blob/main/inst/notes/floodplain_interpretation.md).
