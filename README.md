@@ -102,6 +102,13 @@ total.
   25 m provincial data against 1 m lidar.
 - [Watershed-scale floodplain delineation](https://newgraphenvironment.github.io/flooded/articles/pars-floodplain.html):
   the whole Parsnip watershed group.
+- [floodplains](https://www.newgraphenvironment.com/floodplains/): flooded run over BC watershed
+  groups at 30 m, with the land cover change inside each floodplain from 2017 to 2023 attributed
+  to fire and harvest.
+- [stac-floodplains-bc](https://www.newgraphenvironment.com/stac_floodplains_bc/): those results
+  to download, by watershed group: the floodplain at three flood factors, land cover for each
+  year and its change, with an interactive map. Readable from rstac, QGIS 3.42+ or any STAC
+  client.
 - [Function reference](https://newgraphenvironment.github.io/flooded/reference/).
 
 ## Ecosystem
