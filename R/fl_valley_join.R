@@ -63,7 +63,9 @@
 #'   areas add up to the floodplain: use it for areas. Exactly equal distances go
 #'   to the lowest key (numeric order for numbers, C-locale order for text, level
 #'   order for a factor, `NA` last), and the number of such cells is returned as
-#'   `ties`.
+#'   `ties`. `seg` is the row of `segments` that owns the cell (`NA` where the
+#'   owning group has no segments), so any per-segment value, a numeric grade or
+#'   a length as much as a flag, joins to the cells it owns.
 #' - **`any`** is `TRUE` where any claiming group's nearest segment is `TRUE`:
 #'   ground connected to an attribute through at least one watercourse. A cell
 #'   can be counted under several groups' flags, so it does not partition.
@@ -269,6 +271,7 @@ fl_valley_join <- function(valleys, attributed, segments, group, cols = NULL) {
   nearest <- data.frame(cell = o$cell[first])
   nearest[[group]] <- lvls[o$rank[first]]
   nearest$dist <- o$dist[first]
+  nearest$seg <- o$seg[first]
   for (col in cols) nearest[[col]] <- attr_vals[[col]][first]
 
   # --- any: OR over the claiming groups that have segments ---

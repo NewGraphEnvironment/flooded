@@ -53,7 +53,7 @@ test_that("fl_valley_join returns nearest and any tables, one row per valley cel
   out <- fl_valley_join(f$r, f$a, f$s, group = "grp")
 
   expect_named(out, c("nearest", "any", "check", "ties", "no_segments"))
-  expect_named(out$nearest, c("cell", "grp", "dist", "flag"))
+  expect_named(out$nearest, c("cell", "grp", "dist", "seg", "flag"))
   expect_named(out$any, c("cell", "flag"))
   expect_equal(out$nearest$cell, seq_len(100))
   expect_equal(out$any$cell, seq_len(100))
@@ -264,7 +264,7 @@ test_that("cols selects attribute columns; NULL takes every logical column", {
   f$s$label <- c("x", "y")
 
   out <- fl_valley_join(f$r, f$a, f$s, group = "grp")
-  expect_named(out$nearest, c("cell", "grp", "dist", "flag", "other"))
+  expect_named(out$nearest, c("cell", "grp", "dist", "seg", "flag", "other"))
 
   out <- fl_valley_join(f$r, f$a, f$s, group = "grp", cols = "other")
   expect_named(out$any, c("cell", "other"))
@@ -381,7 +381,7 @@ test_that("on the bundled tile the join partitions the valley and nests nearest 
   expect_equal(unname(out$check[c("missing", "extra")]), c(0L, 0L))
   expect_equal(out$nearest$cell, vc)
   expect_equal(out$any$cell, vc)
-  expect_named(out$nearest, c("cell", "blue_line_key", "dist", "big", "wide"))
+  expect_named(out$nearest, c("cell", "blue_line_key", "dist", "seg", "big", "wide"))
   expect_length(out$no_segments, 0)
   for (col in c("big", "wide")) {
     expect_gt(sum(out$nearest[[col]]), 0)
@@ -449,4 +449,20 @@ test_that("on the bundled tile fl_valley_join reproduces the reference join cell
     expect_identical(out$nearest[[col]], ref$nearest[[col]])
     expect_identical(out$any[[col]], ref$any[[col]])
   }
+})
+
+test_that("nearest names the owning segment, so a numeric value joins through it", {
+  f <- jn_two()
+  f$s$grade <- c(0.2, 0.9)
+
+  out <- fl_valley_join(f$r, f$a, f$s, group = "grp", cols = "flag")
+
+  expect_type(out$nearest$seg, "integer")
+  expect_false(anyNA(out$nearest$seg))
+  # the flag nearest copied is the owning segment's flag
+  expect_equal(out$nearest$flag, f$s$flag[out$nearest$seg])
+  # a value cols cannot carry joins through seg: A's cells grade 0.2, B's 0.9
+  expect_equal(jn_at(out$nearest, f$r, 45, 55, "seg"), 1L)
+  expect_equal(f$s$grade[jn_at(out$nearest, f$r, 55, 55, "seg")], 0.9)
+  expect_equal(sum(f$s$grade[out$nearest$seg] == 0.2), 50)
 })

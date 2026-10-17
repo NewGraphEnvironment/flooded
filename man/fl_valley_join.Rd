@@ -76,7 +76,9 @@ segment is nearest. Every cell is counted once, so per-group or per-reach
 areas add up to the floodplain: use it for areas. Exactly equal distances go
 to the lowest key (numeric order for numbers, C-locale order for text, level
 order for a factor, \code{NA} last), and the number of such cells is returned as
-\code{ties}.
+\code{ties}. \code{seg} is the row of \code{segments} that owns the cell (\code{NA} where the
+owning group has no segments), so any per-segment value, a numeric grade or
+a length as much as a flag, joins to the cells it owns.
 \item \strong{\code{any}} is \code{TRUE} where any claiming group's nearest segment is \code{TRUE}:
 ground connected to an attribute through at least one watercourse. A cell
 can be counted under several groups' flags, so it does not partition.

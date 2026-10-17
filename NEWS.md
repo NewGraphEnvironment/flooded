@@ -1,3 +1,7 @@
+# flooded (development version)
+
+* `fl_valley_join()`'s `nearest` names the segment that owns each cell (`seg`, the row of `segments`), so a per-segment value that is not a logical flag, a 0-1 habitat grade or a length, joins to the floodplain cells through it (#89).
+
 # flooded 0.8.2
 
 * The README now says what flooded maps and how: the Valley Confinement Algorithm and where it
