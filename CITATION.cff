@@ -8,7 +8,7 @@ message: 'To cite package "flooded" in publications use:'
 type: software
 license: MIT
 title: 'flooded: Map Floodplains from an Elevation Model and a Stream Network'
-version: 0.8.2
+version: 0.8.3
 abstract: Maps floodplains and unconfined valley bottoms from a digital elevation
   model and a stream network with the Valley Confinement Algorithm (VCA), keeping
   ground that is gentle, near a stream in both straight-line and slope-weighted distance,
@@ -26,7 +26,7 @@ authors:
 - name: New Graph Environment Ltd.
 repository-code: https://github.com/NewGraphEnvironment/flooded
 url: https://newgraphenvironment.github.io/flooded/
-date-released: '2026-10-16'
+date-released: '2026-10-17'
 contact:
 - family-names: Irvine
   given-names: Allan
