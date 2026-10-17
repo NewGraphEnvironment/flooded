@@ -142,7 +142,9 @@ segment is nearest. Every cell is counted once, so per-group or per-reach
 areas add up to the floodplain: use it for areas. Exactly equal distances go
 to the lowest key (numeric order for numbers, C-locale order for text, level
 order for a factor, <code>NA</code> last), and the number of such cells is returned as
-<code>ties</code>.</p></li>
+<code>ties</code>. <code>seg</code> is the row of <code>segments</code> that owns the cell (<code>NA</code> where the
+owning group has no segments), so any per-segment value, a numeric grade or
+a length as much as a flag, joins to the cells it owns.</p></li>
 <li><p><strong><code>any</code></strong> is <code>TRUE</code> where any claiming group's nearest segment is <code>TRUE</code>:
 ground connected to an attribute through at least one watercourse. A cell
 can be counted under several groups' flags, so it does not partition.</p></li>

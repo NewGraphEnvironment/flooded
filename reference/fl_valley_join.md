@@ -105,7 +105,10 @@ returned:
   or per-reach areas add up to the floodplain: use it for areas. Exactly
   equal distances go to the lowest key (numeric order for numbers,
   C-locale order for text, level order for a factor, `NA` last), and the
-  number of such cells is returned as `ties`.
+  number of such cells is returned as `ties`. `seg` is the row of
+  `segments` that owns the cell (`NA` where the owning group has no
+  segments), so any per-segment value, a numeric grade or a length as
+  much as a flag, joins to the cells it owns.
 
 - **`any`** is `TRUE` where any claiming group's nearest segment is
   `TRUE`: ground connected to an attribute through at least one
