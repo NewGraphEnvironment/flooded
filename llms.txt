@@ -51,7 +51,7 @@ onto the ground beside each reach.
   interest, by default Natural Resources Canada’s MRDEM-30 (30 m, all of
   Canada, no login). Any elevation raster on a projected grid in metres
   works, such as 1 m provincial lidar DEMs from
-  [stac-elevation-bc](https://www.newgraphenvironment.com/stac_dem_bc/),
+  [stac-elevation-bc](https://www.newgraphenvironment.com/stac_elevation_bc/),
   or a DEM built at any resolution from the LidarBC point clouds in
   [stac-pointcloud-bc](https://www.newgraphenvironment.com/stac_pointcloud_bc/).
 - **Streams.** Stream lines with upstream contributing area in hectares.
