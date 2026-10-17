@@ -1,6 +1,6 @@
 # Changelog
 
-## flooded (development version)
+## flooded 0.8.3
 
 - [`fl_valley_join()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_join.md)’s
   `nearest` names the segment that owns each cell (`seg`, the row of
