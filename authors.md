@@ -25,7 +25,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/NewGraphEnvironment/flooded/blob/v0.8.3/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/NewGraphEnvironment/flooded/blob/main/DESCRIPTION)
 
 Irvine A (2026). *flooded: Map Floodplains from an Elevation Model and a
 Stream Network*. R package version 0.8.3,
