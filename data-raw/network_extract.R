@@ -28,7 +28,10 @@
 # Requires:
 #   - the PostgreSQL database link persists to (fwapg with `fresh_default`),
 #     reached by fresh::frs_db_conn() through the standard PG* variables
-#   - BULK modelled into `fresh_default` by link
+#   - BULK modelled into `fresh_default` by link, in the run named by `run_id`
+#     below. `fresh_default` holds one provincial run at a time and the next
+#     one overwrites it, so the script stops if the run there is not this one;
+#     update `run_id` deliberately when rebuilding from a newer run.
 #   - R packages: fresh, sf, terra, DBI
 
 library(fresh)
@@ -40,6 +43,7 @@ wsg <- "BULK"
 blk <- 360873822
 mouth_drm <- 216733
 cutoff_drm <- 222000
+run_id <- "cypherjob3-20261017T034609.698-65b431"   # fresh_default.log, BULK
 
 # --- DEM extent for clipping ---
 dem <- terra::rast(here::here("inst", "testdata", "dem.tif"))
@@ -48,19 +52,33 @@ dem_bbox <- sf::st_as_sfc(sf::st_bbox(dem))
 conn <- frs_db_conn()
 
 # --- The link run this reads ---
+if (is.na(DBI::dbGetQuery(conn, "SELECT to_regclass('fresh_default.log') AS t")$t)) {
+  stop("Database '", DBI::dbGetQuery(conn, "SELECT current_database()")[[1]],
+       "' has no fresh_default schema; point the PG* variables at the database link ",
+       "persists to.", call. = FALSE)
+}
 run <- DBI::dbGetQuery(conn, sprintf(
-  "SELECT run_id, date_end, config_name, link_version, link_sha, fresh_version, fwapg_sha
+  "SELECT run_id, run_uid, run_label, date_end, config_name, link_version, link_sha,
+          fresh_version, fwapg_sha
      FROM fresh_default.log
     WHERE watershed_group_code = %s
     ORDER BY date_end DESC LIMIT 1",
   DBI::dbQuoteLiteral(conn, wsg)
 ))
-if (nrow(run) == 0L) {
+n_seg <- DBI::dbGetQuery(conn, sprintf(
+  "SELECT count(*)::int AS n FROM fresh_default.streams_access WHERE watershed_group_code = %s",
+  DBI::dbQuoteLiteral(conn, wsg)
+))$n
+if (nrow(run) == 0L || n_seg == 0L) {
   stop(wsg, " is not modelled in `fresh_default`; run link's default config for it first.",
        call. = FALSE)
 }
-message("Reading link run ", run$run_id, " (", run$config_name, " config, link ",
-        run$link_version, ", ", format(run$date_end, "%Y-%m-%d"), ")")
+if (!identical(run$run_id, run_id)) {
+  stop("fresh_default holds ", wsg, " run ", run$run_id, ", not ", run_id,
+       ". Update `run_id` if rebuilding from the newer run is intended.", call. = FALSE)
+}
+message("Reading link run ", run$run_id, " (", run$run_label, ", ", run$config_name,
+        " config, link ", run$link_version, ", ", format(run$date_end, "%Y-%m-%d"), ")")
 
 # --- Network between the two points, plus waterbodies ---
 # frs_clip() doesn't handle XYM/XYZM geometries yet so we clip manually
@@ -94,7 +112,7 @@ attrs <- DBI::dbGetQuery(conn, sprintf(
           s.downstream_route_measure, ua.upstream_area_ha, p.map_upstream,
           s.gnis_name, s.stream_order, s.channel_width,
           mc.mapping_code_co AS mapping_code,
-          a.access_co AS access, h.spawning, h.rearing
+          a.access_co AS access, h.spawning, h.rearing, s.watershed_group_code
      FROM fresh_default.streams s
      JOIN fresh_default.streams_access a USING (id_segment, watershed_group_code)
      JOIN fresh_default.streams_habitat_co h USING (id_segment, watershed_group_code)

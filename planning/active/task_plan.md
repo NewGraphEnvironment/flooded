@@ -36,6 +36,16 @@ column names and types (`id_segment`, TRUE/FALSE `spawning`/`rearing`).
   so `test-fl_valley_join.R:384`'s `expect_named()` will see `spawning`/`rearing`.
 - `pars_meta.rds` is written but read nowhere.
 
+## Corrections from the plan review (`review-plan.md`, 2026-10-18)
+
+- **NOTICE keeps a scoped bcfishpass ODbL credit (B1).** link's `default` config applies the
+  bcfishpass override tables, so access, habitat and mapping code still contain bcfishpass
+  information. NOTICE goes per attribute instead of dropping the row.
+- **Timings and the ff04–ff07 span stay dated records (O1, G4).** No quiet benchmark on this
+  machine today; they are not re-measured.
+- **Record rule (R1, R2):** a claim naming the version, issue or date it was measured at is a
+  record; otherwise present tense. One dated note per section.
+
 ## Phase 1: Bundled test data from link (BULK)
 - [x] Rewrite `data-raw/network_extract.R`: local fwapg connection; `fresh::frs_network()` over
       `fresh_default.streams` (`wscode_ltree`/`localcode_ltree`, same blk/drm, `stream_order >= 4`);
@@ -49,6 +59,8 @@ column names and types (`id_segment`, TRUE/FALSE `spawning`/`rearing`).
 - [x] Run it; regenerate `streams.gpkg` and `waterbodies.gpkg`; record the old-vs-new diff per
       column in `findings.md`
 - [x] Correct `data-raw/testdata.R`'s header, which names an airbc geojson as the streams source
+- [x] Review fixes (A1–A3, G8): pin the expected link run, count rows, check the database holds
+      `fresh_default`; ship `watershed_group_code`; re-run after the stac-dem run has read the file
 
 ## Phase 2: Parsnip vignette data from link
 - [ ] `data-raw/wsg_vignette_data.R`: streams from `fresh_default` PARS (`access_bt IN (1,2)`,
@@ -57,7 +69,10 @@ column names and types (`id_segment`, TRUE/FALSE `spawning`/`rearing`).
       database on an explicit connection; persisted-run guard; fix the swapped assessed/modelled
       labels in its message (1 = modelled, 2 = observed)
 - [ ] Replace the `bcfishpass.log` stamp: `pars_meta.rds` holds the `fresh_default.log` fields
-      for the PARS run, and `pars-floodplain.Rmd` reads it to state the data's source
+      for the PARS run (plus `run_uid`, `run_label`, `config_hash`, dirty flags, and where carried
+      context layers came from, G7), and `pars-floodplain.Rmd` reads it to state the data's
+      source in the same commit as its source sentence (O3)
+- [ ] Same review fixes as Phase 1 (A1–A3); commit PARS outputs together (O2)
 - [ ] Run it; regenerate `pars.gpkg`, `pars_dem.tif`, `pars_valleys.tif`; re-run
       `data-raw/readme_figure.R` for `man/figures/readme-pars.png` and check it at published width
 
@@ -77,9 +92,13 @@ Rule: a present-tense claim (example output, "on this tile", captions, roxygen) 
 a dated measurement record (§9 tables in `inst/notes/`, `research/`, CLAUDE.md's design-decision
 history, NEWS) stays, with one line saying it was measured on the bcfishpass-sourced data
 before this change.
-- [ ] README: example output table and the 287 ha total; the "5 km reach" claim (measure it)
-- [ ] `valley-confinement.Rmd`: source sentence (line 27) and numbers at 96-98, 188, 331, 447, 499
-- [ ] `pars-floodplain.Rmd`: source sentence (214-215) and numbers at 74, 83-84, 227
+- [ ] README: example output table and the 287 ha total; the "5 km reach" claim (measured 5.31 km
+      of Bulkley); the figure caption, which links link's *bcfishpass*-config article (G1)
+- [ ] `valley-confinement.Rmd`: "~8 km" (22), "coho potential habitat" (26), source sentence (27)
+      and numbers at 96-98, 188, 331, 447; 499 is a dated timing record
+- [ ] `pars-floodplain.Rmd`: source sentence (214-215) and the history at 77-84 (past tense, add
+      the #87 regeneration); 74 and 227 stay dated records
+- [ ] `inst/notes/methodology.md` present-tense tile numbers (137-138, 152, 167) (G3)
 - [ ] Roxygen numbers: `fl_flood_surface.R:40-45`, `fl_valley_attribute.R:76-87`,
       `fl_valley_confine.R:89-91`, `fl_dem_aoi.R:90-91`; `devtools::document()`
 - [ ] CLAUDE.md test-data traps: the bijection, "49 of 50", "48 ties", "69 patches",
@@ -91,8 +110,11 @@ before this change.
       ODbL data row and its sentence under "Data flooded produces"
 - [ ] README "Data and methods": rewrite the bundled-data line, drop the #87 pointer; bcfishpass
       stays credited for adapted code (`LICENSE.note`, DESCRIPTION, README:134 unchanged)
-- [ ] `inst/notes/methodology.md` lines that name bcfishpass as the *data source* (13, 22, 40-45);
-      the model comparison (Thorley vs Hall) stays
+- [ ] Lines that name bcfishpass as the *data source* of channel width: `methodology.md` (13, 22,
+      40-45), `R/fl_flood_surface.R:45`, `floodplain_interpretation.md` (252, 258, 265); the model
+      comparison (Thorley vs Hall) stays
+- [ ] NEWS-worthy breaking data change (column rename, logical flags, new columns) stated in the
+      PR body for `/gh-pr-merge` (G5)
 
 ## Validation
 

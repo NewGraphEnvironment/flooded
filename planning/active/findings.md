@@ -68,3 +68,47 @@ order differed), so the committed file is kept rather than churned.
 
 `data-raw/testdata.R` used to write `streams.gpkg` too, from an airbc geojson; it now writes only
 the DEM and slope, so `streams.gpkg` has one producer.
+
+## Plan review and its fixes (2026-10-18)
+
+Review in `review-plan.md`. Verified before acting: link's `default` config applies the bcfishpass
+override tables under ODbL (link `inst/extdata/configs/default/README.md:34`, `NOTICE.md:13`),
+so NOTICE keeps a scoped bcfishpass credit; `fresh_default.log` carries `run_uid`/`run_label`
+(`20261017_004619-3f4c713b` / `provincial-241-default-246`, the same provincial run for BULK and
+PARS) and `config_hash`.
+
+Guards proven to fire (each stops before any write; `streams.gpkg` md5 unchanged):
+- `run_id` set to a run fresh_default does not hold → "fresh_default holds BULK run …, not …"
+- database without the schema (`Sys.setenv(PGDATABASE = "postgres")` inside R; a shell
+  `PGDATABASE=` is overridden by `~/.Renviron`, so the first attempt ran the script normally and
+  rewrote `streams.gpkg` with identical content) → "Database 'postgres' has no fresh_default schema"
+
+## Present-tense numbers re-measured on the new bundled streams
+
+| claim | old data | new data |
+|---|---|---|
+| README example areas (ha) | 264 / 112 / 130 / 50 / 99 | unchanged |
+| README total | 287.27 ha (28,727 cells) | 287.26 ha (28,726 cells) |
+| mean precip depth multiplier over stream cells (`fl_flood_surface.R:41` says 2.366) | 2.368 | 2.363 |
+| Bulkley `map_upstream` (blk 360873822) | 531 | 531 (depth ~1.1 vs ~2.5 m at ff6 holds) |
+| overlap ratio, defaults (test comment says 2.45x) | 2.28 | 2.28 |
+| overlap ratio, vignette run with waterbodies (vignette says ~2.4) | 2.21 | 2.21 |
+| fallback cells, vignette run | 1,643 | 1,643 |
+| Bulkley length in the bundled reach | 5.31 km | 5.31 km (README "5 km" right, vignette "~8 km" wrong) |
+
+The 2.45x and ~2.4 overlap claims were already stale before #87: both data sets give 2.28 / 2.21.
+
+## Parsnip, old vs new (`data-raw/wsg_vignette_data.R`, run `cypherjob2-…1b8d39`)
+
+- 9,386 segments (6,633 modelled, 2,753 observed) against 8,436; 2,313.6 km against 2,310 km.
+- Floodplain 40,888.2 ha → 40,969.3 ha (+0.20%); 454,264 cells in both, 49 only old, 951 only new.
+- `pars_dem.tif` byte-identical in values and grid (3,761 x 3,749, 14.1 Mcells).
+- Waterbodies 664 → 668 (204 lakes, 464 wetlands).
+- Context layers carried over identical (shared database unreachable; user chose carry-over).
+- `aoi` and `named_streams` now from local fwapg: same attributes for the boundary (area equal to
+  3e-6 m²); named streams differ in 7 names and some keys/orders (FWA vintage of the local build).
+- 8 segments have NA `upstream_area_ha`: their `linear_feature_id` has no row in local fwapg's
+  `fwa_streams_watersheds_lut` (edge types 1250/1450, three on the Parsnip River main stem).
+  bcfishpass's `load_streams.sql` uses the same left join and had values, so its lookup had rows
+  these lack. Province-wide 160,877 of 4,699,005 segments lack a row. Filed fwapg#33; shipped as NA.
+- README figure re-rendered at the same 980 x 976 px.
