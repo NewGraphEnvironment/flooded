@@ -112,3 +112,20 @@ The 2.45x and ~2.4 overlap claims were already stale before #87: both data sets 
   bcfishpass's `load_streams.sql` uses the same left join and had values, so its lookup had rows
   these lack. Province-wide 160,877 of 4,699,005 segments lack a row. Filed fwapg#33; shipped as NA.
 - README figure re-rendered at the same 980 x 976 px.
+
+## Phase 4/5 measurements (2026-10-18)
+
+- Suite on the new bundled streams (stac-dem test excluded while its cache rebuilt): 575 passed,
+  1 failed, `test-fl_valley_join.R:384`, the expected `cols = NULL` pick-up of the logical
+  `spawning`/`rearing`. Every pinned number held, including `92L`, the island and no-stream
+  fixtures, and the `cost_threshold = 300` fallback tests.
+- CLAUDE.md test-data facts hold on the new data: 48 ties (old 48), 49 of 50 flags, 5-group
+  `gnis_name`/`blue_line_key` bijection; the 69-patch count comes from `vc_both_paths()`, which
+  passes no precipitation, so its inputs are unchanged.
+- Channel width in the bundled streams was always fwapg's `fwa_stream_networks_channel_width`
+  (bcfishpass's `load_streams.sql` joins the same table), so the notes now name fwapg as the source
+  and keep Thorley et al. 2021 as the model. Order 1 NA holds: 19,184 of 19,740 PARS order-1
+  segments have no width in fwapg; 61,863 of 64,653 in link.
+- Stale before #87 and corrected: overlap ratio "~2.4" / "2.45x" (2.21 / 2.28 on both data sets);
+  "1,643 cells (3.0%)" (3.0% was of the pre-0.5.0 53,635; it is 5.4% of 30,480 now); vignette
+  "~8 km" of mainstem (5.31 km).

@@ -83,8 +83,8 @@ column names and types (`id_segment`, TRUE/FALSE `spawning`/`rearing`).
 ## Phase 4: Tests
 - [ ] Full suite; for each failure take the file:line, re-measure the pinned value on the new
       data, never loosen a tolerance. Includes the stac-dem cell counts
-- [ ] `test-fl_valley_join.R:384`: account for the logical `spawning`/`rearing` columns
-- [ ] Confirm the geometry fixtures still hold (no-stream block `311:323, 229:241`, island
+- [x] `test-fl_valley_join.R:384`: account for the logical `spawning`/`rearing` columns
+- [x] Confirm the geometry fixtures still hold (no-stream block `311:323, 229:241`, island
       `340:370, 570:600`) — geometry did not change, so expected to
 
 ## Phase 5: Numbers and prose that move
@@ -94,12 +94,12 @@ history, NEWS) stays, with one line saying it was measured on the bcfishpass-sou
 before this change.
 - [ ] README: example output table and the 287 ha total; the "5 km reach" claim (measured 5.31 km
       of Bulkley); the figure caption, which links link's *bcfishpass*-config article (G1)
-- [ ] `valley-confinement.Rmd`: "~8 km" (22), "coho potential habitat" (26), source sentence (27)
+- [x] `valley-confinement.Rmd`: "~8 km" (22), "coho potential habitat" (26), source sentence (27)
       and numbers at 96-98, 188, 331, 447; 499 is a dated timing record
 - [ ] `pars-floodplain.Rmd`: source sentence (214-215) and the history at 77-84 (past tense, add
       the #87 regeneration); 74 and 227 stay dated records
-- [ ] `inst/notes/methodology.md` present-tense tile numbers (137-138, 152, 167) (G3)
-- [ ] Roxygen numbers: `fl_flood_surface.R:40-45`, `fl_valley_attribute.R:76-87`,
+- [x] `inst/notes/methodology.md` present-tense tile numbers (137-138, 152, 167) (G3)
+- [x] Roxygen numbers: `fl_flood_surface.R:40-45`, `fl_valley_attribute.R:76-87`,
       `fl_valley_confine.R:89-91`, `fl_dem_aoi.R:90-91`; `devtools::document()`
 - [ ] CLAUDE.md test-data traps: the bijection, "49 of 50", "48 ties", "69 patches",
       "300 works" — re-measure each
@@ -110,7 +110,7 @@ before this change.
       ODbL data row and its sentence under "Data flooded produces"
 - [ ] README "Data and methods": rewrite the bundled-data line, drop the #87 pointer; bcfishpass
       stays credited for adapted code (`LICENSE.note`, DESCRIPTION, README:134 unchanged)
-- [ ] Lines that name bcfishpass as the *data source* of channel width: `methodology.md` (13, 22,
+- [x] Lines that name bcfishpass as the *data source* of channel width: `methodology.md` (13, 22,
       40-45), `R/fl_flood_surface.R:45`, `floodplain_interpretation.md` (252, 258, 265); the model
       comparison (Thorley vs Hall) stays
 - [ ] NEWS-worthy breaking data change (column rename, logical flags, new columns) stated in the

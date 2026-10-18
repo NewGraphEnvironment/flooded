@@ -142,7 +142,7 @@ test_that("group counts and overlap are anchored, not merely non-zero", {
                       function(i) sum(cells_of(out[i, ], f$valleys)), integer(1))
   expect_true(all(per_group > 0))
 
-  # Measured 2.45x on this tile; assert a band so the test fails if overlap
+  # Measured 2.28x on this tile; assert a band so the test fails if overlap
   # collapses to a partition or explodes.
   ratio <- sum(per_group) / sum(valley_cells(f$valleys))
   expect_gt(ratio, 1.5)

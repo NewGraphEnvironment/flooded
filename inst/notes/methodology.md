@@ -10,7 +10,7 @@ Parameter metadata + citations are also surfaced programmatically via `fl_params
 
 | Source | Used for | Formula | Input units |
 |---|---|---|---|
-| **bcfishpass** `channel_width` (Thorley et al. 2021) | `channel_buffer` polygon (DEM correction only) | `exp(0.307) * (area * precip / 100000) ^ 0.458` | area **ha**, precip **mm** |
+| **fwapg** `channel_width` (Thorley et al. 2021) | `channel_buffer` polygon (DEM correction only) | `exp(0.307) * (area * precip / 100000) ^ 0.458` | area **ha**, precip **mm** |
 | **VCA / Hall 2007 bankfull regression** | Flood depth modelling in `fl_flood_surface()` | `(area ^ 0.280) * 0.196 * (precip ^ 0.355)` | area **km2**, precip **cm/yr** |
 
 **The two formulas do not take the same units, and that mattered.** Until 0.5.0 `fl_flood_surface()`
@@ -19,30 +19,31 @@ bankfull depth by **3.5926x** in every result this package produced (flooded#49)
 now converts internally — callers still pass `upstream_area_ha` and `map_upstream` in mm.
 
 A consequence worth stating: the Hall regression predicts a **fitted index**, not a surveyed
-channel. Its widths run well below bcfishpass's — 5.7 m against 31.3 m for the Bulkley — and its
+channel. Its widths run well below fwapg's — 5.7 m against 31.3 m for the Bulkley — and its
 R2 is 0.47. `flood_factor` is what scales that index onto a mapped footprint, which is why the two
 rows above are not comparable as width estimates even after the units agree.
 
 ### Why the two formulas differ
 
-- **bcfishpass (Poisson)** uses a single exponent on a discharge proxy (`area × precip`)
+- **fwapg / Thorley (Poisson)** uses a single exponent on a discharge proxy (`area × precip`)
 - **VCA (Hall 2007)** uses independent exponents for area (`0.280`) and precip (`0.355`)
 
 ### What each is for
 
-- **bcfishpass width** → a channel polygon for DEM gap-fill at coarse resolutions. The buffer is a coarse-DEM correction, not an ecological feature.
+- **fwapg width** → a channel polygon for DEM gap-fill at coarse resolutions. The buffer is a coarse-DEM correction, not an ecological feature.
 - **VCA regression** → flood depth, a physical-process input to the cost-distance surface
 
 They are not substitutes. Different physical quantities, both needed.
 
 ### Order 1 handling
 
-Order 1 streams have `NA` `channel_width` in bcfishpass. `flooded` handles this by:
+Most order 1 streams have `NA` `channel_width` in fwapg's channel-width table, and so in the link
+tables flooded's bundled streams come from. `flooded` handles this by:
 
-- Skipping the bcfishpass-derived buffer for these streams
+- Skipping the buffer for these streams
 - Still including them in the flood model via stream rasterization
 
-`channel_buffer = FALSE` disables only the bcfishpass-derived buffer; the VCA flood model still runs.
+`channel_buffer = FALSE` disables only the `channel_width` buffer; the VCA flood model still runs.
 
 ### See also
 
@@ -134,7 +135,8 @@ UNION of per-group runs:   54,123   |  510 cells in a group run but NOT in the f
 ```
 
 > **Cell counts above predate the 0.5.0 units fix** (flooded#49) and were measured with bankfull
-> depth 3.5926x too large. Corrected, the same full-network run returns **28,727 cells (287.3 ha)**.
+> depth 3.5926x too large. Corrected, the same full-network run returns **28,727 cells (287.3 ha)**,
+> and 28,726 on the link-sourced streams (#87), whose precipitation differs on 28 of 50 segments.
 > The per-group union has not been re-measured, so it is left as recorded rather than restated. The
 > argument is unaffected either way: it turns on per-group runs disagreeing with the whole-network
 > run in both directions, which a uniform change in flood depth does not remove.
@@ -145,7 +147,8 @@ streams happened to be in the run.
 
 ### Overlap is real and large
 
-Per-group areas sum to 2.1-2.45x the whole on this tile. Near a confluence, ground genuinely belongs
+Per-group areas sum to about 2.2-2.3x the whole on this tile (2.28 at the defaults, 2.21 with the
+bundled waterbodies). Near a confluence, ground genuinely belongs
 to both floodplains, so the output is overlapping rows rather than a partition. A representation
 that assigns each cell to exactly one watercourse discards a lot of real ground, and discards it
 worst exactly where sampling designs care most.
@@ -164,7 +167,7 @@ The flood mask stays global — recomputing it per group is what makes per-group
 
 `fl_valley_confine()` ORs in cleanup, the channel buffer, and waterbody polygons *after* the mask
 intersection, and waterbodies get no spatial filter, so those cells can satisfy no group's criteria
-— 1,643 cells (3.0%) with the bundled waterbodies. `complete = TRUE` assigns them to the nearest
+— 1,643 cells (5.4% of the 30,480-cell delineation) with the bundled waterbodies. `complete = TRUE` assigns them to the nearest
 group; `attr(x, "fl_fallback_cells")` reports how many. An unusually large count is also the signal
 that `max_width` / `cost_threshold` do not match the values the delineation was built with.
 

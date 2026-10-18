@@ -381,7 +381,10 @@ test_that("on the bundled tile the join partitions the valley and nests nearest 
   expect_equal(unname(out$check[c("missing", "extra")]), c(0L, 0L))
   expect_equal(out$nearest$cell, vc)
   expect_equal(out$any$cell, vc)
-  expect_named(out$nearest, c("cell", "blue_line_key", "dist", "seg", "big", "wide"))
+  # cols = NULL takes every logical column: the shipped spawning and rearing
+  # flags (logical since #87) as well as the two built here.
+  expect_named(out$nearest, c("cell", "blue_line_key", "dist", "seg",
+                              "spawning", "rearing", "big", "wide"))
   expect_length(out$no_segments, 0)
   for (col in c("big", "wide")) {
     expect_gt(sum(out$nearest[[col]]), 0)
