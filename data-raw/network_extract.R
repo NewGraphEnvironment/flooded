@@ -80,15 +80,17 @@ if (!identical(run$run_id, run_id)) {
        ". Update `run_id` if rebuilding from the newer run is intended.", call. = FALSE)
 }
 rc <- DBI::dbGetQuery(conn, sprintf(
-  "SELECT recompute_id, date_end, link_version, link_sha
+  "SELECT recompute_id, date_start, date_end, link_version, link_sha
      FROM fresh_default.log_recompute
     WHERE watershed_group_code = %s
     ORDER BY date_start DESC LIMIT 1", DBI::dbQuoteLiteral(conn, wsg)))
-if (!identical(rc$recompute_id, recompute_id) || anyNA(rc$date_end)) {
+if (!identical(rc$recompute_id, recompute_id) || anyNA(rc$date_end) ||
+    !isTRUE(rc$date_start > run$date_end)) {
   stop("fresh_default's latest ", wsg, " recompute is ",
        if (nrow(rc)) paste0(rc$recompute_id, if (anyNA(rc$date_end)) " (unfinished)") else "none",
-       ", not ", recompute_id, ". Access and mapping codes come from it: update ",
-       "`recompute_id` if rebuilding from it is intended.", call. = FALSE)
+       ", expected ", recompute_id, " started after run ", run$run_id, " ended. Access ",
+       "and mapping codes come from it: update `recompute_id` if rebuilding from it ",
+       "is intended.", call. = FALSE)
 }
 # Upstream area and precipitation are read live from fwapg tables that no link
 # run pins and that carry no load stamp: record the state read.

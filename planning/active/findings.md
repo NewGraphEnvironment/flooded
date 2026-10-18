@@ -202,3 +202,32 @@ pinned run ids live in the scripts and in NOTICE; both scripts now point at NOTI
 - Full-run worktree harness, previous gpkg with an extra layer: stopped with "would lose layer(s)
   extra_layer", previous gpkg byte-identical, no `.partial` left. Its message named the tempfile,
   which R deletes on exit; the rejected gpkg is now kept as `<gpkg>.new` beside the target.
+
+## Code-check round 4 (`review-round4.md`): terminal enumeration
+
+Round 4 re-derived the write and provenance set from the code (grep of every write/delete in the
+five data-raw scripts, every field of both meta files, every run id in NOTICE): it matches round
+3's plus the two writes the fixes added (`.partial` copy/rename, rejected copy). Every row holds
+against the code and the database except four, all fixed:
+
+1. (inside round 2's fix) a layer the previous run carried with an NA origin was credited to the
+   current commit. A/B in a throwaway worktree commit changing gpkg and meta together: code at
+   99a1817 → all four `397849e` (the harness commit); fix → all four NA. Control: a layer the
+   previous run fetched → that commit (`5c519b8`), carried layers keep `2ef5c89`. (A first attempt
+   changed only the meta, which the one-sided check turns to NA regardless; it tested nothing and
+   was redone.)
+2. The recompute guard did not require the recompute to follow the modelling run: now
+   `date_start > run date_end`. Mutation (run end moved into the future) stops; the real BULK
+   extract passes with identical content.
+3. The meta comment credited habitat flags to the recompute; link's `wsg_recompute_one.R`
+   rewrites only `streams_access` and `streams_mapping_code`. Comment corrected (NOTICE was right).
+4. The rejected gpkg was kept in `inst/` (would ship, unignored) with an unchecked copy, and a
+   failed rename left `.partial`. Rejected copy now goes to the tempdir's parent with a checked
+   return; a failed copy or rename removes `.partial` and stops.
+
+The committed Parsnip outputs (99a1817) are unchanged by these fixes: the state they handle does
+not occur in this rebuild (all four layers carried with origin `2ef5c89`).
+
+**Loop ended by enumeration**: write set 15 (13 + 2 added), provenance fields as tabled in
+`review-round4.md`; every row verified or fixed with a harness. Agents this task: inventory
+(Explore), plan review, code-check rounds 1–4 = 6, one over the ~5 bound.

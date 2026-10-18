@@ -99,8 +99,9 @@ prev_value <- function(x, nm) {
 
 # Previous context layers, in case the shared database cannot be reached
 # (section 4), and where each was last fetched from the database: inherited
-# from the previous meta when that run carried it too, else the commit of the
-# previous gpkg, when the working gpkg and meta are both that commit's.
+# from the previous meta when that run carried it too (NA stays NA), else the
+# commit of the previous gpkg, when the working gpkg and meta are both that
+# commit's.
 carried <- list()
 carried_from <- character()
 prev_layers <- character()
@@ -119,9 +120,11 @@ if (file.exists(gpkg_final)) {
   pm <- if (!is.na(commit) && file.exists(meta_path)) readRDS(meta_path) else list()
   for (nm in intersect(context_names, sf::st_layers(gpkg_final)$name)) {
     carried[[nm]] <- sf::st_read(gpkg_final, layer = nm, quiet = TRUE)
-    inherited <- prev_value(pm$context_carried_from, nm)
-    carried_from[[nm]] <- if (identical(prev_value(pm$context_source, nm), "carried") &&
-                              !is.na(inherited)) inherited else commit
+    carried_from[[nm]] <- if (identical(prev_value(pm$context_source, nm), "carried")) {
+      prev_value(pm$context_carried_from, nm)
+    } else {
+      commit
+    }
   }
 }
 
@@ -157,15 +160,17 @@ if (!identical(run$run_id, run_id)) {
        ". Update `run_id` if rebuilding from the newer run is intended.", call. = FALSE)
 }
 rc <- DBI::dbGetQuery(conn, sprintf(
-  "SELECT recompute_id, date_end, link_version, link_sha
+  "SELECT recompute_id, date_start, date_end, link_version, link_sha
      FROM fresh_default.log_recompute
     WHERE watershed_group_code = '%s'
     ORDER BY date_start DESC LIMIT 1", wsg))
-if (!identical(rc$recompute_id, recompute_id) || anyNA(rc$date_end)) {
+if (!identical(rc$recompute_id, recompute_id) || anyNA(rc$date_end) ||
+    !isTRUE(rc$date_start > run$date_end)) {
   stop("fresh_default's latest ", wsg, " recompute is ",
        if (nrow(rc)) paste0(rc$recompute_id, if (anyNA(rc$date_end)) " (unfinished)") else "none",
-       ", not ", recompute_id, ". Access and mapping codes come from it: update ",
-       "`recompute_id` if rebuilding from it is intended.", call. = FALSE)
+       ", expected ", recompute_id, " started after run ", run$run_id, " ended. Access ",
+       "and mapping codes come from it: update `recompute_id` if rebuilding from it ",
+       "is intended.", call. = FALSE)
 }
 # Upstream area and precipitation are read live from fwapg tables that no link
 # run pins and that carry no load stamp: record the state read.
@@ -367,7 +372,8 @@ meta <- list(link_run_id     = run$run_id,
        link_sha        = run$link_sha,
        link_dirty      = run$link_dirty,
        link_run_date   = format(run$date_end, "%Y-%m-%d"),
-       # access, habitat flags and mapping codes were rewritten by this recompute
+       # access and mapping codes were rewritten by this recompute; spawning and
+       # rearing are the modelling run's (link_sha)
        link_recompute_id  = rc$recompute_id,
        link_recompute_sha = rc$link_sha,
        link_recompute_date = format(rc$date_end, "%Y-%m-%d"),
@@ -432,14 +438,20 @@ write_layer(floodplain, "floodplain")
 # volume) and rename into place, so the target is never left half-written.
 lost <- setdiff(prev_layers, sf::st_layers(gpkg)$name)
 if (length(lost) > 0L) {
-  # The tempfile goes when R exits, so keep the new file beside the old one.
-  kept <- paste0(gpkg_final, ".new")
-  file.copy(gpkg, kept, overwrite = TRUE)
+  # The tempfile goes when R exits; keep the new file outside the package
+  # (the parent of the session tempdir outlives it) so nothing stray ships.
+  kept <- file.path(dirname(tempdir()), paste0(stub, "_rejected.gpkg"))
+  saved <- file.copy(gpkg, kept, overwrite = TRUE)
   stop("The new ", gpkg_final, " would lose layer(s) ", paste(lost, collapse = ", "),
-       "; the previous file is unchanged and the new one is at ", kept, call. = FALSE)
+       "; the previous file is unchanged",
+       if (saved) paste0(" and the new one is at ", kept) else " and the new one could not be kept",
+       call. = FALSE)
 }
 partial <- paste0(gpkg_final, ".partial")
-stopifnot(file.copy(gpkg, partial, overwrite = TRUE), file.rename(partial, gpkg_final))
+if (!file.copy(gpkg, partial, overwrite = TRUE) || !file.rename(partial, gpkg_final)) {
+  unlink(partial)
+  stop("Could not move the new gpkg into place; ", gpkg_final, " is unchanged.", call. = FALSE)
+}
 unlink(gpkg)
 gpkg <- gpkg_final
 saveRDS(meta, meta_path)
