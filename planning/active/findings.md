@@ -142,3 +142,12 @@ The 2.45x and ~2.4 overlap claims were already stale before #87: both data sets 
    `context_source` per layer; no previous gpkg → stops.
 2. README "upstream area … on every stream segment" was false (fwapg#33); reworded.
 3. CLAUDE.md reference-docs line still said "bcfishpass vs VCA"; now fwapg/Thorley.
+
+## Phase 3: stac-dem cache (2026-10-18)
+
+`data-raw/stac_dem_vignette_data.R` (frozen copy, `STAC_DEM_TILE_DIR` in the scratchpad) on the new
+bundled streams: `n_10m` 28,727 → 28,726, `n_site_10m` 20,586 (same), `n_5m` 186,675 → 186,607,
+`n_1m` 3,096,003 → 3,094,921, `n_10m_no_lidar` 32, NA fractions and pop-up shares (0.774 / 0.236)
+unchanged. `test-vignette_data.R` 8/8 on the new cache. The script stamps `git_sha` at the end of
+the run (407ee26) rather than when it loaded R/; the R code loaded at its start (80cf2d1) differs
+from 407ee26 in roxygen comments only.

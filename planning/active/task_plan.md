@@ -77,7 +77,7 @@ column names and types (`id_segment`, TRUE/FALSE `spawning`/`rearing`).
       `data-raw/readme_figure.R` for `man/figures/readme-pars.png` and check it at published width
 
 ## Phase 3: stac-dem cache
-- [ ] Re-run `data-raw/stac_dem_vignette_data.R` (it reads the new bundled streams); confirm
+- [x] Re-run `data-raw/stac_dem_vignette_data.R` (it reads the new bundled streams); confirm
       `test-vignette_data.R` passes against the rebuilt cache
 
 ## Phase 4: Tests
