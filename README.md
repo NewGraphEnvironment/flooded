@@ -135,8 +135,8 @@ Land cover change: fresh (network) &rarr; flooded (floodplains) &rarr; drift (la
   Parameters and flood levels: [methodology](https://github.com/NewGraphEnvironment/flooded/blob/main/inst/notes/methodology.md).
   What the output can be used to claim: [floodplain interpretation](https://github.com/NewGraphEnvironment/flooded/blob/main/inst/notes/floodplain_interpretation.md).
 - [fwapg](https://smnorris.github.io/fwapg/) (Simon Norris): the BC Freshwater Atlas in
-  PostgreSQL, with upstream area and [ClimateBC](https://climatebc.ca/) mean annual precipitation
-  on every stream segment.
+  PostgreSQL, with upstream area, [ClimateBC](https://climatebc.ca/) mean annual precipitation
+  and channel width on its stream segments.
 - NRCan's [MRDEM-30](https://open.canada.ca/data/en/dataset/18752265-bda3-498c-a4ba-9dfe68cb98da)
   elevation model.
 - Bundled data: BC's 25 m TRIM DEM, the Freshwater Atlas, stream access and habitat modelled by

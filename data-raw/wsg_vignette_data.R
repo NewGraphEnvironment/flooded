@@ -241,18 +241,11 @@ write_layer(waterbodies, "waterbodies")
 # Spatial intersect with the WSG boundary. Each query becomes a layer in
 # the multi-layer gpkg. Geometry-only attributes plus a name field where
 # the source carries one. These tables are not in fwapg: read them from the
-# shared database (PG_*_SHARE), or carry the previous layers over when it
-# cannot be reached.
+# shared database (PG_*_SHARE). A layer whose query fails (no connection, or a
+# database without the table) is carried over from the previous gpkg, and
+# `context_source` in <wsg>_meta.rds records, per layer, which it was.
 
-e <- Sys.getenv
-conn_ctx <- try(fresh::frs_db_conn(
-  dbname = e("PG_DB_SHARE"), host = e("PG_HOST_SHARE"),
-  port = e("PG_PORT_SHARE"), user = e("PG_USER_SHARE"),
-  password = e("PG_PASS_SHARE")
-), silent = TRUE)
-context_source <- if (inherits(conn_ctx, "try-error")) "carried" else "database"
-
-fetch_layer <- function(query_sql, layer_name, label, db = conn_ctx) {
+fetch_layer <- function(query_sql, layer_name, label, db) {
   layer <- try(sf::st_read(db, query = query_sql, quiet = TRUE),
                silent = TRUE)
   if (inherits(layer, "try-error") || nrow(layer) == 0L) {
@@ -269,44 +262,59 @@ intersect_clause <- function(geom_col = "geom") {
   sprintf("ST_Intersects(%s, ST_GeomFromText('%s', 3005))", geom_col, aoi_wkt)
 }
 
-if (context_source == "carried") {
-  missing <- setdiff(context_names, names(carried))
-  if (length(missing) > 0L) {
-    stop("The shared database cannot be reached and the previous ", gpkg,
-         " has no ", paste(missing, collapse = ", "), " layer to carry over: ",
-         conditionMessage(attr(conn_ctx, "condition")), call. = FALSE)
-  }
-  message("Shared database unreachable; carrying railways, roads, reserves and ",
-          "parks over unchanged from the previous ", gpkg)
-  for (nm in context_names) write_layer(carried[[nm]], nm)
-} else {
-message("Fetching context layers (railways, roads, reserves, parks) ...")
-
-fetch_layer(
-  sprintf("SELECT track_name, geom FROM whse_basemapping.gba_railway_tracks_sp
-           WHERE %s", intersect_clause()),
-  "railways", "railways")
-
-fetch_layer(
-  sprintf("SELECT transport_line_id, structured_name_1, transport_line_type_code,
+context_sql <- c(
+  railways = "SELECT track_name, geom FROM whse_basemapping.gba_railway_tracks_sp
+              WHERE %s",
+  roads = "SELECT transport_line_id, structured_name_1, transport_line_type_code,
                   highway_route_1, geom
            FROM whse_basemapping.transport_line
-           WHERE %s", intersect_clause()),
-  "roads", "roads")
-
-fetch_layer(
-  sprintf("SELECT english_name, band_name, geom
-           FROM whse_admin_boundaries.adm_indian_reserves_bands_sp
-           WHERE %s", intersect_clause()),
-  "reserves", "First Nations reserves")
-
-fetch_layer(
-  sprintf("SELECT protected_lands_name, protected_lands_designation, geom
+           WHERE %s",
+  reserves = "SELECT english_name, band_name, geom
+              FROM whse_admin_boundaries.adm_indian_reserves_bands_sp
+              WHERE %s",
+  parks = "SELECT protected_lands_name, protected_lands_designation, geom
            FROM whse_tantalis.ta_park_ecores_pa_svw
-           WHERE %s", intersect_clause()),
-  "parks", "parks / protected")
-DBI::dbDisconnect(conn_ctx)
+           WHERE %s"
+)
+
+# With every PG_*_SHARE variable empty, frs_db_conn() would fall through to
+# the standard PG* database (fwapg), which has none of these tables.
+e <- Sys.getenv
+share <- c(dbname = e("PG_DB_SHARE"), host = e("PG_HOST_SHARE"),
+           port = e("PG_PORT_SHARE"), user = e("PG_USER_SHARE"))
+conn_ctx <- if (any(nzchar(share))) {
+  try(do.call(fresh::frs_db_conn, c(as.list(share), password = e("PG_PASS_SHARE"))),
+      silent = TRUE)
+} else {
+  structure("PG_*_SHARE variables are not set", class = "try-error")
 }
+
+message("Fetching context layers (railways, roads, reserves, parks) ...")
+context_source <- character()
+for (nm in context_names) {
+  # A query error (not an empty result) is what sends a layer to the fallback.
+  layer <- if (inherits(conn_ctx, "try-error")) conn_ctx else
+    try(sf::st_read(conn_ctx, query = sprintf(context_sql[[nm]], intersect_clause()),
+                    quiet = TRUE), silent = TRUE)
+  if (!inherits(layer, "try-error")) {
+    context_source[[nm]] <- "database"
+    if (nrow(layer) == 0L) {
+      message(sprintf("  %s: 0 features (skipping)", nm))
+      next
+    }
+    write_layer(sf::st_zm(layer), nm)
+    message(sprintf("  %s: %d features", nm, nrow(layer)))
+  } else if (!is.null(carried[[nm]])) {
+    context_source[[nm]] <- "carried"
+    write_layer(carried[[nm]], nm)
+    message(sprintf("  %s: %d features carried over from the previous %s (%s)",
+                    nm, nrow(carried[[nm]]), gpkg, trimws(as.character(layer))))
+  } else {
+    stop("Could not fetch ", nm, " and the previous ", gpkg, " has no such layer ",
+         "to carry over: ", trimws(as.character(layer)), call. = FALSE)
+  }
+}
+if (!inherits(conn_ctx, "try-error")) DBI::dbDisconnect(conn_ctx)
 
 # Named streams come pre-filtered by watershed_group_code — no spatial join.
 fetch_layer(
@@ -332,10 +340,11 @@ saveRDS(
        crate_version   = run$crate_version,
        fwapg_sha       = run$fwapg_sha,
        species         = toupper(species),
-       # "database": fetched from the shared database (PG_*_SHARE) in this run;
-       # "carried": copied from the pars.gpkg of the commit in context_carried_from
+       # per context layer, "database": fetched from the shared database
+       # (PG_*_SHARE) in this run; "carried": copied from the <wsg>.gpkg of the
+       # commit in context_carried_from
        context_source  = context_source,
-       context_carried_from = if (context_source == "carried") carried_from else NA_character_),
+       context_carried_from = if (any(context_source == "carried")) carried_from else NA_character_),
   file.path(out_dir, paste0(stub, "_meta.rds"))
 )
 

@@ -216,7 +216,7 @@ tests/testthat/          — unit tests for each fl_* function
 
 ## Reference docs
 
-- [`inst/notes/methodology.md`](inst/notes/methodology.md) — channel-width models (bcfishpass vs VCA), flood-factor scenarios (ff02/ff04/ff06), citations, DEM-resolution compensation
+- [`inst/notes/methodology.md`](inst/notes/methodology.md) — channel-width models (fwapg/Thorley vs VCA), flood-factor scenarios (ff02/ff04/ff06), citations, DEM-resolution compensation
 - [`inst/notes/floodplain_interpretation.md`](inst/notes/floodplain_interpretation.md) — what the model actually maps, what flood factor means, what we can and cannot claim in reports
 - [`inst/research/vca_parameter_rationale.md`](inst/research/vca_parameter_rationale.md) — VCA parameter provenance, verified citations
 

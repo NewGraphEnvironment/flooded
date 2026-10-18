@@ -129,3 +129,16 @@ The 2.45x and ~2.4 overlap claims were already stale before #87: both data sets 
 - Stale before #87 and corrected: overlap ratio "~2.4" / "2.45x" (2.21 / 2.28 on both data sets);
   "1,643 cells (3.0%)" (3.0% was of the pre-0.5.0 53,635; it is 5.4% of 30,480 now); vignette
   "~8 km" of mainstem (5.31 km).
+
+## Code-check round 1 (`review-round1.md`)
+
+1. Context fallback fired only on a connection error. With `PG_*_SHARE` empty, `frs_db_conn()`
+   falls through to the standard `PG*` database (fwapg), the four queries fail inside `try()`,
+   and the old code dropped all four layers while recording `"database"`. Reproduced with a
+   harness (script copies writing to scratch, stopping after section 4): old version, empty
+   variables and variables pointed at fwapg → layers `aoi streams waterbodies named_streams`
+   only. Fixed: per-layer source, a query error falls back to the carried layer, no carried layer
+   stops; empty variables skip the connection. New version: all four carried in both scenarios,
+   `context_source` per layer; no previous gpkg → stops.
+2. README "upstream area … on every stream segment" was false (fwapg#33); reworded.
+3. CLAUDE.md reference-docs line still said "bcfishpass vs VCA"; now fwapg/Thorley.
