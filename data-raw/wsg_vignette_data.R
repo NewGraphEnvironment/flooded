@@ -78,26 +78,44 @@ dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 stub <- tolower(wsg)
 out <- function(name) file.path(out_dir, paste0(stub, "_", name))   # rasters
 
-# Single multi-layer GeoPackage for all sf layers. Wipe at the start of
-# each run so we never carry stale layers across re-runs.
-gpkg <- file.path(out_dir, paste0(stub, ".gpkg"))
+# Single multi-layer GeoPackage for all sf layers. It is built from scratch
+# in a temporary file and moved into place only after the last layer is
+# written (section 6), so a run that stops part-way leaves the previous
+# <wsg>.gpkg, and the context layers it holds, untouched.
+gpkg_final <- file.path(out_dir, paste0(stub, ".gpkg"))
+meta_path <- file.path(out_dir, paste0(stub, "_meta.rds"))
+gpkg <- tempfile(paste0(stub, "_"), fileext = ".gpkg")
 context_names <- c("railways", "roads", "reserves", "parks")
 
-# Hold the previous context layers in memory before the wipe, in case the
-# shared database cannot be reached (section 4).
+# Value for one layer from a previous meta field: named per layer, or a single
+# value that applied to every layer (the format before per-layer records).
+prev_value <- function(x, nm) {
+  if (is.null(x) || length(x) == 0L) return(NA_character_)
+  if (!is.null(names(x))) return(if (nm %in% names(x)) unname(x[[nm]]) else NA_character_)
+  if (length(x) == 1L) unname(x) else NA_character_
+}
+
+# Previous context layers, in case the shared database cannot be reached
+# (section 4), and where each was last fetched from the database: inherited
+# from the previous meta when that run carried it too, else the commit of the
+# previous gpkg, when the working copy of it is that commit's.
 carried <- list()
-carried_from <- NA_character_
-if (file.exists(gpkg)) {
-  carried_from <- suppressWarnings(system2(
-    "git", c("log", "-1", shQuote("--format=%h %cs"), "--", gpkg), stdout = TRUE
-  ))
-  if (length(carried_from) != 1L || !is.null(attr(carried_from, "status"))) {
-    carried_from <- NA_character_
+carried_from <- character()
+if (file.exists(gpkg_final)) {
+  git1 <- function(args) {
+    x <- suppressWarnings(system2("git", args, stdout = TRUE))
+    if (!is.null(attr(x, "status"))) NA_character_ else x
   }
-  for (nm in intersect(context_names, sf::st_layers(gpkg)$name)) {
-    carried[[nm]] <- sf::st_read(gpkg, layer = nm, quiet = TRUE)
+  clean <- identical(git1(c("status", "--porcelain", "--", gpkg_final)), character(0))
+  commit <- if (clean) git1(c("log", "-1", shQuote("--format=%h %cs"), "--", gpkg_final)) else NA
+  if (length(commit) != 1L) commit <- NA_character_
+  pm <- if (file.exists(meta_path)) readRDS(meta_path) else list()
+  for (nm in intersect(context_names, sf::st_layers(gpkg_final)$name)) {
+    carried[[nm]] <- sf::st_read(gpkg_final, layer = nm, quiet = TRUE)
+    inherited <- prev_value(pm$context_carried_from, nm)
+    carried_from[[nm]] <- if (identical(prev_value(pm$context_source, nm), "carried") &&
+                              !is.na(inherited)) inherited else commit
   }
-  file.remove(gpkg)
 }
 
 write_layer <- function(x, layer) {
@@ -308,9 +326,9 @@ for (nm in context_names) {
     context_source[[nm]] <- "carried"
     write_layer(carried[[nm]], nm)
     message(sprintf("  %s: %d features carried over from the previous %s (%s)",
-                    nm, nrow(carried[[nm]]), gpkg, trimws(as.character(layer))))
+                    nm, nrow(carried[[nm]]), gpkg_final, trimws(as.character(layer))))
   } else {
-    stop("Could not fetch ", nm, " and the previous ", gpkg, " has no such layer ",
+    stop("Could not fetch ", nm, " and the previous ", gpkg_final, " has no such layer ",
          "to carry over: ", trimws(as.character(layer)), call. = FALSE)
   }
 }
@@ -325,8 +343,7 @@ fetch_layer(
 
 # Cache the link run the streams came from, so the vignette can state the
 # data's source without a DB connection at render time.
-saveRDS(
-  list(link_run_id     = run$run_id,
+meta <- list(link_run_id     = run$run_id,
        link_run_uid    = run$run_uid,
        link_run_label  = run$run_label,
        link_config     = run$config_name,
@@ -341,12 +358,11 @@ saveRDS(
        fwapg_sha       = run$fwapg_sha,
        species         = toupper(species),
        # per context layer, "database": fetched from the shared database
-       # (PG_*_SHARE) in this run; "carried": copied from the <wsg>.gpkg of the
-       # commit in context_carried_from
+       # (PG_*_SHARE) in this run; "carried": copied from the previous <wsg>.gpkg.
+       # context_carried_from: per carried layer, the commit ("<sha> <date>")
+       # whose gpkg last fetched it from the database, NA where unknown
        context_source  = context_source,
-       context_carried_from = if (any(context_source == "carried")) carried_from else NA_character_),
-  file.path(out_dir, paste0(stub, "_meta.rds"))
-)
+       context_carried_from = carried_from[names(context_source)[context_source == "carried"]])
 
 DBI::dbDisconnect(conn)
 
@@ -387,6 +403,13 @@ terra::writeRaster(
 message("Polygonizing valleys ...")
 floodplain <- fl_valley_poly(valleys)
 write_layer(floodplain, "floodplain")
+
+# Every layer is written: replace the previous gpkg, then record the run.
+# file.copy() rather than file.rename(), which fails across volumes.
+stopifnot(file.copy(gpkg, gpkg_final, overwrite = TRUE))
+unlink(gpkg)
+gpkg <- gpkg_final
+saveRDS(meta, meta_path)
 
 # ---- 7. Report cache size -----------------------------------------------
 

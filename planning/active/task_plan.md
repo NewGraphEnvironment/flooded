@@ -81,7 +81,7 @@ column names and types (`id_segment`, TRUE/FALSE `spawning`/`rearing`).
       `test-vignette_data.R` passes against the rebuilt cache
 
 ## Phase 4: Tests
-- [ ] Full suite; for each failure take the file:line, re-measure the pinned value on the new
+- [x] Full suite; for each failure take the file:line, re-measure the pinned value on the new
       data, never loosen a tolerance. Includes the stac-dem cell counts
 - [x] `test-fl_valley_join.R:384`: account for the logical `spawning`/`rearing` columns
 - [x] Confirm the geometry fixtures still hold (no-stream block `311:323, 229:241`, island

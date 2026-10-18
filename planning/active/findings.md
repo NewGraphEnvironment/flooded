@@ -151,3 +151,21 @@ bundled streams: `n_10m` 28,727 → 28,726, `n_site_10m` 20,586 (same), `n_5m` 1
 unchanged. `test-vignette_data.R` 8/8 on the new cache. The script stamps `git_sha` at the end of
 the run (407ee26) rather than when it loaded R/; the R code loaded at its start (80cf2d1) differs
 from 407ee26 in roxygen comments only.
+
+## Code-check round 2 (`review-round2.md`)
+
+Both inside earlier fixes (the guards from the plan review; the origin field from round 1's
+follow-up):
+1. The script deleted the committed `pars.gpkg` before its connection and `run_id` guards, so a
+   guard stop destroyed the only copy of the carried context layers. Reproduced with the harness
+   (`run_id` set wrong): HEAD's version leaves no gpkg. Fixed: the gpkg is built in a tempfile and
+   copied into place after the last layer; the metadata is written after it. Harness: the fix
+   leaves the existing gpkg byte-identical.
+2. `context_carried_from` was one value for a per-layer `context_source`, and its git fallback
+   named a commit even when the working gpkg was uncommitted. Fixed: per layer, inherited when
+   the previous run also carried that layer, else the commit of the previous gpkg only when the
+   working copy is clean, else NA. Harness with a mixed previous meta (railways fetched; roads,
+   reserves, parks carried from two commits and NA): railways NA (scratch is outside git), roads
+   and reserves inherited, parks NA.
+
+Full suite on the new data and caches: 584 passed, 0 failed, 0 skipped (`NOT_CRAN=true`).
