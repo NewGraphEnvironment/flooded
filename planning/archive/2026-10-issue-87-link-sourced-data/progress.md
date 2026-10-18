@@ -24,3 +24,8 @@
   875ae1d: context layers carried per layer, origin `2ef5c89 2026-10-13` each; valleys
   byte-identical. Full suite 584/0/0. Round 3 (mechanism + enumeration) in flight; my own
   enumeration added a NOTICE <-> `run_id` cross-reference comment in both scripts.
+- Validation: full suite 584/0/0 (at 407ee26; later commits touch only data-raw/, NOTICE and the
+  Parsnip cache, which no test reads); `R CMD check` at 541cd59 0 errors / 0 warnings / 2 notes,
+  both pre-existing (`CITATION.cff`, `pkgdown/` at top level); `check_pkgdown()` clean; lintr 145
+  against main's 149, none added. Parsnip vignette re-rendered on the final meta.
+- Code-check: 4 rounds, ended by enumeration (round 4). Rejected-copy harness re-run at 0ee7c55.

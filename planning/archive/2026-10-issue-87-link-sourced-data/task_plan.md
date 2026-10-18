@@ -113,15 +113,15 @@ before this change.
 - [x] Lines that name bcfishpass as the *data source* of channel width: `methodology.md` (13, 22,
       40-45), `R/fl_flood_surface.R:45`, `floodplain_interpretation.md` (252, 258, 265); the model
       comparison (Thorley vs Hall) stays
-- [ ] NEWS-worthy breaking data change (column rename, logical flags, new columns) stated in the
+- [x] NEWS-worthy breaking data change (column rename, logical flags, new columns) stated in the
       PR body for `/gh-pr-merge` (G5)
 
 ## Validation
 
-- [ ] Tests pass (`devtools::test()`), `R CMD check` clean, `pkgdown::check_pkgdown()`, lintr
-- [ ] `/code-check` clean (each commit, or once over the branch with `/code-check branch`)
-- [ ] PWF checkboxes match landed work
-- [ ] `/planning-archive` on completion
+- [x] Tests pass (`devtools::test()`), `R CMD check` clean, `pkgdown::check_pkgdown()`, lintr
+- [x] `/code-check` clean (each commit, or once over the branch with `/code-check branch`)
+- [x] PWF checkboxes match landed work
+- [x] `/planning-archive` on completion
 
 ## Out of scope (noted, not done)
 - `dem.tif` itself (`data-raw/testdata.R` crops it from a bcfishpass lateral-habitat working
