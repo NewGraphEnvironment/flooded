@@ -432,8 +432,11 @@ write_layer(floodplain, "floodplain")
 # volume) and rename into place, so the target is never left half-written.
 lost <- setdiff(prev_layers, sf::st_layers(gpkg)$name)
 if (length(lost) > 0L) {
+  # The tempfile goes when R exits, so keep the new file beside the old one.
+  kept <- paste0(gpkg_final, ".new")
+  file.copy(gpkg, kept, overwrite = TRUE)
   stop("The new ", gpkg_final, " would lose layer(s) ", paste(lost, collapse = ", "),
-       "; the previous file is unchanged and the new one is at ", gpkg, call. = FALSE)
+       "; the previous file is unchanged and the new one is at ", kept, call. = FALSE)
 }
 partial <- paste0(gpkg_final, ".partial")
 stopifnot(file.copy(gpkg, partial, overwrite = TRUE), file.rename(partial, gpkg_final))

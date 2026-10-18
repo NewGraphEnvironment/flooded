@@ -199,3 +199,6 @@ findings, all fixed:
 My own pass over the same set (every `st_write`/`writeRaster`/`saveRDS`/delete/copy and every
 provenance field in the five data-raw scripts) found one more instance of one-fact-twice: the
 pinned run ids live in the scripts and in NOTICE; both scripts now point at NOTICE.
+- Full-run worktree harness, previous gpkg with an extra layer: stopped with "would lose layer(s)
+  extra_layer", previous gpkg byte-identical, no `.partial` left. Its message named the tempfile,
+  which R deletes on exit; the rejected gpkg is now kept as `<gpkg>.new` beside the target.
