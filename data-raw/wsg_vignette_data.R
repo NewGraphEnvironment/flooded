@@ -1,7 +1,7 @@
 # Pre-compute heavy data for the WSG floodplain showcase vignette.
 #
-# Generic — runs for any BC watershed group. Set `wsg` and `species_view`
-# below.
+# Generic — runs for any BC watershed group that link has modelled. Set
+# `wsg` and `species` below.
 #
 # Generates (under inst/vignette-data/, namespaced by WSG code):
 #   <wsg>.gpkg              multi-layer GeoPackage with the sf layers:
@@ -10,16 +10,20 @@
 #                             named_streams
 #   <wsg>_dem.tif           MRDEM-30 clip cropped to streams + 2 km buffer
 #   <wsg>_valleys.tif       fl_valley_confine() binary output (1=valley)
+#   <wsg>_meta.rds          the link run the streams came from, and where the
+#                           context layers came from
 #
 # Bundling the sf layers into a single multi-layer gpkg matches how QGIS
 # expects a per-WSG project bundle and keeps the cache to three files per
 # WSG. Rasters stay separate (terra writes COG/GeoTIFF, not into gpkg).
 #
-# Streams come from `bcfishpass.streams_bt_vw` (bull trout accessible
-# network — every row has `access IN (1, 2)` by construction). Filtering
-# to `access IN (1, 2) AND stream_order >= min_order` plus the
-# `watershed_group_code` filter gives "best accessible habitat order 3+"
-# without needing a working-table classification pipeline.
+# Streams come from the tables link builds with its `default` config
+# (schema `fresh_default`): geometry, channel width, access, habitat and
+# mapping code for `species`, from the run recorded in fresh_default.log.
+# Filtering to `access IN (1, 2)` (1 = modelled, 2 = observed) and
+# `stream_order >= min_order` gives "accessible habitat order 3+". Upstream
+# area and mean annual precipitation upstream (ClimateBC) are joined from
+# fwapg's own tables, the joins fresh::frs_col_join() documents.
 #
 # Waterbodies (lakes + wetlands) are picked up via `waterbody_key`
 # linkage from the filtered stream list — only those physically anchored
@@ -27,20 +31,28 @@
 # so the final valley raster fills lake / wetland cells the gradient and
 # cost-distance masks would otherwise carve donut holes around.
 #
-# To swap species: change `species_view` to e.g. `"streams_co_vw"` for
-# coho or `"streams_st_vw"` for steelhead — same column shape (`access`,
-# `spawning`, `rearing`).
+# To swap species: change `species` to any code link models for the WSG
+# (e.g. "co" for coho, "st" for steelhead) — same column shape (`access`,
+# `spawning`, `rearing`, `mapping_code`).
+#
+# Context layers (railways, roads, reserves, parks) are not in fwapg; they
+# come from the shared database behind the PG_*_SHARE variables. When that
+# database cannot be reached, the layers are carried over unchanged from
+# the existing <wsg>.gpkg (they do not depend on the streams), and
+# <wsg>_meta.rds records that they were.
 #
 # Prerequisites:
-#   - SSH tunnel to fwapg PostgreSQL up; PG_*_SHARE env vars set
-#     (defaults of fresh::frs_db_conn())
+#   - the PostgreSQL database link persists to (fwapg with `fresh_default`),
+#     reached by fresh::frs_db_conn() through the standard PG* variables,
+#     with `wsg` modelled into `fresh_default` by link
+#   - for fresh context layers: the shared database (PG_*_SHARE variables)
 #   - Outbound HTTPS to s3.ca-central-1.amazonaws.com for MRDEM /vsicurl/
 #   - Run from package root so devtools::load_all() finds dev fl_dem_aoi()
 
 # ---- params -------------------------------------------------------------
 
 wsg <- "PARS"                       # any 4-letter BC watershed group code
-species_view <- "streams_bt_vw"     # bcfishpass species-accessible view
+species <- "bt"                     # link species code (bull trout)
 min_order <- 3                      # minimum stream order to keep
 
 # ---- env ----------------------------------------------------------------
@@ -65,7 +77,17 @@ out <- function(name) file.path(out_dir, paste0(stub, "_", name))   # rasters
 # Single multi-layer GeoPackage for all sf layers. Wipe at the start of
 # each run so we never carry stale layers across re-runs.
 gpkg <- file.path(out_dir, paste0(stub, ".gpkg"))
-if (file.exists(gpkg)) file.remove(gpkg)
+context_names <- c("railways", "roads", "reserves", "parks")
+
+# Hold the previous context layers in memory before the wipe, in case the
+# shared database cannot be reached (section 4).
+carried <- list()
+if (file.exists(gpkg)) {
+  for (nm in intersect(context_names, sf::st_layers(gpkg)$name)) {
+    carried[[nm]] <- sf::st_read(gpkg, layer = nm, quiet = TRUE)
+  }
+  file.remove(gpkg)
+}
 
 write_layer <- function(x, layer) {
   sf::st_write(x, gpkg, layer = layer, delete_layer = TRUE,
@@ -74,9 +96,22 @@ write_layer <- function(x, layer) {
 
 # ---- 1. WSG boundary ----------------------------------------------------
 
-message("Fetching ", wsg, " watershed group boundary ...")
 conn <- fresh::frs_db_conn()
-on.exit(try(DBI::dbDisconnect(conn), silent = TRUE), add = TRUE)
+
+run <- DBI::dbGetQuery(conn, sprintf(
+  "SELECT run_id, date_end, config_name, link_version, link_sha, fresh_version, fwapg_sha
+     FROM fresh_default.log
+    WHERE watershed_group_code = '%s'
+    ORDER BY date_end DESC LIMIT 1", wsg))
+if (nrow(run) == 0L) {
+  DBI::dbDisconnect(conn)
+  stop(wsg, " is not modelled in `fresh_default`; run link's default config for it first.",
+       call. = FALSE)
+}
+message("Reading link run ", run$run_id, " (", run$config_name, " config, link ",
+        run$link_version, ", ", format(run$date_end, "%Y-%m-%d"), ")")
+
+message("Fetching ", wsg, " watershed group boundary ...")
 
 aoi <- sf::st_read(
   conn,
@@ -93,25 +128,42 @@ message(sprintf("  area: %.0f km²", aoi$area_ha[1] / 100))
 
 # ---- 2. Streams: accessible, order 3+ -----------------------------------
 
-message(sprintf("Fetching %s accessible order %d+ streams from bcfishpass.%s ...",
-                wsg, min_order, species_view))
+message(sprintf("Fetching %s order %d+ streams accessible to %s from fresh_default ...",
+                wsg, min_order, toupper(species)))
 streams <- sf::st_read(
   conn,
   query = sprintf("
-    SELECT segmented_stream_id, linear_feature_id, blue_line_key,
-           waterbody_key, downstream_route_measure, upstream_area_ha,
-           map_upstream, channel_width, gnis_name, stream_order,
-           gradient, mapping_code, access, spawning, rearing,
-           dam_dnstr_ind, watershed_group_code, geom
-    FROM bcfishpass.%s
-    WHERE watershed_group_code = '%s'
-      AND access IN (1, 2)
-      AND stream_order >= %d", species_view, wsg, min_order),
+    SELECT s.id_segment, s.linear_feature_id, s.blue_line_key,
+           s.waterbody_key, s.downstream_route_measure, ua.upstream_area_ha,
+           p.map_upstream, s.channel_width, s.gnis_name, s.stream_order,
+           s.gradient, mc.mapping_code_%1$s AS mapping_code,
+           a.access_%1$s AS access, h.spawning, h.rearing,
+           a.dam_dnstr_ind, s.watershed_group_code, s.geom
+    FROM fresh_default.streams s
+    JOIN fresh_default.streams_access a USING (id_segment, watershed_group_code)
+    JOIN fresh_default.streams_habitat_%1$s h USING (id_segment, watershed_group_code)
+    LEFT JOIN fresh_default.streams_mapping_code mc USING (id_segment, watershed_group_code)
+    LEFT JOIN whse_basemapping.fwa_streams_watersheds_lut l
+      ON l.linear_feature_id = s.linear_feature_id
+    LEFT JOIN whse_basemapping.fwa_watersheds_upstream_area ua
+      ON ua.watershed_feature_id = l.watershed_feature_id
+    LEFT JOIN whse_basemapping.fwa_stream_networks_mean_annual_precip p
+      ON p.wscode_ltree = s.wscode_ltree AND p.localcode_ltree = s.localcode_ltree
+    WHERE s.watershed_group_code = '%2$s'
+      AND a.access_%1$s IN (1, 2)
+      AND s.stream_order >= %3$d
+    ORDER BY s.blue_line_key, s.downstream_route_measure", species, wsg, min_order),
   quiet = TRUE
 )
+stopifnot(!anyDuplicated(streams$id_segment))
 streams <- sf::st_zm(streams)
+# link stores single-part MULTILINESTRINGs; write them as LINESTRING like the
+# bundled test streams.
+if (all(lengths(sf::st_geometry(streams)) == 1L)) {
+  streams <- sf::st_cast(streams, "LINESTRING", warn = FALSE)
+}
 write_layer(streams, "streams")
-message(sprintf("  %d segments (assessed: %d, modelled: %d)",
+message(sprintf("  %d segments (modelled: %d, observed: %d)",
                 nrow(streams),
                 sum(streams$access == 1L, na.rm = TRUE),
                 sum(streams$access == 2L, na.rm = TRUE)))
@@ -165,10 +217,20 @@ write_layer(waterbodies, "waterbodies")
 
 # Spatial intersect with the WSG boundary. Each query becomes a layer in
 # the multi-layer gpkg. Geometry-only attributes plus a name field where
-# the source carries one.
+# the source carries one. These tables are not in fwapg: read them from the
+# shared database (PG_*_SHARE), or carry the previous layers over when it
+# cannot be reached.
 
-fetch_layer <- function(query_sql, layer_name, label) {
-  layer <- try(sf::st_read(conn, query = query_sql, quiet = TRUE),
+e <- Sys.getenv
+conn_ctx <- try(fresh::frs_db_conn(
+  dbname = e("PG_DB_SHARE"), host = e("PG_HOST_SHARE"),
+  port = e("PG_PORT_SHARE"), user = e("PG_USER_SHARE"),
+  password = e("PG_PASS_SHARE")
+), silent = TRUE)
+context_source <- if (inherits(conn_ctx, "try-error")) "carried" else "database"
+
+fetch_layer <- function(query_sql, layer_name, label, db = conn_ctx) {
+  layer <- try(sf::st_read(db, query = query_sql, quiet = TRUE),
                silent = TRUE)
   if (inherits(layer, "try-error") || nrow(layer) == 0L) {
     message(sprintf("  %s: 0 features (skipping)", label))
@@ -184,6 +246,17 @@ intersect_clause <- function(geom_col = "geom") {
   sprintf("ST_Intersects(%s, ST_GeomFromText('%s', 3005))", geom_col, aoi_wkt)
 }
 
+if (context_source == "carried") {
+  missing <- setdiff(context_names, names(carried))
+  if (length(missing) > 0L) {
+    stop("The shared database cannot be reached and the previous ", gpkg,
+         " has no ", paste(missing, collapse = ", "), " layer to carry over: ",
+         conditionMessage(attr(conn_ctx, "condition")), call. = FALSE)
+  }
+  message("Shared database unreachable; carrying railways, roads, reserves and ",
+          "parks over unchanged from the previous ", gpkg)
+  for (nm in context_names) write_layer(carried[[nm]], nm)
+} else {
 message("Fetching context layers (railways, roads, reserves, parks) ...")
 
 fetch_layer(
@@ -209,25 +282,28 @@ fetch_layer(
            FROM whse_tantalis.ta_park_ecores_pa_svw
            WHERE %s", intersect_clause()),
   "parks", "parks / protected")
+DBI::dbDisconnect(conn_ctx)
+}
 
 # Named streams come pre-filtered by watershed_group_code — no spatial join.
 fetch_layer(
   sprintf("SELECT gnis_name, blue_line_key, stream_order, geom
            FROM whse_basemapping.fwa_named_streams
            WHERE watershed_group_code = '%s'", wsg),
-  "named_streams", "named streams")
+  "named_streams", "named streams", db = conn)
 
-# Cache the bcfishpass model version + date so the vignette can stamp
-# data provenance without needing a DB connection at render time.
-message("Caching bcfishpass version stamp ...")
-bp_log <- DBI::dbGetQuery(conn, "
-  SELECT model_version, date_completed
-  FROM bcfishpass.log
-  WHERE model_type = 'LINEAR'
-  ORDER BY date_completed DESC LIMIT 1")
+# Cache the link run the streams came from, so the vignette can state the
+# data's source without a DB connection at render time.
 saveRDS(
-  list(bcfishpass_version = bp_log$model_version,
-       bcfishpass_date    = format(bp_log$date_completed, "%Y-%m-%d")),
+  list(link_run_id     = run$run_id,
+       link_config     = run$config_name,
+       link_version    = run$link_version,
+       link_sha        = run$link_sha,
+       link_run_date   = format(run$date_end, "%Y-%m-%d"),
+       fresh_version   = run$fresh_version,
+       fwapg_sha       = run$fwapg_sha,
+       species         = toupper(species),
+       context_source  = context_source),
   file.path(out_dir, paste0(stub, "_meta.rds"))
 )
 
