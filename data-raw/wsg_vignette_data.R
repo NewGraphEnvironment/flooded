@@ -44,7 +44,10 @@
 # Prerequisites:
 #   - the PostgreSQL database link persists to (fwapg with `fresh_default`),
 #     reached by fresh::frs_db_conn() through the standard PG* variables,
-#     with `wsg` modelled into `fresh_default` by link
+#     with `wsg` modelled into `fresh_default` by link, in the run named by
+#     `run_id` below. `fresh_default` holds one provincial run at a time and
+#     the next one overwrites it, so the script stops if the run there is not
+#     this one; update `run_id` deliberately when rebuilding from a newer run.
 #   - for fresh context layers: the shared database (PG_*_SHARE variables)
 #   - Outbound HTTPS to s3.ca-central-1.amazonaws.com for MRDEM /vsicurl/
 #   - Run from package root so devtools::load_all() finds dev fl_dem_aoi()
@@ -54,6 +57,7 @@
 wsg <- "PARS"                       # any 4-letter BC watershed group code
 species <- "bt"                     # link species code (bull trout)
 min_order <- 3                      # minimum stream order to keep
+run_id <- "cypherjob2-20261017T034533.534-1b8d39"   # fresh_default.log, PARS
 
 # ---- env ----------------------------------------------------------------
 
@@ -82,7 +86,14 @@ context_names <- c("railways", "roads", "reserves", "parks")
 # Hold the previous context layers in memory before the wipe, in case the
 # shared database cannot be reached (section 4).
 carried <- list()
+carried_from <- NA_character_
 if (file.exists(gpkg)) {
+  carried_from <- suppressWarnings(system2(
+    "git", c("log", "-1", shQuote("--format=%h %cs"), "--", gpkg), stdout = TRUE
+  ))
+  if (length(carried_from) != 1L || !is.null(attr(carried_from, "status"))) {
+    carried_from <- NA_character_
+  }
   for (nm in intersect(context_names, sf::st_layers(gpkg)$name)) {
     carried[[nm]] <- sf::st_read(gpkg, layer = nm, quiet = TRUE)
   }
@@ -98,18 +109,30 @@ write_layer <- function(x, layer) {
 
 conn <- fresh::frs_db_conn()
 
+if (is.na(DBI::dbGetQuery(conn, "SELECT to_regclass('fresh_default.log') AS t")$t)) {
+  stop("Database '", DBI::dbGetQuery(conn, "SELECT current_database()")[[1]],
+       "' has no fresh_default schema; point the PG* variables at the database link ",
+       "persists to.", call. = FALSE)
+}
 run <- DBI::dbGetQuery(conn, sprintf(
-  "SELECT run_id, date_end, config_name, link_version, link_sha, fresh_version, fwapg_sha
+  "SELECT run_id, run_uid, run_label, date_end, config_name, config_hash, link_version,
+          link_sha, link_dirty, fresh_version, fresh_dirty, crate_version, fwapg_sha
      FROM fresh_default.log
     WHERE watershed_group_code = '%s'
     ORDER BY date_end DESC LIMIT 1", wsg))
-if (nrow(run) == 0L) {
-  DBI::dbDisconnect(conn)
+n_seg <- DBI::dbGetQuery(conn, sprintf(
+  "SELECT count(*)::int AS n FROM fresh_default.streams_access WHERE watershed_group_code = '%s'",
+  wsg))$n
+if (nrow(run) == 0L || n_seg == 0L) {
   stop(wsg, " is not modelled in `fresh_default`; run link's default config for it first.",
        call. = FALSE)
 }
-message("Reading link run ", run$run_id, " (", run$config_name, " config, link ",
-        run$link_version, ", ", format(run$date_end, "%Y-%m-%d"), ")")
+if (!identical(run$run_id, run_id)) {
+  stop("fresh_default holds ", wsg, " run ", run$run_id, ", not ", run_id,
+       ". Update `run_id` if rebuilding from the newer run is intended.", call. = FALSE)
+}
+message("Reading link run ", run$run_id, " (", run$run_label, ", ", run$config_name,
+        " config, link ", run$link_version, ", ", format(run$date_end, "%Y-%m-%d"), ")")
 
 message("Fetching ", wsg, " watershed group boundary ...")
 
@@ -296,14 +319,23 @@ fetch_layer(
 # data's source without a DB connection at render time.
 saveRDS(
   list(link_run_id     = run$run_id,
+       link_run_uid    = run$run_uid,
+       link_run_label  = run$run_label,
        link_config     = run$config_name,
+       link_config_hash = run$config_hash,
        link_version    = run$link_version,
        link_sha        = run$link_sha,
+       link_dirty      = run$link_dirty,
        link_run_date   = format(run$date_end, "%Y-%m-%d"),
        fresh_version   = run$fresh_version,
+       fresh_dirty     = run$fresh_dirty,
+       crate_version   = run$crate_version,
        fwapg_sha       = run$fwapg_sha,
        species         = toupper(species),
-       context_source  = context_source),
+       # "database": fetched from the shared database (PG_*_SHARE) in this run;
+       # "carried": copied from the pars.gpkg of the commit in context_carried_from
+       context_source  = context_source,
+       context_carried_from = if (context_source == "carried") carried_from else NA_character_),
   file.path(out_dir, paste0(stub, "_meta.rds"))
 )
 

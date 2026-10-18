@@ -63,17 +63,17 @@ column names and types (`id_segment`, TRUE/FALSE `spawning`/`rearing`).
       `fresh_default`; ship `watershed_group_code`; re-run after the stac-dem run has read the file
 
 ## Phase 2: Parsnip vignette data from link
-- [ ] `data-raw/wsg_vignette_data.R`: streams from `fresh_default` PARS (`access_bt IN (1,2)`,
+- [x] `data-raw/wsg_vignette_data.R`: streams from `fresh_default` PARS (`access_bt IN (1,2)`,
       order >= 3, the Phase 1 columns plus `gradient`, `dam_dnstr_ind`, `watershed_group_code`);
       boundary, waterbodies and named streams from local fwapg; context layers from the remote
       database on an explicit connection; persisted-run guard; fix the swapped assessed/modelled
       labels in its message (1 = modelled, 2 = observed)
-- [ ] Replace the `bcfishpass.log` stamp: `pars_meta.rds` holds the `fresh_default.log` fields
+- [x] Replace the `bcfishpass.log` stamp: `pars_meta.rds` holds the `fresh_default.log` fields
       for the PARS run (plus `run_uid`, `run_label`, `config_hash`, dirty flags, and where carried
       context layers came from, G7), and `pars-floodplain.Rmd` reads it to state the data's
       source in the same commit as its source sentence (O3)
-- [ ] Same review fixes as Phase 1 (A1–A3); commit PARS outputs together (O2)
-- [ ] Run it; regenerate `pars.gpkg`, `pars_dem.tif`, `pars_valleys.tif`; re-run
+- [x] Same review fixes as Phase 1 (A1–A3); commit PARS outputs together (O2)
+- [x] Run it; regenerate `pars.gpkg`, `pars_dem.tif`, `pars_valleys.tif`; re-run
       `data-raw/readme_figure.R` for `man/figures/readme-pars.png` and check it at published width
 
 ## Phase 3: stac-dem cache
@@ -96,7 +96,7 @@ before this change.
       of Bulkley); the figure caption, which links link's *bcfishpass*-config article (G1)
 - [x] `valley-confinement.Rmd`: "~8 km" (22), "coho potential habitat" (26), source sentence (27)
       and numbers at 96-98, 188, 331, 447; 499 is a dated timing record
-- [ ] `pars-floodplain.Rmd`: source sentence (214-215) and the history at 77-84 (past tense, add
+- [x] `pars-floodplain.Rmd`: source sentence (214-215) and the history at 77-84 (past tense, add
       the #87 regeneration); 74 and 227 stay dated records
 - [x] `inst/notes/methodology.md` present-tense tile numbers (137-138, 152, 167) (G3)
 - [x] Roxygen numbers: `fl_flood_surface.R:40-45`, `fl_valley_attribute.R:76-87`,
