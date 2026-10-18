@@ -37,18 +37,18 @@ column names and types (`id_segment`, TRUE/FALSE `spawning`/`rearing`).
 - `pars_meta.rds` is written but read nowhere.
 
 ## Phase 1: Bundled test data from link (BULK)
-- [ ] Rewrite `data-raw/network_extract.R`: local fwapg connection; `fresh::frs_network()` over
+- [x] Rewrite `data-raw/network_extract.R`: local fwapg connection; `fresh::frs_network()` over
       `fresh_default.streams` (`wscode_ltree`/`localcode_ltree`, same blk/drm, `stream_order >= 4`);
       join `streams_access.access_co`, `streams_habitat_co` spawning/rearing and
       `streams_mapping_code.mapping_code_co` by `id_segment`; `upstream_area_ha` and `map_upstream`
       from fwapg; keep `access IN (1,2)` and the clip to `dem.tif`; stop if BULK is not persisted in
       `fresh_default`; print the `fresh_default.log` run it read
-- [ ] Columns: `id_segment`, `linear_feature_id`, `blue_line_key`, `waterbody_key`,
+- [x] Columns: `id_segment`, `linear_feature_id`, `blue_line_key`, `waterbody_key`,
       `downstream_route_measure`, `upstream_area_ha`, `map_upstream`, `gnis_name`, `stream_order`,
       `channel_width`, `mapping_code`, `access`, `spawning`, `rearing`
-- [ ] Run it; regenerate `streams.gpkg` and `waterbodies.gpkg`; record the old-vs-new diff per
+- [x] Run it; regenerate `streams.gpkg` and `waterbodies.gpkg`; record the old-vs-new diff per
       column in `findings.md`
-- [ ] Correct `data-raw/testdata.R`'s header, which names an airbc geojson as the streams source
+- [x] Correct `data-raw/testdata.R`'s header, which names an airbc geojson as the streams source
 
 ## Phase 2: Parsnip vignette data from link
 - [ ] `data-raw/wsg_vignette_data.R`: streams from `fresh_default` PARS (`access_bt IN (1,2)`,

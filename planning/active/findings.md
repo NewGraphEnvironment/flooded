@@ -47,3 +47,24 @@ Phase 1 commits as `data-raw/network_extract.R`.
 | Error | Resolution |
 |-------|------------|
 | `gh`: TLS handshake timeout (all GitHub hosts) | Background waiter retried every minute; resumed when it answered |
+
+## Phase 1: regenerated test data, old vs new (2026-10-18)
+
+`data-raw/network_extract.R` against link run `cypherjob3-20261017T034609.698-65b431`:
+
+| | old (bcfishpass `streams_co_vw`) | new (link `fresh_default`) |
+|---|---|---|
+| segments | 50 | 50, same WKT for every segment (matched on blk + drm) |
+| columns | 13, `segmented_stream_id` | 14, `id_segment` + `linear_feature_id` |
+| spawning/rearing | integer 1/0 | logical TRUE/FALSE, same pattern (49 / 1) |
+| access | 1 ×14, 2 ×36 | 1 ×13, 2 ×37 |
+| `map_upstream` | bcfishpass's copy | fwapg's; 28 of 50 differ, −17 to +1 mm |
+| `upstream_area_ha` | | max diff 2.9e-11 |
+| `channel_width`, `stream_order`, `gnis_name`, `waterbody_key`, `mapping_code` | | identical |
+| row order | frs_network's | `blue_line_key`, `downstream_route_measure` |
+
+`waterbodies.gpkg` regenerated with identical attributes and 0 m vertex distance (only ring
+order differed), so the committed file is kept rather than churned.
+
+`data-raw/testdata.R` used to write `streams.gpkg` too, from an airbc geojson; it now writes only
+the DEM and slope, so `streams.gpkg` has one producer.
