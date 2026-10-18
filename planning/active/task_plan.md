@@ -92,7 +92,7 @@ Rule: a present-tense claim (example output, "on this tile", captions, roxygen) 
 a dated measurement record (§9 tables in `inst/notes/`, `research/`, CLAUDE.md's design-decision
 history, NEWS) stays, with one line saying it was measured on the bcfishpass-sourced data
 before this change.
-- [ ] README: example output table and the 287 ha total; the "5 km reach" claim (measured 5.31 km
+- [x] README: example output table and the 287 ha total; the "5 km reach" claim (measured 5.31 km
       of Bulkley); the figure caption, which links link's *bcfishpass*-config article (G1)
 - [x] `valley-confinement.Rmd`: "~8 km" (22), "coho potential habitat" (26), source sentence (27)
       and numbers at 96-98, 188, 331, 447; 499 is a dated timing record
@@ -101,14 +101,14 @@ before this change.
 - [x] `inst/notes/methodology.md` present-tense tile numbers (137-138, 152, 167) (G3)
 - [x] Roxygen numbers: `fl_flood_surface.R:40-45`, `fl_valley_attribute.R:76-87`,
       `fl_valley_confine.R:89-91`, `fl_dem_aoi.R:90-91`; `devtools::document()`
-- [ ] CLAUDE.md test-data traps: the bijection, "49 of 50", "48 ties", "69 patches",
+- [x] CLAUDE.md test-data traps: the bijection, "49 of 50", "48 ties", "69 patches",
       "300 works" — re-measure each
 
 ## Phase 6: Provenance and licences
-- [ ] `inst/NOTICE.md`: stream attributes and access from link (version, `default` config, run
+- [x] `inst/NOTICE.md`: stream attributes and access from link (version, `default` config, run
       ids) over fwapg; upstream area and ClimateBC precipitation via fwapg; drop the bcfishpass
       ODbL data row and its sentence under "Data flooded produces"
-- [ ] README "Data and methods": rewrite the bundled-data line, drop the #87 pointer; bcfishpass
+- [x] README "Data and methods": rewrite the bundled-data line, drop the #87 pointer; bcfishpass
       stays credited for adapted code (`LICENSE.note`, DESCRIPTION, README:134 unchanged)
 - [x] Lines that name bcfishpass as the *data source* of channel width: `methodology.md` (13, 22,
       40-45), `R/fl_flood_surface.R:45`, `floodplain_interpretation.md` (252, 258, 265); the model

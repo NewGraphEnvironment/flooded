@@ -15,3 +15,8 @@
 - Parsnip ran three times (link source; review fixes; a quoting fix for `context_carried_from`,
   whose unquoted `--format=%h %cs` made git exit 128). All three gave 455,215 valley cells.
 - Filed fwapg#33 (lookup gap); edited #85's body for the new lineage.
+- README figure regenerated from the final Parsnip files is byte-identical to the run-1 version,
+  which landed in d367030 with `man/` rather than in the Parsnip commit.
+- Phase 6: NOTICE per attribute with a scoped bcfishpass ODbL credit (plan review B1); README
+  caption and data line; CLAUDE.md design-decision bullet. Root `Rplots.pdf` (untracked plot dump)
+  moved to the scratchpad so `R CMD check` does not NOTE it.
