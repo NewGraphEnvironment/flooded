@@ -58,7 +58,8 @@ wsg <- "PARS"                       # any 4-letter BC watershed group code
 species <- "bt"                     # link species code (bull trout)
 min_order <- 3                      # minimum stream order to keep
 run_id <- "cypherjob2-20261017T034533.534-1b8d39"   # fresh_default.log, PARS
-# inst/NOTICE.md names this run and its link version: change them together.
+recompute_id <- "m1-20261017T092007.555-1b04b0"   # fresh_default.log_recompute, PARS
+# inst/NOTICE.md names these runs and their link version: change them together.
 
 # ---- env ----------------------------------------------------------------
 
@@ -99,18 +100,23 @@ prev_value <- function(x, nm) {
 # Previous context layers, in case the shared database cannot be reached
 # (section 4), and where each was last fetched from the database: inherited
 # from the previous meta when that run carried it too, else the commit of the
-# previous gpkg, when the working copy of it is that commit's.
+# previous gpkg, when the working gpkg and meta are both that commit's.
 carried <- list()
 carried_from <- character()
+prev_layers <- character()
 if (file.exists(gpkg_final)) {
+  prev_layers <- sf::st_layers(gpkg_final)$name
   git1 <- function(args) {
     x <- suppressWarnings(system2("git", args, stdout = TRUE))
     if (!is.null(attr(x, "status"))) NA_character_ else x
   }
-  clean <- identical(git1(c("status", "--porcelain", "--", gpkg_final)), character(0))
-  commit <- if (clean) git1(c("log", "-1", shQuote("--format=%h %cs"), "--", gpkg_final)) else NA
-  if (length(commit) != 1L) commit <- NA_character_
-  pm <- if (file.exists(meta_path)) readRDS(meta_path) else list()
+  # The previous meta describes the previous gpkg only when both are the
+  # committed copies of one commit; otherwise record no origin.
+  clean <- identical(git1(c("status", "--porcelain", "--", gpkg_final, meta_path)), character(0))
+  commit <- git1(c("log", "-1", shQuote("--format=%h %cs"), "--", gpkg_final))
+  same <- identical(commit, git1(c("log", "-1", shQuote("--format=%h %cs"), "--", meta_path)))
+  if (!clean || !same || length(commit) != 1L) commit <- NA_character_
+  pm <- if (!is.na(commit) && file.exists(meta_path)) readRDS(meta_path) else list()
   for (nm in intersect(context_names, sf::st_layers(gpkg_final)$name)) {
     carried[[nm]] <- sf::st_read(gpkg_final, layer = nm, quiet = TRUE)
     inherited <- prev_value(pm$context_carried_from, nm)
@@ -150,8 +156,27 @@ if (!identical(run$run_id, run_id)) {
   stop("fresh_default holds ", wsg, " run ", run$run_id, ", not ", run_id,
        ". Update `run_id` if rebuilding from the newer run is intended.", call. = FALSE)
 }
+rc <- DBI::dbGetQuery(conn, sprintf(
+  "SELECT recompute_id, date_end, link_version, link_sha
+     FROM fresh_default.log_recompute
+    WHERE watershed_group_code = '%s'
+    ORDER BY date_start DESC LIMIT 1", wsg))
+if (!identical(rc$recompute_id, recompute_id) || anyNA(rc$date_end)) {
+  stop("fresh_default's latest ", wsg, " recompute is ",
+       if (nrow(rc)) paste0(rc$recompute_id, if (anyNA(rc$date_end)) " (unfinished)") else "none",
+       ", not ", recompute_id, ". Access and mapping codes come from it: update ",
+       "`recompute_id` if rebuilding from it is intended.", call. = FALSE)
+}
+# Upstream area and precipitation are read live from fwapg tables that no link
+# run pins and that carry no load stamp: record the state read.
+fwapg_state <- DBI::dbGetQuery(conn, "
+  SELECT (SELECT count(*) FROM whse_basemapping.fwa_streams_watersheds_lut) AS lut_rows,
+         (SELECT count(*) FROM whse_basemapping.fwa_watersheds_upstream_area) AS upstream_area_rows,
+         (SELECT count(*) FROM whse_basemapping.fwa_stream_networks_mean_annual_precip) AS precip_rows")
+fwapg_state[] <- lapply(fwapg_state, as.numeric)
 message("Reading link run ", run$run_id, " (", run$run_label, ", ", run$config_name,
-        " config, link ", run$link_version, ", ", format(run$date_end, "%Y-%m-%d"), ")")
+        " config, link ", run$link_version, ", ", format(run$date_end, "%Y-%m-%d"),
+        "), recomputed by ", rc$recompute_id, " (link ", substr(rc$link_sha, 1, 7), ")")
 
 message("Fetching ", wsg, " watershed group boundary ...")
 
@@ -264,18 +289,6 @@ write_layer(waterbodies, "waterbodies")
 # database without the table) is carried over from the previous gpkg, and
 # `context_source` in <wsg>_meta.rds records, per layer, which it was.
 
-fetch_layer <- function(query_sql, layer_name, label, db) {
-  layer <- try(sf::st_read(db, query = query_sql, quiet = TRUE),
-               silent = TRUE)
-  if (inherits(layer, "try-error") || nrow(layer) == 0L) {
-    message(sprintf("  %s: 0 features (skipping)", label))
-    return(invisible(NULL))
-  }
-  layer <- sf::st_zm(layer)
-  write_layer(layer, layer_name)
-  message(sprintf("  %s: %d features", label, nrow(layer)))
-}
-
 aoi_wkt <- sf::st_as_text(sf::st_geometry(aoi))
 intersect_clause <- function(geom_col = "geom") {
   sprintf("ST_Intersects(%s, ST_GeomFromText('%s', 3005))", geom_col, aoi_wkt)
@@ -336,11 +349,12 @@ for (nm in context_names) {
 if (!inherits(conn_ctx, "try-error")) DBI::dbDisconnect(conn_ctx)
 
 # Named streams come pre-filtered by watershed_group_code — no spatial join.
-fetch_layer(
-  sprintf("SELECT gnis_name, blue_line_key, stream_order, geom
-           FROM whse_basemapping.fwa_named_streams
-           WHERE watershed_group_code = '%s'", wsg),
-  "named_streams", "named streams", db = conn)
+named_streams <- sf::st_read(conn, query = sprintf(
+  "SELECT gnis_name, blue_line_key, stream_order, geom
+     FROM whse_basemapping.fwa_named_streams
+    WHERE watershed_group_code = '%s'", wsg), quiet = TRUE)
+if (nrow(named_streams) > 0L) write_layer(sf::st_zm(named_streams), "named_streams")
+message(sprintf("  named streams: %d features", nrow(named_streams)))
 
 # Cache the link run the streams came from, so the vignette can state the
 # data's source without a DB connection at render time.
@@ -353,10 +367,18 @@ meta <- list(link_run_id     = run$run_id,
        link_sha        = run$link_sha,
        link_dirty      = run$link_dirty,
        link_run_date   = format(run$date_end, "%Y-%m-%d"),
+       # access, habitat flags and mapping codes were rewritten by this recompute
+       link_recompute_id  = rc$recompute_id,
+       link_recompute_sha = rc$link_sha,
+       link_recompute_date = format(rc$date_end, "%Y-%m-%d"),
        fresh_version   = run$fresh_version,
        fresh_dirty     = run$fresh_dirty,
        crate_version   = run$crate_version,
-       fwapg_sha       = run$fwapg_sha,
+       fwapg_sha       = run$fwapg_sha,   # as recorded by the link run
+       # row counts of the fwapg tables upstream area and precipitation were
+       # joined from, when this script read them
+       fwapg_read      = cbind(fwapg_state, read_at = format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")),
+       n_upstream_area_na = sum(is.na(streams$upstream_area_ha)),
        species         = toupper(species),
        # per context layer, "database": fetched from the shared database
        # (PG_*_SHARE) in this run; "carried": copied from the previous <wsg>.gpkg.
@@ -405,9 +427,16 @@ message("Polygonizing valleys ...")
 floodplain <- fl_valley_poly(valleys)
 write_layer(floodplain, "floodplain")
 
-# Every layer is written: replace the previous gpkg, then record the run.
-# file.copy() rather than file.rename(), which fails across volumes.
-stopifnot(file.copy(gpkg, gpkg_final, overwrite = TRUE))
+# Replace the previous gpkg only if no layer it had has gone missing, then
+# record the run. Copy beside the target first (the tempfile may be on another
+# volume) and rename into place, so the target is never left half-written.
+lost <- setdiff(prev_layers, sf::st_layers(gpkg)$name)
+if (length(lost) > 0L) {
+  stop("The new ", gpkg_final, " would lose layer(s) ", paste(lost, collapse = ", "),
+       "; the previous file is unchanged and the new one is at ", gpkg, call. = FALSE)
+}
+partial <- paste0(gpkg_final, ".partial")
+stopifnot(file.copy(gpkg, partial, overwrite = TRUE), file.rename(partial, gpkg_final))
 unlink(gpkg)
 gpkg <- gpkg_final
 saveRDS(meta, meta_path)

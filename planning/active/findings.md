@@ -169,3 +169,33 @@ follow-up):
    and reserves inherited, parks NA.
 
 Full suite on the new data and caches: 584 passed, 0 failed, 0 skipped (`NOT_CRAN=true`).
+
+## Code-check round 3 (`review-round3.md`): mechanism and enumeration
+
+Mechanism named by the reviewer: **provenance by proxy** — each script inferred an artifact's
+state from a record kept by a different writer (git for the file on disk, the previous meta for
+the previous gpkg, `fresh_default.log` for what the tables hold, a successful connection for the
+tables existing), and treated the artifact as rebuildable from that record, so wiping it looked
+safe. Its enumeration (13 writes, 13 provenance fields; table in `review-round3.md`) left five
+findings, all fixed:
+
+1. `fresh_default.log` is not the last writer: link's recompute rewrites access and mapping codes
+   and logs to `fresh_default.log_recompute` (verified: BULK `m1-…24a90b` 07:14Z, PARS
+   `m1-…1b04b0` 09:20Z, both link `a17e917`, after the modelling runs at `ee21eb1`). Both scripts
+   now pin `recompute_id` too and stop on a newer or unfinished one; meta and NOTICE name it.
+   Guard proven: a wrong `recompute_id` stops before any write.
+2. Upstream area and precipitation are read live from fwapg tables with no pin and no load stamp
+   (`provenance.source_artifact` stamps only the channel-width table). Meta now records the row
+   counts read and the time, and the NA count; `network_extract.R` prints them.
+3. (inside round 2's fix) the origin fallback trusted the working meta when only the gpkg was
+   clean. Now both files must be clean and share their last commit, else NA. Worktree harness:
+   clean → `2ef5c89` inherited for all four; meta changed alone → NA for all four.
+4. (round 1's fix missed one layer) `named_streams` still went through the error-swallowing
+   helper; it now stops on a query error (harness: bad table → stops), and the final copy refuses
+   to replace a gpkg if any previous layer would be lost.
+5. `file.copy()` truncates the target before writing: now copied to `<gpkg>.partial` beside it
+   and renamed into place.
+
+My own pass over the same set (every `st_write`/`writeRaster`/`saveRDS`/delete/copy and every
+provenance field in the five data-raw scripts) found one more instance of one-fact-twice: the
+pinned run ids live in the scripts and in NOTICE; both scripts now point at NOTICE.

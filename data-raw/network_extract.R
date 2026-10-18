@@ -44,7 +44,8 @@ blk <- 360873822
 mouth_drm <- 216733
 cutoff_drm <- 222000
 run_id <- "cypherjob3-20261017T034609.698-65b431"   # fresh_default.log, BULK
-# inst/NOTICE.md names this run and its link version: change them together.
+recompute_id <- "m1-20261017T071424.051-24a90b"   # fresh_default.log_recompute, BULK
+# inst/NOTICE.md names these runs and their link version: change them together.
 
 # --- DEM extent for clipping ---
 dem <- terra::rast(here::here("inst", "testdata", "dem.tif"))
@@ -78,8 +79,28 @@ if (!identical(run$run_id, run_id)) {
   stop("fresh_default holds ", wsg, " run ", run$run_id, ", not ", run_id,
        ". Update `run_id` if rebuilding from the newer run is intended.", call. = FALSE)
 }
+rc <- DBI::dbGetQuery(conn, sprintf(
+  "SELECT recompute_id, date_end, link_version, link_sha
+     FROM fresh_default.log_recompute
+    WHERE watershed_group_code = %s
+    ORDER BY date_start DESC LIMIT 1", DBI::dbQuoteLiteral(conn, wsg)))
+if (!identical(rc$recompute_id, recompute_id) || anyNA(rc$date_end)) {
+  stop("fresh_default's latest ", wsg, " recompute is ",
+       if (nrow(rc)) paste0(rc$recompute_id, if (anyNA(rc$date_end)) " (unfinished)") else "none",
+       ", not ", recompute_id, ". Access and mapping codes come from it: update ",
+       "`recompute_id` if rebuilding from it is intended.", call. = FALSE)
+}
+# Upstream area and precipitation are read live from fwapg tables that no link
+# run pins and that carry no load stamp: record the state read.
+fwapg_state <- DBI::dbGetQuery(conn, "
+  SELECT (SELECT count(*) FROM whse_basemapping.fwa_streams_watersheds_lut) AS lut_rows,
+         (SELECT count(*) FROM whse_basemapping.fwa_watersheds_upstream_area) AS upstream_area_rows,
+         (SELECT count(*) FROM whse_basemapping.fwa_stream_networks_mean_annual_precip) AS precip_rows")
+fwapg_state[] <- lapply(fwapg_state, as.numeric)
 message("Reading link run ", run$run_id, " (", run$run_label, ", ", run$config_name,
-        " config, link ", run$link_version, ", ", format(run$date_end, "%Y-%m-%d"), ")")
+        " config, link ", run$link_version, ", ", format(run$date_end, "%Y-%m-%d"),
+        "), recomputed by ", rc$recompute_id, " (link ", substr(rc$link_sha, 1, 7), ")")
+message("fwapg tables read: ", paste(names(fwapg_state), unlist(fwapg_state), sep = " ", collapse = ", "))
 
 # --- Network between the two points, plus waterbodies ---
 # frs_clip() doesn't handle XYM/XYZM geometries yet so we clip manually
