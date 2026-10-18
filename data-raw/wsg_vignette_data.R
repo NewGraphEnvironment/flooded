@@ -58,6 +58,7 @@ wsg <- "PARS"                       # any 4-letter BC watershed group code
 species <- "bt"                     # link species code (bull trout)
 min_order <- 3                      # minimum stream order to keep
 run_id <- "cypherjob2-20261017T034533.534-1b8d39"   # fresh_default.log, PARS
+# inst/NOTICE.md names this run and its link version: change them together.
 
 # ---- env ----------------------------------------------------------------
 

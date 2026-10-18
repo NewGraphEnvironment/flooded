@@ -44,6 +44,7 @@ blk <- 360873822
 mouth_drm <- 216733
 cutoff_drm <- 222000
 run_id <- "cypherjob3-20261017T034609.698-65b431"   # fresh_default.log, BULK
+# inst/NOTICE.md names this run and its link version: change them together.
 
 # --- DEM extent for clipping ---
 dem <- terra::rast(here::here("inst", "testdata", "dem.tif"))

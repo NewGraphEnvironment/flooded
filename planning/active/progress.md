@@ -20,3 +20,7 @@
 - Phase 6: NOTICE per attribute with a scoped bcfishpass ODbL credit (plan review B1); README
   caption and data line; CLAUDE.md design-decision bullet. Root `Rplots.pdf` (untracked plot dump)
   moved to the scratchpad so `R CMD check` does not NOTE it.
+- Code-check rounds 1 and 2 fixed (407ee26, 875ae1d); final Parsnip run from the clean tree at
+  875ae1d: context layers carried per layer, origin `2ef5c89 2026-10-13` each; valleys
+  byte-identical. Full suite 584/0/0. Round 3 (mechanism + enumeration) in flight; my own
+  enumeration added a NOTICE <-> `run_id` cross-reference comment in both scripts.
