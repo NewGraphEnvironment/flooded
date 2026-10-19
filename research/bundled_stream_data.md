@@ -1,6 +1,6 @@
 # Bundled stream data: where it comes from and what pins it
 
-**Verified:** 2026-10-18 · **Issues:** #87, #85, fwapg#33 · **Produced by:** `data-raw/network_extract.R`,
+**Verified:** 2026-10-19 · **Issues:** #87, #92, #85, fwapg#33 · **Produced by:** `data-raw/network_extract.R`,
 `data-raw/wsg_vignette_data.R`, read-only SQL against the fwapg database link persists to
 (`planning/archive/2026-10-issue-87-link-sourced-data/`).
 
@@ -27,7 +27,8 @@ come from link's `default` configuration, schema `fresh_default`:
 - **`fresh_default` holds one provincial run at a time**; the next overwrites it. A pinned id that
   no longer matches stops the script: update it deliberately, with `inst/NOTICE.md`.
 - **The fwapg tables carry no load stamp** (`provenance.source_artifact` stamps only the channel-width
-  table), so nothing pins them; `pars_meta.rds` records the row counts read instead.
+  table), so nothing pins them; `pars_meta.rds` records the row counts read, and a digest of every
+  query's rows that `tests/testthat/test-vignette_data.R` checks against the database (#92).
 
 ## The lookup gap (fwapg#33)
 

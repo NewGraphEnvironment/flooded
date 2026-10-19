@@ -91,37 +91,37 @@ trout can reach. Every one of those numbers is computed inline.
 - `xciter` helper chunks.
 
 ## Phase 1: Data script records what the article states
-- [ ] `data-raw/wsg_vignette_data.R`: pass the VCA arguments explicitly from `fl_params()`
+- [x] `data-raw/wsg_vignette_data.R`: pass the VCA arguments explicitly from `fl_params()`
       defaults plus `flood_factor = 4`, and save them in meta (`vca_args`).
-- [ ] Also run `fl_valley_confine()` at flood factors 2, 6 and 7 on the same inputs. Save each
+- [x] Also run `fl_valley_confine()` at flood factors 2, 6 and 7 on the same inputs. Save each
       area within the watershed group boundary in meta. Only ff4 is written as `pars_valleys.tif`.
-- [ ] Record `fl_valley_confine()` elapsed seconds for ff4 and the machine's CPU name.
-- [ ] Source digests. For each database query (aoi, streams, waterbodies, named_streams, and the
+- [x] Record `fl_valley_confine()` elapsed seconds for ff4 and the machine's CPU name.
+- [x] Source digests. For each database query (aoi, streams, waterbodies, named_streams, and the
       context layers when read live), save its SQL in meta and a Postgres digest of its rows:
       `md5(string_agg(md5(t::text), '' ORDER BY md5(t::text)))`.
       - Carried context layers record NA.
       - Record the MRDEM-30 COG's ETag.
-- [ ] Record the md5 of every file written (`pars.gpkg`, `pars_dem.tif`, `pars_valleys.tif`).
-- [ ] Software table in meta:
+- [x] Record the md5 of every file written (`pars.gpkg`, `pars_dem.tif`, `pars_valleys.tif`).
+- [x] Software table in meta:
       - `flooded`: version, last tag at or before HEAD (`git describe`), commit, dirty flag;
       - `fresh`: installed version and RemoteSha, plus the run's `fresh_version`;
       - `link`: the run's version and both commits, with the tag checked to be at or before them
         through the GitHub compare API;
       - fwapg: commit.
-- [ ] Concept DOIs from DataCite (`client-id=cern.zenodo`; concept = the `IsVersionOf` relation),
+- [x] Concept DOIs from DataCite (`client-id=cern.zenodo`; concept = the `IsVersionOf` relation),
       saved with the query URL and the date retrieved. The script stops if a package listed as
       having one returns no single concept DOI.
-- [ ] Commit the script, then run it from the committed tree, so the recorded commit is clean.
+- [x] Commit the script, then run it from the committed tree, so the recorded commit is clean.
       Commit the regenerated bundle.
 
 ## Phase 2: Tests that fail when the article's data is superseded
-- [ ] `tests/testthat/test-vignette_data.R`: the md5 of each bundled Parsnip file equals meta's.
+- [x] `tests/testthat/test-vignette_data.R`: the md5 of each bundled Parsnip file equals meta's.
       Always runs.
-- [ ] The database digests equal meta's when fwapg / `fresh_default` is reachable. This test
+- [x] The database digests equal meta's when fwapg / `fresh_default` is reachable. This test
       skips on CI and CRAN and when there is no connection; it also skips carried layers.
-- [ ] Meta's ff4 area equals the cells of `pars_valleys.tif` inside the AOI, so the two are one
+- [x] Meta's ff4 area equals the cells of `pars_valleys.tif` inside the AOI, so the two are one
       fact from one run.
-- [ ] Prove each fires: alter a copied bundle file, a digest and the area, and the test reddens
+- [x] Prove each fires: alter a copied bundle file, a digest and the area, and the test reddens
       (in scratch copies).
 
 ## Phase 3: Rewrite `vignettes/pars-floodplain.Rmd`

@@ -54,3 +54,36 @@ Rewrite it as a data-product article:
 | Error | Resolution |
 |-------|------------|
 | `diff -q` in an agent shell is aliased to `git diff --no-index` | `cmp -s`, or `command diff` |
+
+## The build (2026-10-19)
+
+- `pars_valleys.tif` and `pars_dem.tif` are byte-identical in content to #87's: same grid, identical
+  values. The #87 figure of 40,969.3 ha was the whole grid, which extends 2 km past the streams and so
+  past the boundary; inside the watershed group it is 40,640.1 ha (451,557 cells), the figure the
+  article states. Flood factors 2 / 4 / 6 / 7: 427,950 / 451,557 / 470,793 / 479,500 cells
+  (38,515.5 / 40,640.1 / 42,371.4 / 43,155.0 ha).
+- `fl_valley_confine()` at flood factor 4: 71.5 s and 67.4 s over the two complete runs (Apple M1 Max, 8 threads).
+- Lakes and wetlands are 20.4 % of the floodplain inside the boundary; every lake and wetland cell is
+  floodplain (the guard checks it).
+- Context layers were carried again (shared database unreachable); they get no source digest, only
+  the gpkg md5.
+
+## Restore-the-bug proofs (scratchpad `mutate.R`, each in a fresh copy of the package)
+
+| mutation | fired |
+|---|---|
+| meta md5 of `pars_valleys.tif` | test: bundle md5 (1 failing) |
+| meta digest of `streams` | test: database digests (1 failing) |
+| meta `fp_cells[["4"]]` + 1 | test: cells vs grid (1 failing); render: `identical(fp_cells, ...)` |
+| meta MRDEM ETag | test: DEM source (1 failing) |
+| species CO / config bcfishpass / link_dirty | render: each guard by name |
+| slope_threshold 10 | render: defaults-vs-`formals()` guard |
+| flood_factor 6 | render: `ff == 4` |
+| no "7" / area at 7 = area at 4 | render: each guard |
+| flooded dirty / link DOI NA | render: each guard |
+| one lake cell set to 0 (count moved to match) | render: `all(v_in[wb_cell] == 1L)` |
+| control (unmutated) | 0 failing tests; renders |
+
+The control render first failed in the citation chunk: `citation()` reads `packageDescription()` from
+`dirname()` of the package path, so a copy whose folder is not named `flooded` returns NA. Renamed,
+it renders. That was a fault in the probe, not in the article.
