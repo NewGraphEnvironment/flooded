@@ -47,7 +47,7 @@ R/
 vignettes/
   valley-confinement.Rmd — full walkthrough with bundled test data
   stac-dem.Rmd           — STAC lidar vs bundled 10 m; 10 m runs live, lidar results cached
-  pars-floodplain.Rmd    — Parsnip River WSG using fl_dem_aoi() + cached outputs
+  pars-floodplain.Rmd    — Parsnip River WSG floodplain: answer first, every number from pars_meta.rds
 tests/testthat/          — unit tests for each fl_* function
 ```
 
@@ -87,6 +87,12 @@ tests/testthat/          — unit tests for each fl_* function
   `default` config applies bcfishpass's override tables, so `inst/NOTICE.md` keeps a scoped ODbL
   credit for access and habitat. Context layers (roads, rail, reserves, parks) come from the shared
   database or are carried over from the previous `pars.gpkg`; `pars_meta.rds` says which.
+- **The Parsnip article states only what `pars_meta.rds` records (#92).** The data script records
+  the VCA arguments, the floodplain area at flood factors 2, 4, 6 and 7, a Postgres digest of every
+  query it reads (with the SQL), the MRDEM-30 ETag, the md5 of each file it writes, and the software
+  (release, commit, concept DOI from DataCite). `test-vignette_data.R` fails when a bundled file
+  or a reachable source no longer matches, and the vignette's `stopifnot()` fails when a sentence's
+  premise does. Run the script from a committed tree: its commit is the article's citation.
 - **25 m TRIM resampled to 10 m** is not real 10 m detail — note this when comparing TRIM-derived outputs to true 10 m or 1 m lidar.
 - **1 m lidar reveals anthropogenic barriers** ("pop-ups") — diagnostic value beyond floodplain area itself.
 - **Channel-width buffer auto-detect** from streams sf. DEM correction only — the buffer is a coarse-DEM gap-filler, not an ecological feature.

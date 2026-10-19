@@ -51,11 +51,9 @@ Suggests:
     rmarkdown,
     rstac,
     testthat (>= 3.2.0),
-    whitebox,
-    xciter
+    whitebox
 Remotes:
     NewGraphEnvironment/gdalcubes@newgraph,
-    NewGraphEnvironment/fresh,
-    NewGraphEnvironment/xciter
+    NewGraphEnvironment/fresh
 Config/testthat/edition: 3
 VignetteBuilder: knitr
