@@ -75,6 +75,7 @@ recompute_link <- sprintf("[%s](https://github.com/%s/commit/%s)", substr(sw_row
                           sw_row("link")$repo, sw_row("link")$commit_also)
 scen <- flooded::fl_scenarios()
 fm <- formals(flooded::fl_valley_confine)
+cite_text <- format(utils::citation("flooded"), style = "text")
 
 # formatting
 n0 <- function(v) format(round(v), big.mark = ",", scientific = FALSE, trim = TRUE)
@@ -99,7 +100,7 @@ stopifnot(
   # the answer is the area the build recorded for this flood factor, cell for cell
   identical(as.integer(fp_cells), meta$fp_cells[[as.character(ff)]]),
   # the three presets the article names, and the comparison with 7
-  identical(as.numeric(scen$flood_factor), c(2, 4, 6)), "7" %in% names(area_at),
+  identical(as.numeric(scen$flood_factor), c(2, 4, 6)), identical(names(area_at), c("2", "4", "6", "7")),
   area_at[["7"]] > area_at[[as.character(ff)]],
   # "it adds the lakes and wetlands": every lake and wetland cell inside the boundary is floodplain
   nrow(waterbodies) > 0, "waterbody_type" %in% names(waterbodies),
@@ -118,7 +119,8 @@ stopifnot(
   fits(sw_row("link")$commit_also, "^[0-9a-f]{40}$"),
   fits(sw_row("flooded")$concept_doi, "^10[.]5281/zenodo[.][0-9]+$"),
   fits(sw_row("link")$concept_doi, "^10[.]5281/zenodo[.][0-9]+$"),
-  fits(sw_row("flooded")$doi_from, "^v[0-9]+[.][0-9]+[.][0-9]+$"),
+  # the citation printed under "Cite flooded as" names the DOI for all versions listed above it
+  grepl(sw_row("flooded")$concept_doi, paste(cite_text, collapse = " "), fixed = TRUE),
   isFALSE(sw_row("flooded")$dirty), isFALSE(sw_row("link")$dirty), isFALSE(sw_row("link")$dirty_also),
   fits(meta$link_run_date, "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"),
   fits(as.character(meta$fwapg_read$read_at), "^[0-9]{4}-[0-9]{2}-[0-9]{2}T"),
@@ -201,16 +203,30 @@ if (!is.null(reserves) && nrow(reserves) > 0L) label_reserves(reserves, 0.9)
 
 ## Which flood level should I use?
 
-`flooded` has three preset levels: 2, 4 and 6 times bankfull depth. A factor of 2 borrows the
-multiplier of Rosgen's flood-prone width, which he measured at twice the maximum bankfull depth and
-which roughly matches a 50-year flood stage or less
-[@nagel_etal2014LandscapeScale]. `flooded` calls 4 the functional floodplain and 6 the valley
-bottom; those names are its own reading, not a published one. This article uses `r ff`. For valley
-extent on 30 m elevation models, Nagel et al. found a factor of 7 the most appropriate.
+`flooded` has three preset levels, 2, 4 and 6 times bankfull depth; the names it gives 4 and 6 are
+its own reading, not a published one. The table adds 7 and gives the Parsnip's floodplain at each
+level, with every other setting unchanged. This article uses `r ff`.
 
-With every other setting unchanged, the Parsnip's floodplain is `r lst(paste(n0(area_at), "ha"))`
-at flood factors `r lst(names(area_at))`. Going from `r ff` to 7 adds
-`r pc(area_at[["7"]] / area_at[[as.character(ff)]] - 1)`.
+```{r levels}
+lv <- data.frame(
+  `Flood factor` = names(area_at),
+  `What it maps` = c(
+    "Flood-prone width: roughly a 50-year flood stage or less",
+    "Functional floodplain (used here)",
+    "Valley bottom, including terraces",
+    "Valley extent on 30 m elevation models"),
+  `Where the level comes from` = c(
+    "Rosgen's multiplier, twice the maximum bankfull depth [@nagel_etal2014LandscapeScale]",
+    "`flooded`'s preset",
+    "`flooded`'s preset",
+    "Nagel et al.'s choice for 30 m data [@nagel_etal2014LandscapeScale]"),
+  `Floodplain (ha)` = unname(n0(area_at)),
+  check.names = FALSE
+)
+knitr::kable(lv, format = "pipe", row.names = FALSE, align = c("c", "l", "l", "r"), caption = "Flood levels and the Parsnip's floodplain at each.")
+```
+
+Going from `r ff` to 7 adds `r pc(area_at[["7"]] / area_at[[as.character(ff)]] - 1)` to the area.
 
 ## How do I read it up close?
 
@@ -321,11 +337,11 @@ The results can be downloaded:
 ## Software and how to cite it
 
 - [`flooded`](`r sw_row("flooded")$url`) `r sw_row("flooded")$release`, at commit
-  `r commit_link("flooded")`: the floodplain model. DOI
+  `r commit_link("flooded")`: the floodplain model. DOI for all versions:
   [`r sw_row("flooded")$concept_doi`](https://doi.org/`r sw_row("flooded")$concept_doi`).
 - [`link`](`r sw_row("link")$url`) `r sw_row("link")$release`, modelled at commit
   `r commit_link("link")` and recomputed at `r recompute_link`: which streams bull trout can reach.
-  DOI [`r sw_row("link")$concept_doi`](https://doi.org/`r sw_row("link")$concept_doi`).
+  DOI for all versions: [`r sw_row("link")$concept_doi`](https://doi.org/`r sw_row("link")$concept_doi`).
 - [`fresh`](`r sw_row("fresh")$url`) `r sw_row("fresh")$release`, at commit `r commit_link("fresh")`:
   the stream network modelling engine `link` runs on.
 - [fwapg](`r sw_row("fwapg")$url`), at commit `r commit_link("fwapg")` as `link`'s run recorded it: the
@@ -335,11 +351,7 @@ The results can be downloaded:
 Cite `flooded` as:
 
 ```{r cite, results = "asis"}
-cat(format(utils::citation("flooded"), style = "text"), sep = "\n\n")
+cat(cite_text, sep = "\n\n")
 ```
-
-and by its DOI, which covers its releases from `r sw_row("flooded")$doi_from` on and resolves to the
-latest:
-<https://doi.org/`r sw_row("flooded")$concept_doi`>.
 
 ## References
