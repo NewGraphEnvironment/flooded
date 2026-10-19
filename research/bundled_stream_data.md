@@ -47,3 +47,11 @@ link's `default` config applies bcfishpass's barrier, crossing-status, observati
 habitat-confirmation override tables, so `access`/habitat/mapping code still contain bcfishpass
 information (ODbL): `inst/NOTICE.md` keeps a scoped credit. CABD (dams) and the ClimateBC-derived
 columns are open questions in #85.
+
+## Where the Parsnip floodplain is measured (#92)
+
+`inst/vignette-data/pars_valleys.tif` covers the streams plus 2 km, which reaches past the watershed
+group's boundary. The article measures the floodplain inside the boundary: 451,557 cells (40,640.1
+ha) at flood factor 4. The whole grid holds 40,969.3 ha, the figure #87 recorded. `pars_meta.rds`
+stores the inside-boundary cell counts at flood factors 2, 4, 6 and 7.
+
