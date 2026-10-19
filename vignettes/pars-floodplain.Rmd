@@ -99,7 +99,9 @@ stopifnot(
   # the answer is the area the build recorded for this flood factor, cell for cell
   identical(as.integer(fp_cells), meta$fp_cells[[as.character(ff)]]),
   # the three presets the article names, and the comparison with 7
-  identical(as.numeric(scen$flood_factor), c(2, 4, 6)), identical(names(area_at), c("2", "4", "6", "7")),
+  identical(as.numeric(scen$flood_factor), c(2, 4, 6)),
+  identical(scen$description, c("Flood-prone width / active channel margin", "Functional floodplain",
+                                "Valley bottom extent")), identical(names(area_at), c("2", "4", "6", "7")),
   area_at[["7"]] > area_at[[as.character(ff)]],
   # "it adds the lakes and wetlands": every lake and wetland cell inside the boundary is floodplain
   nrow(waterbodies) > 0, "waterbody_type" %in% names(waterbodies),
@@ -220,7 +222,7 @@ lv <- data.frame(
     "Valley bottom, including terraces",
     "Valley extent on 30 m elevation models"),
   `Where the level comes from` = c(
-    "Rosgen's multiplier, twice the maximum bankfull depth [Rosgen, as cited in @nagel_etal2014LandscapeScale]",
+    "Rosgen's multiplier, twice the maximum bankfull depth [Rosgen 1994, 1996, as cited in @nagel_etal2014LandscapeScale]",
     "`flooded`'s preset",
     "`flooded`'s preset",
     "Recommended for 30 m data [@nagel_etal2014LandscapeScale]"),

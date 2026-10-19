@@ -244,6 +244,18 @@ Citation code-check:
   - The DOI-coverage guard compared version numbers, and its versions came from a DataCite search
     that misses records. Zenodo's API now gives each concept DOI's archived versions (flooded 8 from
     v0.6.4; link 11, to v0.66.5), and the guard requires the cited release to be among them. It
-    fires when the release is absent and when the column is absent.
+    fires when the release is absent and when the column is absent. These counts supersede the
+    DataCite figures in the earlier review records ("from v0.8.2", "v0.1.0 to v0.8.1 never
+    deposited"): Zenodo holds flooded from v0.6.4.
   - The message now names the DOI.
 - **Round 3:** results below.
+- **Round 3:** a full enumeration of every added or changed text and check. All TRUE but 3 low
+  findings, 2 inside round-2 fixes, and all fixed:
+  - The Rosgen citation carries his years (1994, 1996, as cited in Nagel et al.).
+  - The line above supersedes the DataCite figures in the earlier review records.
+  - The table's names are pinned to `fl_scenarios()$description`, so the edit flooded#96 proposes
+    fails the build until the table follows.
+
+  The new guard was proven on a renamed description. The loop ended there: round 3's enumeration
+  covered the whole set, and its three fixes were each verified directly. Citation review cost
+  3 agents, so this session's total is 9.
