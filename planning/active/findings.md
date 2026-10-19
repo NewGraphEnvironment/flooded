@@ -87,3 +87,23 @@ Rewrite it as a data-product article:
 The control render first failed in the citation chunk: `citation()` reads `packageDescription()` from
 `dirname()` of the package path, so a copy whose folder is not named `flooded` returns NA. Renamed,
 it renders. That was a fault in the probe, not in the article.
+
+## Measure the simplification
+
+Rendered the same way (`rmarkdown::render()` after `load_all()`), words a reader sees, code blocks
+and references excluded:
+
+| | before | after |
+|---|---|---|
+| prose and captions | 1,088 | 974 |
+| table words | 277 | 0 |
+| reader-visible total | 1,365 | 974 (-29 %) |
+| tables / figures | 2 / 2 | 0 / 2 |
+| source body words / file lines | 960 / 441 | 872 / 306 |
+
+The forecast was 500-600 body words, and the result missed it by about 60 %. Four things set the floor:
+- The exact definition (the four tests, then the tidy-up and what is added), which the plan
+  review's B1 and B2 made longer, not shorter.
+- The new "How good is it?" section (B3).
+- The software section, with release, commit and DOI per package.
+- Map captions that do a legend's job.

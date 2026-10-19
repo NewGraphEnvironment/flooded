@@ -125,24 +125,24 @@ trout can reach. Every one of those numbers is computed inline.
       (in scratch copies).
 
 ## Phase 3: Rewrite `vignettes/pars-floodplain.Rmd`
-- [ ] Apply the outline above, with `echo = FALSE` throughout, as in the chinook article.
-- [ ] Compute every number inline. Formatting helpers live in the load chunk.
-- [ ] Add a `stopifnot()` for each claim's premise. Among them:
+- [x] Apply the outline above, with `echo = FALSE` throughout, as in the chinook article.
+- [x] Compute every number inline. Formatting helpers live in the load chunk.
+- [x] Add a `stopifnot()` for each claim's premise. Among them:
       - the flood-factor areas rise with the factor;
       - meta's `species == "BT"`, `link_config == "default"`, min order 3 and access in {1,2};
       - the VCA args equal the `fl_params()` defaults, except `flood_factor`;
       - the inline area equals meta's ff4 area;
       - the software rows hold a DOI for `flooded` and `link`.
-- [ ] Remove `main =` map titles and shorten the captions so they say what is drawn and what is
+- [x] Remove `main =` map titles and shorten the captions so they say what is drawn and what is
       left off.
-- [ ] Prove a guard fires on a false premise (an altered meta copy) by rendering against it.
+- [x] Prove a guard fires on a false premise (an altered meta copy) by rendering against it.
 
 ## Phase 4: Ripple
-- [ ] DESCRIPTION: drop `xciter` from Suggests and Remotes. Only this vignette used it; confirm
+- [x] DESCRIPTION: drop `xciter` from Suggests and Remotes. Only this vignette used it; confirm
       with a grep.
-- [ ] README "Learn more" line, and CLAUDE.md's architecture line and design-decision bullet:
+- [x] README "Learn more" line, and CLAUDE.md's architecture line and design-decision bullet:
       match the new title and the meta fields.
-- [ ] `_pkgdown.yml`: check the articles listing still resolves.
+- [x] `_pkgdown.yml`: check the articles listing still resolves.
 
 ## Validation
 - [ ] Render with `rmarkdown::render()` after `pkgload::load_all()`, plus `pkgdown::build_article()`.

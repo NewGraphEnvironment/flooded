@@ -1,11 +1,11 @@
 ---
-title: "Watershed-scale floodplain delineation — Parsnip River Watershed Group"
+title: "Floodplains of the Parsnip River watershed group"
 output:
   bookdown::html_vignette2
 bibliography: references.bib
 link-citations: false
 vignette: >
-  %\VignetteIndexEntry{Watershed-scale floodplain delineation — Parsnip River Watershed Group}
+  %\VignetteIndexEntry{Floodplains of the Parsnip River watershed group}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -14,6 +14,7 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
+  echo = FALSE,
   fig.width = 7,
   fig.height = 6,
   dpi = 150,
@@ -23,322 +24,172 @@ knitr::opts_chunk$set(
 library(flooded)
 ```
 
-This vignette runs the `flooded` pipeline on the Parsnip River Watershed
-Group (`PARS`, 5,597 km², north-eastern BC) and demonstrates the
-AOI-driven helper [`flooded::fl_dem_aoi()`][fl_dem_aoi].
-
-The Parsnip River Watershed Group sits between Prince George and
-Mackenzie, BC. The Parsnip River flows north and enters the southern
-arm of Williston Reservoir at Mackenzie, joining the Peace River
-system. From there the drainage runs Peace → Slave → Mackenzie River,
-ultimately discharging to the Arctic Ocean via the Mackenzie Delta.
-
-[fl_dem_aoi]: ../reference/fl_dem_aoi.html
-
-## Why floodplains
-
-Floodplains are the low-lying, periodically inundated lands flanking a
-stream — the parts of the valley that water reclaims when discharge
-exceeds bankfull. They store flood water and dissipate flood energy,
-recharge shallow groundwater, sort sediment, and host the off-channel
-ponds, side channels, sloughs, lakes, and wetlands that drive
-disproportionate ecological productivity per unit area. For salmonids
-in particular, floodplain habitat — slow-water margins, beaver
-complexes, off-channel rearing — is often the limiting factor for
-freshwater survival, especially through winter low-flow and high-flow
-refugia. Mapping the *extent* of the floodplain at watershed scale is
-therefore the first step in scoping where restoration, protection, or
-flood-risk planning has the most leverage.
-
-## Modelling parameters
-
-`flooded::fl_valley_confine()` combines four masks — slope, distance
-from stream, cost-distance through the terrain, and a bankfull flood
-model — and applies morphological cleanup (closing, hole-fill, patch
-removal) before returning a binary valley raster. The algorithm is
-adapted from the
-[USDA Valley Confinement Algorithm](https://github.com/Ecotrust/BlueGeo)
-[@nagel_etal2014LandscapeScale] (BlueGeo R port by Devin Cairns, MIT)
-and the [bcfishpass](https://github.com/smnorris/bcfishpass) lateral
-habitat assembly (Simon Norris, Apache 2.0). The bankfull flood model
-follows the regional regression of @hall_etal2007Predictingriver. The
-parameter legend (units, defaults, citations, ecological effect) lives
-in `flooded::fl_params()`.
-
-This run uses the **`ff04`** scenario from `flooded::fl_scenarios()` —
-*functional floodplain*, the recurrent-inundation footprint. The active
-parameter values are shown in the table below.
-
-On a 30 m DEM, `ff04` is a *conservative* functional floodplain: Nagel et al.
-put the resolution equivalent nearer `ff07`. In practice the difference is
-small here — measured on the 0.7.0 inputs, corrected `ff04` through `ff07`
-spanned only 6.3% of mapped area on this watershed, because at 30 m the slope
-and cost-distance criteria bind before the flood mask does.
-
-The cached outputs below were regenerated for `flooded` 0.5.0, which corrected
-a units defect in the bankfull regression (flooded#49): the mapped extent went
-from 48,603.1 ha to 41,142.9 ha, a loss of 15.3%. They were regenerated again
-for 0.7.0, which projects MRDEM-30 onto a fixed 30 m grid aligned to multiples
-of 30 m instead of a grid GDAL chose (30.54 m here), and pins the datum step
-between MRDEM-30 and BC Albers (flooded#67). The extent was then 40,888.2 ha,
-0.6% less, and the DEM 14.1 rather than 20.9 million cells. They were
-regenerated once more when the streams moved from bcfishpass to the tables link
-builds (flooded#87): 9,386 segments where there were 8,436, over about the same
-length, and an extent of 40,969.3 ha, 0.2% more, on the same DEM.
-
-```{r citation-helper, include = FALSE}
-# Convert "key1;key2" bare-key strings (the format used in
-# `fl_params()$citation_keys` and `fl_scenarios()$citation_keys`) into
-# pandoc citation markers `[@key1; @key2]`. The output is then handed to
-# `xciter::xct_keys_to_inline_table_col()` which calls pandoc to render
-# them as proper inline citations, against the same references.bib that
-# pandoc uses for the rest of the vignette.
-keys_to_pandoc <- function(s) {
-  vapply(s, function(x) {
-    if (is.na(x) || !nzchar(x)) return("")
-    paste0("[", paste0("@", trimws(strsplit(x, ";")[[1]]), collapse = "; "), "]")
-  }, character(1), USE.NAMES = FALSE)
-}
-```
-
-```{r params-stamp, echo = FALSE}
-ff_used <- 4
-pars_used <- c("flood_factor", "slope_threshold", "max_width", "cost_threshold")
-p_tab <- flooded::fl_params()[match(pars_used, flooded::fl_params()$parameter),
-                              c("parameter", "default", "unit", "effect",
-                                "citation_keys")]
-p_tab$value <- p_tab$default
-p_tab$value[p_tab$parameter == "flood_factor"] <- ff_used
-p_tab$citation_keys <- keys_to_pandoc(p_tab$citation_keys)
-p_tab <- xciter::xct_keys_to_inline_table_col(
-  p_tab, col_format = "citation_keys",
-  path_bib = "references.bib"
-)
-p_tab <- p_tab[, c("parameter", "value", "unit", "effect", "citation_keys")]
-names(p_tab)[names(p_tab) == "citation_keys"] <- "source"
-knitr::kable(
-  p_tab, row.names = FALSE,
-  caption = "Active parameter values for the Parsnip River Watershed Group run. `flood_factor = 4` (`ff04`); other values are package defaults from `flooded::fl_params()`."
-)
-```
-
-The package ships three pre-baked scenarios (table below). They differ
-only in `flood_factor`; all other parameters are held constant so
-output differences isolate the ecological signal.
-
-```{r scenarios-stamp, echo = FALSE}
-s_tab <- flooded::fl_scenarios()[, c("scenario_id", "flood_factor",
-                                     "description", "ecological_process",
-                                     "citation_keys")]
-s_tab$citation_keys <- keys_to_pandoc(s_tab$citation_keys)
-s_tab <- xciter::xct_keys_to_inline_table_col(
-  s_tab, col_format = "citation_keys",
-  path_bib = "references.bib"
-)
-names(s_tab)[names(s_tab) == "citation_keys"] <- "source"
-knitr::kable(
-  s_tab, row.names = FALSE,
-  caption = "Pre-baked flood-factor scenarios shipped with the package. Switch by passing `flood_factor =` to `flooded::fl_valley_confine()`."
-)
-```
-
-For a side-by-side comparison of all three scenarios on a smaller reach,
-see the
-[valley-confinement vignette](https://newgraphenvironment.github.io/flooded/articles/valley-confinement.html).
-
-## Cached inputs
-
-The vignette renders against pre-computed outputs from
-`data-raw/wsg_vignette_data.R` so it builds fast and doesn't touch the
-network or database. Direct downloads of the cached Parsnip River Watershed Group bundle from the repo (open in QGIS
-or any GDAL-aware tool):
-
-- [`pars.gpkg`](https://github.com/NewGraphEnvironment/flooded/raw/main/inst/vignette-data/pars.gpkg)
-  — vectors: `aoi`, `streams`, `waterbodies`, `floodplain`, `railways`,
-  `roads`, `reserves`, `parks`, `named_streams`
-- [`pars_dem.tif`](https://github.com/NewGraphEnvironment/flooded/raw/main/inst/vignette-data/pars_dem.tif)
-  — MRDEM-30 clip (Int16)
-- [`pars_valleys.tif`](https://github.com/NewGraphEnvironment/flooded/raw/main/inst/vignette-data/pars_valleys.tif)
-  — `fl_valley_confine()` binary output
-
-```{r load, include = FALSE}
-library(terra)
-library(sf)
-
-gpkg    <- system.file("vignette-data/pars.gpkg",   package = "flooded", mustWork = TRUE)
-dem_tif <- system.file("vignette-data/pars_dem.tif", package = "flooded", mustWork = TRUE)
-val_tif <- system.file("vignette-data/pars_valleys.tif", package = "flooded", mustWork = TRUE)
-meta <- readRDS(system.file("vignette-data/pars_meta.rds", package = "flooded", mustWork = TRUE))
-
+```{r load}
+# data from data-raw/wsg_vignette_data.R
+vd <- function(f) system.file("vignette-data", f, package = "flooded", mustWork = TRUE)
+gpkg <- vd("pars.gpkg")
+meta <- readRDS(vd("pars_meta.rds"))
 present <- sf::st_layers(gpkg)$name
 load_layer <- function(name) {
   if (name %in% present) sf::st_read(gpkg, layer = name, quiet = TRUE) else NULL
 }
+aoi <- load_layer("aoi")
+# every layer clipped to the watershed group, so nothing draws outside it
+clip <- function(x) if (is.null(x)) NULL else fresh::frs_clip(x, aoi)
+streams <- clip(load_layer("streams"))
+waterbodies <- clip(load_layer("waterbodies"))
+roads <- clip(load_layer("roads"))
+railways <- clip(load_layer("railways"))
+reserves <- clip(load_layer("reserves"))
+parks <- clip(load_layer("parks"))
+named_streams <- clip(load_layer("named_streams"))
+dem <- terra::mask(terra::crop(terra::rast(vd("pars_dem.tif")), terra::vect(aoi)), terra::vect(aoi))
+valleys <- terra::mask(terra::crop(terra::rast(vd("pars_valleys.tif")), terra::vect(aoi)), terra::vect(aoi))
 
-aoi           <- load_layer("aoi")
-streams       <- load_layer("streams")
-waterbodies   <- load_layer("waterbodies")
-floodplain    <- load_layer("floodplain")
-railways      <- load_layer("railways")
-roads         <- load_layer("roads")
-reserves      <- load_layer("reserves")
-parks         <- load_layer("parks")
-named_streams <- load_layer("named_streams")
-dem     <- terra::rast(dem_tif)
-valleys <- terra::rast(val_tif)
+# the numbers the prose states
+args <- meta$vca_args
+ff <- args$flood_factor
+cell_m <- terra::res(valleys)[1]
+cell_ha <- prod(terra::res(valleys)) / 1e4
+v_in <- terra::values(valleys)[, 1]
+fp_cells <- sum(v_in == 1L, na.rm = TRUE)
+fp_ha <- fp_cells * cell_ha
+wsg_km2 <- aoi$area_ha / 100
+stream_km <- sum(as.numeric(sf::st_length(streams))) / 1000
+area_at <- meta$fp_area_ha
+# lakes and wetlands, burned as fl_valley_confine() burns them (by cell centre)
+wb_r <- terra::rasterize(terra::vect(waterbodies), valleys, field = 1L, background = 0L)
+wb_cell <- terra::values(wb_r)[, 1] == 1L & !is.na(v_in)
+sw <- meta$software
+sw_row <- function(p) sw[sw$package == p, ]
+commit_link <- function(p) {
+  r <- sw_row(p)
+  sprintf("[%s](https://github.com/%s/commit/%s)", substr(r$commit, 1, 7), r$repo, r$commit)
+}
+recompute_link <- sprintf("[%s](https://github.com/%s/commit/%s)", substr(sw_row("link")$commit_also, 1, 7),
+                          sw_row("link")$repo, sw_row("link")$commit_also)
+scen <- flooded::fl_scenarios()
+fm <- formals(flooded::fl_valley_confine)
 
-# Trim the DEM to the WSG and clip every layer to the same boundary so
-# nothing renders outside the basin.
-dem        <- terra::mask(terra::crop(dem, terra::vect(aoi)), terra::vect(aoi))
-valleys    <- terra::mask(terra::crop(valleys, terra::vect(aoi)), terra::vect(aoi))
-streams    <- fresh::frs_clip(streams, aoi)
-waterbodies <- fresh::frs_clip(waterbodies, aoi)
-floodplain <- fresh::frs_clip(floodplain, aoi)
-if (!is.null(roads))         roads         <- fresh::frs_clip(roads, aoi)
-if (!is.null(railways))      railways      <- fresh::frs_clip(railways, aoi)
-if (!is.null(reserves))      reserves      <- fresh::frs_clip(reserves, aoi)
-if (!is.null(parks))         parks         <- fresh::frs_clip(parks, aoi)
-if (!is.null(named_streams)) named_streams <- fresh::frs_clip(named_streams, aoi)
-```
+# formatting
+n0 <- function(v) format(round(v), big.mark = ",", scientific = FALSE, trim = TRUE)
+pc <- function(v, d = 1) paste0(formatC(100 * v, format = "f", digits = d), " %")
+lst <- function(v) if (length(v) < 2) v else paste(paste(v[-length(v)], collapse = ", "), "and", v[length(v)])
 
-## DEM
-
-The underlying elevation data is
-[MRDEM-30](https://open.canada.ca/data/en/dataset/18752265-bda3-498c-a4ba-9dfe68cb98da),
-NRCan's 30 m Medium-Resolution Digital Elevation Model — a single
-Cloud-Optimized GeoTIFF covering all of Canada, hosted on public S3
-with no authentication required, integrated from LidarBC where lidar
-coverage exists with Copernicus TanDEM-X / CDEM-derived fallback
-elsewhere. `flooded::fl_dem_aoi()` reads it via `/vsicurl/`, so the only
-bytes transferred are those intersecting the AOI — bandwidth scales
-with the AOI, not with the COG size.
-
-## Streams and waterbodies
-
-Streams are the segments of order 3 and up that
-[link](https://www.newgraphenvironment.com/link/)'s `` `r meta$link_config` ``
-configuration models as accessible to bull trout, from link
-`` `r meta$link_version` `` (run of `r meta$link_run_date`). Upstream area and
-mean annual precipitation upstream come from
-[fwapg](https://smnorris.github.io/fwapg/). `r sum(is.na(streams$upstream_area_ha))`
-of the `r format(nrow(streams), big.mark = ",")` segments have no upstream area,
-because fwapg's stream-to-watershed lookup has no row for them
-([fwapg#33](https://github.com/NewGraphEnvironment/fwapg/issues/33)).
-
-Waterbodies (lakes + wetlands) come from `whse_basemapping.fwa_lakes_poly`
-and `whse_basemapping.fwa_wetlands_poly` joined on `waterbody_key` — only
-those physically anchored to the streams above are pulled in. They feed
-`flooded::fl_valley_confine(waterbodies = ...)` so the final valley
-raster fills lake / wetland cells the gradient and cost-distance masks
-would otherwise carve donut holes around.
-
-## Valley confinement
-
-`flooded::fl_valley_confine()` runs the full VCA pipeline on the cached
-DEM, streams, and waterbodies. On the Parsnip River Watershed Group at 30 m (~14 Mcells) it took
-83 to 122 s of wall time on an Apple M1 Max, with other work on the machine (flooded 0.8.1, on the
-8,436 segments the streams had before flooded#87).
-
-```{r vca, eval = FALSE}
-valleys <- flooded::fl_valley_confine(
-  dem = dem,
-  streams = streams,
-  area_field = "upstream_area_ha",
-  precip = flooded::fl_stream_rasterize(streams, dem, field = "map_upstream"),
-  waterbodies = waterbodies,
-  flood_factor = 4   # ff04 — functional floodplain
+# Each sentence below reads these as true; a rebuild that breaks one must change the prose.
+stopifnot(
+  # "streams of order 3 and up that bull trout can reach in link's default configuration"
+  identical(meta$species, "BT"), identical(meta$link_config, "default"), !isTRUE(meta$link_dirty),
+  min(streams$stream_order) == 3, all(streams$access %in% c(1L, 2L)),
+  # "every setting but the flood factor is the package default": what fl_valley_confine() itself defaults to
+  all(names(args) %in% names(fm)),
+  all(vapply(setdiff(names(args), "flood_factor"), function(a) isTRUE(args[[a]] == eval(fm[[a]])), logical(1))),
+  # the call shown under "Data and how it was built" types flood_factor = 4
+  ff == 4,
+  # the answer is the area the build recorded for this flood factor, cell for cell
+  identical(as.integer(fp_cells), meta$fp_cells[[as.character(ff)]]),
+  # the three presets the article names, and the comparison with 7
+  identical(as.numeric(scen$flood_factor), c(2, 4, 6)), "7" %in% names(area_at),
+  area_at[["7"]] > area_at[[as.character(ff)]],
+  # "it adds the lakes and wetlands": every lake and wetland cell inside the boundary is floodplain
+  all(waterbodies$waterbody_type %in% c("L", "W")), all(v_in[wb_cell] == 1L),
+  # the software section's citations
+  !anyNA(sw_row("flooded")$concept_doi), !anyNA(sw_row("link")$concept_doi), !isTRUE(sw_row("flooded")$dirty)
 )
-floodplain <- flooded::fl_valley_poly(valleys)
 ```
 
-## Floodplain map — full WSG
+[`flooded`](https://www.newgraphenvironment.com/flooded/) is an R package that maps floodplains
+from an elevation model and a stream network. This article runs it over the Parsnip River
+watershed group, `r n0(wsg_km2)` km² of British Columbia between Prince George and Mackenzie,
+where the Parsnip River flows north into Williston Reservoir.
 
-```{r map-floodplain, echo = FALSE, fig.cap = "Parsnip River Watershed Group unconfined valleys (green) over MRDEM-30 hillshade. Parks (light green polygon), First Nations reserves (light grey polygon, black diamond marker at centroid + label), accessible order 3+ streams in blue, lakes and wetlands in light blue, forest service / resource roads grey, railways black-dashed, watershed boundary heavy black."}
+**The answer.** At flood factor `r ff`, `flooded` maps **`r n0(fp_ha)` ha of floodplain**,
+`r pc(fp_ha / aoi$area_ha)` of the watershed group, along `r n0(stream_km)` km of streams of order
+3 and up that bull trout can reach.
+
+## What does the map show?
+
+The map starts from the `r cell_m` m cells that pass four tests:
+
+- the slope is at most `r args$slope_threshold` %;
+- the cell is within `r n0(args$max_width / 2 / 1000)` km of a stream in a straight line;
+- it is close to a stream by a distance that counts steep ground as farther (a cost under
+  `r n0(args$cost_threshold)`);
+- it lies below a water level `r ff` times the stream's bankfull depth above the stream, spread
+  across the valley from the streams. Bankfull depth is estimated from each stream's upstream area
+  and mean annual precipitation, through Hall et al.'s regression for channel width
+  [@hall_etal2007Predictingriver].
+
+It then closes small gaps, fills holes under `r args$hole_threshold / 1e4` ha, drops patches under
+`r args$size_threshold / 1e4` ha and smooths edges with a majority filter, so a cell can be in
+without passing every test, or out despite passing them. Last, it adds the lakes and wetlands the
+streams flow through, which make up `r pc(sum(wb_cell) / fp_cells)` of the floodplain, and the cells
+whose centre lies inside a stream's channel width. Every setting but the flood factor is the
+package default.
+
+The streams are those of order 3 and up that bull trout can reach in the `default` configuration
+of [`link`](`r sw_row("link")$url`), the R package that models fish access and habitat on BC's
+stream network.
+
+```{r map-floodplain, fig.cap = paste0("Floodplain at flood factor ", ff, " (green) over a hillshade of the elevation model, with the streams it was mapped from (blue), lakes and wetlands (light blue), resource roads (grey), railways (black, dashed), parks (light green), First Nations reserves (grey, marked with a diamond and named) and the watershed group boundary (black). Roads other than resource roads are left off at this scale.")}
 hill <- terra::shade(
   terra::terrain(dem, "slope", unit = "radians"),
   terra::terrain(dem, "aspect", unit = "radians")
 )
-
-terra::plot(hill, col = grey(0:100 / 100), legend = FALSE, axes = FALSE,
-            mar = c(2, 2, 4, 2),
-            main = "Parsnip River Watershed Group\nfunctional floodplain (ff04), accessible order 3+")
-
-# Hydro / floodplain
-terra::plot(valleys, col = c(NA, "#2c7a2c"), alpha = 0.55,
-            add = TRUE, legend = FALSE)
-plot(sf::st_geometry(waterbodies), col = "#a3cdb966", border = "#2171B5",
-     lwd = 0.3, add = TRUE)
+terra::plot(hill, col = grey(0:100 / 100), legend = FALSE, axes = FALSE, mar = c(1, 1, 1, 1))
+terra::plot(valleys, col = c(NA, "#2c7a2c"), alpha = 0.55, add = TRUE, legend = FALSE)
+plot(sf::st_geometry(waterbodies), col = "#a3cdb966", border = "#2171B5", lwd = 0.3, add = TRUE)
 plot(sf::st_geometry(streams), col = "#1f77b4", lwd = 0.4, add = TRUE)
-
-# Transport — FSRs only on the wide view; full network too cluttered
 if (!is.null(roads)) {
   fsr <- roads[roads$transport_line_type_code %in% c("RRS", "RRD", "RRN"), ]
-  if (nrow(fsr) > 0L) {
-    plot(sf::st_geometry(fsr), col = "#88888888", lwd = 0.25, add = TRUE)
+  if (nrow(fsr) > 0L) plot(sf::st_geometry(fsr), col = "#88888888", lwd = 0.25, add = TRUE)
+}
+if (!is.null(railways)) plot(sf::st_geometry(railways), col = "black", lwd = 0.8, lty = "dashed", add = TRUE)
+# land-use polygons above hydro and transport, so they read where they overlap;
+# colours from the gq registry (reg_qgis_restoration.json)
+if (!is.null(parks)) plot(sf::st_geometry(parks), col = "#639b5f55", border = "#33a02c", lwd = 0.7, add = TRUE)
+label_reserves <- function(r, cex_pt) {
+  pts <- suppressWarnings(sf::st_centroid(sf::st_geometry(r), of_largest_polygon = TRUE))
+  plot(pts, pch = 23, bg = "#222222", col = "white", cex = cex_pt, add = TRUE)
+  xy <- sf::st_coordinates(pts)
+  ly <- xy[, 2] - par("cxy")[2] * 0.45 * 0.9
+  hx <- par("cxy")[1] * 0.45 * 0.05
+  hy <- par("cxy")[2] * 0.45 * 0.05
+  # a thin white halo, then the label; xpd so a label near the edge is not cut off
+  for (d in list(c(-1, 0), c(1, 0), c(0, -1), c(0, 1))) {
+    text(xy[, 1] + d[1] * hx, ly + d[2] * hy, labels = r$english_name, cex = 0.45, col = "white",
+         font = 2, xpd = TRUE)
   }
-}
-if (!is.null(railways)) {
-  plot(sf::st_geometry(railways), col = "black", lwd = 0.8, lty = "dashed",
-       add = TRUE)
-}
-
-# Land-use polygons drawn ABOVE hydro/transport so they're visible where
-# they overlap. Colours from the gq registry (`reg_qgis_restoration.json`).
-if (!is.null(parks)) {
-  plot(sf::st_geometry(parks), col = "#639b5f55", border = "#33a02c",
-       lwd = 0.7, add = TRUE)
+  text(xy[, 1], ly, labels = r$english_name, cex = 0.45, col = "#111111", font = 2, xpd = TRUE)
 }
 if (!is.null(reserves)) {
-  plot(sf::st_geometry(reserves), col = "#b2b2b288", border = "#232323",
-       lwd = 0.6, add = TRUE)
-  # Reserves are tiny at WSG scale — overlay a point marker at each
-  # centroid so they read on the map.
-  pts <- suppressWarnings(sf::st_centroid(sf::st_geometry(reserves),
-                                          of_largest_polygon = TRUE))
-  plot(pts, pch = 23, bg = "#222222", col = "white", cex = 0.9, add = TRUE)
+  plot(sf::st_geometry(reserves), col = "#b2b2b288", border = "#232323", lwd = 0.6, add = TRUE)
 }
-
 plot(sf::st_geometry(aoi), border = "black", lwd = 1.5, add = TRUE)
-
-# Reserve labels — drawn last and with xpd = TRUE so a label whose
-# centroid sits near the AOI edge after clipping isn't cropped at the
-# plot region. Tiny font with a thin white halo for legibility on
-# hillshade.
-if (!is.null(reserves) && "english_name" %in% names(reserves) &&
-    nrow(reserves) > 0L) {
-  pts <- suppressWarnings(sf::st_centroid(sf::st_geometry(reserves),
-                                          of_largest_polygon = TRUE))
-  coords <- sf::st_coordinates(pts)
-  ofs_y <- par("cxy")[2] * 0.45 * 0.9
-  halo_x <- par("cxy")[1] * 0.45 * 0.05
-  halo_y <- par("cxy")[2] * 0.45 * 0.05
-  ly <- coords[, 2] - ofs_y
-  for (dx in c(-1, 1)) {
-    text(coords[, 1] + dx * halo_x, ly, labels = reserves$english_name,
-         cex = 0.45, col = "white", font = 2, xpd = TRUE)
-  }
-  for (dy in c(-1, 1)) {
-    text(coords[, 1], ly + dy * halo_y, labels = reserves$english_name,
-         cex = 0.45, col = "white", font = 2, xpd = TRUE)
-  }
-  text(coords[, 1], ly, labels = reserves$english_name,
-       cex = 0.45, col = "#111111", font = 2, xpd = TRUE)
-}
+if (!is.null(reserves) && nrow(reserves) > 0L) label_reserves(reserves, 0.9)
 ```
 
-## Detail map — south-east corner
+## Which flood level should I use?
 
-The full-WSG view compresses a lot of detail. Cropping to the
-south-eastern corner — the headwaters of the Parsnip River, where Arctic
-Lake Provincial Park sits on the continental divide between Arctic
-Ocean and Pacific Ocean drainages — shows the per-reach floodplain
-pattern, individual channels, lakes / wetlands, and the named First
-Nations reserves at full resolution. Streams just inside the Parsnip
-River Watershed Group here drain north via Williston Reservoir → Peace
-→ Slave → Mackenzie to the Arctic; a short distance south of the
-divide, streams drain into the Fraser and out to the Pacific.
+`flooded` has three preset levels: 2, 4 and 6 times bankfull depth. A factor of 2 gives Rosgen's
+flood-prone width, which roughly matches a 50-year flood stage or less
+[@nagel_etal2014LandscapeScale]. `flooded` calls 4 the functional floodplain and 6 the valley
+bottom; those names are its own reading, not a published one. This article uses `r ff`. For valley
+extent on 30 m elevation models, Nagel et al. found a factor of 7 the most appropriate.
 
-```{r map-detail, echo = FALSE, fig.cap = "South-east corner of the Parsnip River Watershed Group at full resolution — the headwaters around Arctic Lake on the continental divide. Parks (light green), First Nations reserves (light grey polygon with black diamond marker + formal english_name label at centroid), waterbodies, valleys, named streams (italic blue labels), roads (grey), railways (black dashed)."}
+With every other setting unchanged, the Parsnip's floodplain is `r lst(paste(n0(area_at), "ha"))`
+at flood factors `r lst(names(area_at))`. Going from `r ff` to 7 adds
+`r pc(area_at[["7"]] / area_at[[as.character(ff)]] - 1)`.
+
+## How do I read it up close?
+
+The south-east corner holds the Parsnip's headwaters around Arctic Lake, on the divide between
+Arctic and Pacific drainage. At this scale the floodplain follows individual channels, lakes and
+wetlands, and sits against roads, railways, reserves and parks.
+
+The map does not record which test, or which step of the tidying, left a cell out.
+
+```{r map-detail, fig.cap = "The south-east corner of the watershed group, around Arctic Lake: floodplain (green), streams (blue) with named streams labelled, lakes and wetlands (light blue), all roads (grey), railways (black, dashed), parks (light green) and First Nations reserves (grey, named)."}
 e <- sf::st_bbox(aoi)
 inset_bbox <- sf::st_bbox(c(
   xmin = unname(e["xmin"] + (e["xmax"] - e["xmin"]) * 0.55),
@@ -347,95 +198,109 @@ inset_bbox <- sf::st_bbox(c(
   ymax = unname(e["ymin"] + (e["ymax"] - e["ymin"]) * 0.45)
 ), crs = sf::st_crs(streams))
 inset_ext <- terra::ext(inset_bbox[c("xmin", "xmax", "ymin", "ymax")])
-
 crop_sf <- function(x) {
   if (is.null(x) || nrow(x) == 0L) return(NULL)
   out <- suppressWarnings(sf::st_crop(x, inset_bbox))
   if (nrow(out) == 0L) NULL else out
 }
-
-dem_inset            <- terra::crop(dem, inset_ext)
-valleys_inset        <- terra::crop(valleys, inset_ext)
-streams_inset        <- crop_sf(streams)
-wb_inset             <- crop_sf(waterbodies)
-aoi_inset            <- crop_sf(aoi)
-roads_inset          <- crop_sf(roads)
-railways_inset       <- crop_sf(railways)
-reserves_inset       <- crop_sf(reserves)
-parks_inset          <- crop_sf(parks)
-named_streams_inset  <- crop_sf(named_streams)
-
-hill_inset <- terra::shade(
-  terra::terrain(dem_inset, "slope", unit = "radians"),
-  terra::terrain(dem_inset, "aspect", unit = "radians")
+dem_i <- terra::crop(dem, inset_ext)
+hill_i <- terra::shade(
+  terra::terrain(dem_i, "slope", unit = "radians"),
+  terra::terrain(dem_i, "aspect", unit = "radians")
 )
-
-terra::plot(hill_inset, col = grey(0:100 / 100), legend = FALSE, axes = FALSE,
-            mar = c(2, 2, 4, 2),
-            main = "Parsnip River Watershed Group\nsouth-east detail")
-
-# Hydro / floodplain
-terra::plot(valleys_inset, col = c(NA, "#2c7a2c"), alpha = 0.55,
-            add = TRUE, legend = FALSE)
-if (!is.null(wb_inset)) {
-  plot(sf::st_geometry(wb_inset), col = "#a3cdb988", border = "#2171B5",
-       lwd = 0.4, add = TRUE)
-}
-plot(sf::st_geometry(streams_inset), col = "#1f77b4", lwd = 0.7, add = TRUE)
-
-# Transport
-if (!is.null(roads_inset)) {
-  plot(sf::st_geometry(roads_inset), col = "#666666aa", lwd = 0.4, add = TRUE)
-}
-if (!is.null(railways_inset)) {
-  plot(sf::st_geometry(railways_inset), col = "black", lwd = 1.0, lty = "dashed",
-       add = TRUE)
-}
-
-# Land-use polygons on top so they read on overlap.
-if (!is.null(parks_inset)) {
-  plot(sf::st_geometry(parks_inset), col = "#639b5f55", border = "#33a02c",
-       lwd = 0.8, add = TRUE)
-}
-if (!is.null(reserves_inset)) {
-  plot(sf::st_geometry(reserves_inset), col = "#b2b2b2aa", border = "#232323",
-       lwd = 0.7, add = TRUE)
-}
-
-if (!is.null(aoi_inset)) {
-  plot(sf::st_geometry(aoi_inset), border = "black", lwd = 1.5, add = TRUE)
-}
-
-# Named-stream labels — one per unique gnis_name at the segment midpoint
-if (!is.null(named_streams_inset)) {
-  dedup <- named_streams_inset[!duplicated(named_streams_inset$gnis_name), ]
+terra::plot(hill_i, col = grey(0:100 / 100), legend = FALSE, axes = FALSE, mar = c(1, 1, 1, 1))
+terra::plot(terra::crop(valleys, inset_ext), col = c(NA, "#2c7a2c"), alpha = 0.55, add = TRUE, legend = FALSE)
+wb_i <- crop_sf(waterbodies)
+if (!is.null(wb_i)) plot(sf::st_geometry(wb_i), col = "#a3cdb988", border = "#2171B5", lwd = 0.4, add = TRUE)
+plot(sf::st_geometry(crop_sf(streams)), col = "#1f77b4", lwd = 0.7, add = TRUE)
+roads_i <- crop_sf(roads)
+if (!is.null(roads_i)) plot(sf::st_geometry(roads_i), col = "#666666aa", lwd = 0.4, add = TRUE)
+rail_i <- crop_sf(railways)
+if (!is.null(rail_i)) plot(sf::st_geometry(rail_i), col = "black", lwd = 1.0, lty = "dashed", add = TRUE)
+parks_i <- crop_sf(parks)
+if (!is.null(parks_i)) plot(sf::st_geometry(parks_i), col = "#639b5f55", border = "#33a02c", lwd = 0.8, add = TRUE)
+res_i <- crop_sf(reserves)
+if (!is.null(res_i)) plot(sf::st_geometry(res_i), col = "#b2b2b2aa", border = "#232323", lwd = 0.7, add = TRUE)
+aoi_i <- crop_sf(aoi)
+if (!is.null(aoi_i)) plot(sf::st_geometry(aoi_i), border = "black", lwd = 1.5, add = TRUE)
+ns_i <- crop_sf(named_streams)
+if (!is.null(ns_i)) {
+  # one label per name, at the middle of its first segment
+  dedup <- ns_i[!duplicated(ns_i$gnis_name), ]
   pts <- suppressWarnings(sf::st_centroid(sf::st_geometry(dedup)))
-  text(sf::st_coordinates(pts), labels = dedup$gnis_name,
-       cex = 0.5, font = 3, col = "#0d3a6c")
+  text(sf::st_coordinates(pts), labels = dedup$gnis_name, cex = 0.5, font = 3, col = "#0d3a6c")
 }
-
-# First Nations reserve markers + labels (inset only)
-if (!is.null(reserves_inset) && "english_name" %in% names(reserves_inset) &&
-    nrow(reserves_inset) > 0L) {
-  pts <- suppressWarnings(sf::st_centroid(sf::st_geometry(reserves_inset),
-                                          of_largest_polygon = TRUE))
-  coords <- sf::st_coordinates(pts)
-  plot(pts, pch = 23, bg = "#222222", col = "white", cex = 1.0, add = TRUE)
-  ofs_y <- par("cxy")[2] * 0.45 * 0.9
-  halo_x <- par("cxy")[1] * 0.45 * 0.05
-  halo_y <- par("cxy")[2] * 0.45 * 0.05
-  ly <- coords[, 2] - ofs_y
-  for (dx in c(-1, 1)) {
-    text(coords[, 1] + dx * halo_x, ly, labels = reserves_inset$english_name,
-         cex = 0.45, col = "white", font = 2, xpd = TRUE)
-  }
-  for (dy in c(-1, 1)) {
-    text(coords[, 1], ly + dy * halo_y, labels = reserves_inset$english_name,
-         cex = 0.45, col = "white", font = 2, xpd = TRUE)
-  }
-  text(coords[, 1], ly, labels = reserves_inset$english_name,
-       cex = 0.45, col = "#111111", font = 2, xpd = TRUE)
-}
+if (!is.null(res_i)) label_reserves(res_i, 1.0)
 ```
+
+## How good is it?
+
+This map has not been compared with floodplain mapped on the ground. Its water level rests on Hall
+et al.'s channel-width regression, which explains about half the variation in width (R² = 0.47)
+across 1,951 sites in the Columbia River basin [@hall_etal2007Predictingriver], and on a conversion
+from width to depth fitted in a single Idaho basin. The flood factor multiplies whatever error those
+carry.
+
+## What should you know before using it?
+
+- **It maps terrain, not floods.** No discharge, flood routing or return period goes into it; the
+  flood factor sets a level relative to each stream's bankfull depth.
+- **It starts only from the streams it is given.** Ground beside a smaller stream, or one bull
+  trout cannot reach, is in the map only through its slope, distance and height relative to those
+  streams.
+- **It works on `r cell_m` m cells.** Nothing narrower than a cell is resolved.
+
+## Data and how it was built
+
+The elevation model is Natural Resources Canada's
+[MRDEM-30](https://open.canada.ca/data/en/dataset/18752265-bda3-498c-a4ba-9dfe68cb98da). The
+streams are BC Freshwater Atlas segments from `link`'s run of `r meta$link_run_date`, with upstream
+area and mean annual precipitation from [fwapg](`r sw_row("fwapg")$url`); lakes, wetlands and
+named streams are from the atlas too. Roads, railways, reserves and parks are from the BC Data
+Catalogue. The data were built by
+[`data-raw/wsg_vignette_data.R`](https://github.com/NewGraphEnvironment/flooded/blob/main/data-raw/wsg_vignette_data.R),
+which ran this call; one run of it took `r round(meta$vca_seconds / 60, 1)` minutes
+(`r meta$cpu`):
+
+```{r vca, eval = FALSE, echo = TRUE}
+valleys <- flooded::fl_valley_confine(
+  dem = dem,
+  streams = streams,
+  area_field = "upstream_area_ha",
+  precip = flooded::fl_stream_rasterize(streams, dem, field = "map_upstream"),
+  waterbodies = waterbodies,
+  flood_factor = 4
+)
+```
+
+The results can be downloaded:
+[`pars.gpkg`](https://github.com/NewGraphEnvironment/flooded/raw/main/inst/vignette-data/pars.gpkg)
+(the floodplain, streams, lakes and wetlands, and the map layers),
+[`pars_valleys.tif`](https://github.com/NewGraphEnvironment/flooded/raw/main/inst/vignette-data/pars_valleys.tif)
+(the floodplain grid) and
+[`pars_dem.tif`](https://github.com/NewGraphEnvironment/flooded/raw/main/inst/vignette-data/pars_dem.tif)
+(the elevation model, rounded to whole metres; the floodplain was mapped from the unrounded values).
+
+## Software and how to cite it
+
+- [`flooded`](`r sw_row("flooded")$url`) `r sw_row("flooded")$release`, at commit
+  `r commit_link("flooded")`: the floodplain model. DOI
+  [`r sw_row("flooded")$concept_doi`](https://doi.org/`r sw_row("flooded")$concept_doi`).
+- [`link`](`r sw_row("link")$url`) `r sw_row("link")$release`, modelled at commit
+  `r commit_link("link")` and recomputed at `r recompute_link`: which streams bull trout can reach.
+  DOI [`r sw_row("link")$concept_doi`](https://doi.org/`r sw_row("link")$concept_doi`).
+- [`fresh`](`r sw_row("fresh")$url`) `r sw_row("fresh")$version`, which has no release, at commit
+  `r commit_link("fresh")`: the stream network modelling engine `link` runs on.
+- [fwapg](`r sw_row("fwapg")$url`), at commit `r commit_link("fwapg")`: the Freshwater Atlas in
+  PostgreSQL, with upstream area and precipitation.
+
+Cite `flooded` as:
+
+```{r cite, results = "asis"}
+cat(format(utils::citation("flooded"), style = "text"), sep = "\n\n")
+```
+
+and by its DOI, which covers every release and resolves to the latest:
+<https://doi.org/`r sw_row("flooded")$concept_doi`>.
 
 ## References
