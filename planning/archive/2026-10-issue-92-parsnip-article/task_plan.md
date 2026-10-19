@@ -145,17 +145,18 @@ trout can reach. Every one of those numbers is computed inline.
 - [x] `_pkgdown.yml`: check the articles listing still resolves.
 
 ## Validation
-- [ ] Render with `rmarkdown::render()` after `pkgload::load_all()`, plus `pkgdown::build_article()`.
+- [x] Render with `rmarkdown::render()` after `pkgload::load_all()`, plus `pkgdown::build_article()`.
       In the HTML, confirm there are no `footnote-ref` and no literal `\@ref`.
-- [ ] Word, line, table and figure counts before and after, against the forecast. Name what set
+- [x] Word, line, table and figure counts before and after, against the forecast. Name what set
       the floor.
-- [ ] `devtools::test()`, `R CMD check`, `pkgdown::check_pkgdown()`, lintr (no increase).
-- [ ] `/code-check branch`. Reviewers work on copies, list every added or changed sentence with a
+- [x] `devtools::test()`, `R CMD check`, `pkgdown::check_pkgdown()`, lintr (no increase).
+- [x] `/code-check branch`. Reviewers work on copies, list every added or changed sentence with a
       verdict against the data and whether a guard fails if it turns false, and continue until an
       enumeration round finds nothing. Report the agent count.
-- [ ] PWF checkboxes match landed work; `/planning-archive`; `/gh-pr-push`.
+- [x] PWF checkboxes match landed work; `/planning-archive`; `/gh-pr-push`.
 
 ## Out of scope (named, not done)
+<!-- filed: #93 (valley-confinement), #94 (stac-dem) -->
 - `valley-confinement.Rmd` and `stac-dem.Rmd` to the same standard. Each needs its own issue,
   filed at the end.
 - The roads licence (#85). The download line points at the gpkg as today.

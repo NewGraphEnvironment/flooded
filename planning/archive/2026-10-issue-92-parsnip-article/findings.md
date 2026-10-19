@@ -95,11 +95,11 @@ and references excluded:
 
 | | before | after |
 |---|---|---|
-| prose and captions | 1,088 | 974 |
+| prose and captions | 1,088 | 974 at the first draft; 1,031 after four review rounds |
 | table words | 277 | 0 |
-| reader-visible total | 1,365 | 974 (-29 %) |
+| reader-visible total | 1,365 | 1,031 (-24 %) |
 | tables / figures | 2 / 2 | 0 / 2 |
-| source body words / file lines | 960 / 441 | 872 / 306 |
+| source body words / file lines | 960 / 441 | 918 / 345 |
 
 The forecast was 500-600 body words, and the result missed it by about 60 %. Four things set the floor:
 - The exact definition (the four tests, then the tidy-up and what is added), which the plan
