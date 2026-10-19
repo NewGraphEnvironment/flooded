@@ -505,24 +505,30 @@ concept_of <- function(pkg) {
   }))
   unique(rel)
 }
-# the earliest release each concept DOI holds a version of
-first_archived <- function(pkg) {
-  v <- unlist(lapply(recs, function(r) {
-    t <- r$attributes$titles
-    if (length(t) > 0L && grepl(sprintf("^(NewGraphEnvironment/)?%s:", pkg), t[[1]]$title)) r$attributes$version
-  }))
-  v <- grep("^v?[0-9]+\\.[0-9]+\\.[0-9]+$", v, value = TRUE)
-  paste0("v", min(package_version(sub("^v", "", v))))
+# the releases each concept DOI archives, from Zenodo itself (DataCite's text
+# search misses records); its public API returns at most 25 a page
+zenodo_versions <- function(doi) {
+  id <- sub("^10[.]5281/zenodo[.]", "", doi)
+  out <- character()
+  for (page in 1:40) {
+    x <- get_json(sprintf("https://zenodo.org/api/records?q=parent.id:%s&allversions=true&size=25&page=%d",
+                          id, page))$hits
+    v <- vapply(x$hits, function(h) h$metadata$version %||% NA_character_, character(1))
+    out <- c(out, v)
+    if (length(out) >= x$total || length(v) == 0L) return(out)
+  }
+  stop("more than 1,000 Zenodo versions of ", doi, call. = FALSE)
 }
 software$concept_doi <- NA_character_
-software$doi_from <- NA_character_
+software$archived <- I(rep(list(character()), nrow(software)))
 for (pkg in c("flooded", "link")) {
   d <- concept_of(pkg)
   if (length(d) != 1L) stop("DataCite gives ", length(d), " concept DOIs for ", pkg, call. = FALSE)
   software$concept_doi[software$package == pkg] <- d
-  software$doi_from[software$package == pkg] <- first_archived(pkg)
+  software$archived[[which(software$package == pkg)]] <- zenodo_versions(d)
 }
-dois <- list(source = doi_url, retrieved = format(Sys.Date()))
+dois <- list(source = doi_url, archived_from = "https://zenodo.org/api/records?q=parent.id:<id>&allversions=true",
+             retrieved = format(Sys.Date()))
 
 # ---- 5. MRDEM-30 clip via fl_dem_aoi() ----------------------------------
 

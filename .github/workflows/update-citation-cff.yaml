@@ -26,7 +26,8 @@ jobs:
 
       # /citation-cff step 2a's recipe (no CRAN-namesake DOI or page, the firm as
       # publisher in preferred-citation) plus flooded's own: its Zenodo concept DOI,
-      # set after the drop, and a message that reads whole in Zenodo's record notes.
+      # set after the drop, and a message that names that DOI (Zenodo copies the
+      # message into each record's notes).
       # To regenerate CITATION.cff locally, run this block, not the skill's.
       - name: Update CITATION.cff
         run: |
@@ -36,7 +37,7 @@ jobs:
             x$identifiers <- Filter(function(i) !grepl("CRAN.package", i$value, fixed = TRUE), unclass(x$identifiers))
             if (!length(x$identifiers)) x$identifiers <- NULL
             x$doi <- "10.5281/zenodo.23302790"
-            x$message <- "If you use flooded, please cite it using the metadata from this file."
+            x$message <- paste0("If you use flooded, please cite it by its DOI, ", x$doi, ".")
             pc <- x[intersect(c("title", "authors", "version", "date-released", "url",
                                 "repository-code", "license", "doi"), names(x))]
             pc$type <- "software"
