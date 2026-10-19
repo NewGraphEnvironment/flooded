@@ -69,10 +69,10 @@ test_that("stac-dem cached lidar rasters carry the lidar gap as NA (#63)", {
   expect_equal(terra::global(is.na(v1), "sum")[[1]], 11020)
 })
 
-# vignettes/pars-floodplain.Rmd quotes data-raw/wsg_vignette_data.R's bundle. These fail when the
-# bundle, or a source it was built from, is no longer what pars_meta.rds records, so the article
-# cannot go on quoting a run that has been superseded. The database and DEM checks need the
-# sources, so they run on a machine that has them and skip elsewhere.
+# vignettes/pars-floodplain.Rmd quotes data-raw/wsg_vignette_data.R's bundle. These fail when a
+# bundled file, an fwapg query or the MRDEM-30 file is no longer what pars_meta.rds records, so the
+# article cannot go on quoting a run that has been superseded. The fwapg and MRDEM-30 checks need
+# those sources, so they skip on CI, on CRAN and where the source cannot be reached.
 
 pars_meta <- function() {
   readRDS(system.file("vignette-data", "pars_meta.rds", package = "flooded", mustWork = TRUE))
@@ -98,7 +98,7 @@ test_that("the Parsnip floodplain in meta is the valley grid's, inside the bound
   expect_identical(meta$fp_area_ha, meta$fp_cells * prod(terra::res(v)) / 1e4)
 })
 
-test_that("every database source of the Parsnip bundle is unchanged since it was built", {
+test_that("every fwapg query of the Parsnip bundle is unchanged since it was built", {
   skip_on_cran()
   skip_on_ci()
   skip_if_not_installed("DBI")
@@ -118,7 +118,7 @@ test_that("every database source of the Parsnip bundle is unchanged since it was
   skip_if(is.na(DBI::dbGetQuery(conn, "SELECT to_regclass('fresh_default.log') AS t")$t),
           "the reachable database has no fresh_default schema")
   # fwapg sources only: the map's context layers come from a second database
-  # (PG_*_SHARE) and are drawn, never quoted
+  # (PG_*_SHARE), which this test does not check
   src <- meta$sources[meta$sources$db == "fwapg", ]
   expect_gt(nrow(src), 0)
   for (i in seq_len(nrow(src))) {

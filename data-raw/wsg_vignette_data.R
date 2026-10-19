@@ -154,7 +154,7 @@ write_layer <- function(x, layer) {
 flooded_sha <- git_out(c("rev-parse", "HEAD"))
 flooded_dirty <- length(git_out(c("status", "--porcelain", "--", "R", "DESCRIPTION", "inst/extdata",
                                   "data-raw/wsg_vignette_data.R"))) > 0L
-flooded_tag <- git_out(c("describe", "--tags", "--abbrev=0", "HEAD"))
+flooded_tag <- git_out(c("describe", "--tags", "--abbrev=0", "--match", shQuote("v[0-9]*.[0-9]*.[0-9]*"), "HEAD"))
 if (is.na(flooded_sha)) stop("Not in flooded's git checkout; run from the package root.", call. = FALSE)
 if (flooded_dirty) message("NOTE: R/, DESCRIPTION, inst/extdata or this script differ from ", substr(flooded_sha, 1, 7),
                            "; meta records the build as dirty.")
@@ -436,10 +436,12 @@ DBI::dbDisconnect(conn)
 
 # ---- 4b. Software the build rests on, and how to cite it ------------------
 
-# Each package is cited by its concept DOI, its last release at or before the
-# build, and the commit the build used. link's and fresh's versions are the ones
-# the link run recorded; the GitHub compare API confirms that each version's tag
-# is at or before the commits, and the next tag is not. fwapg is an external tool.
+# Each package is cited by its last release at or before the build, its concept
+# DOI where Zenodo archives one, and the commit the build used. link's and
+# fresh's versions are the ones the link run recorded; the GitHub compare API
+# confirms that each version's tag is at or before the commits, and the next tag
+# is not. flooded's is the last local version tag before HEAD. fwapg is an
+# external tool, cited by the commit link's run recorded.
 tag_at_or_before <- function(repo, tag, sha) {
   st <- get_json(sprintf("https://api.github.com/repos/%s/compare/%s...%s", repo, tag, sha))$status
   st %in% c("ahead", "identical")
@@ -617,7 +619,7 @@ meta <- c(meta, list(
   vca_seconds = unname(vca_seconds),   # fl_valley_confine() at flood_factor, one run
   vca_threads = terra::terraOptions(print = FALSE)$threads,
   cpu = cpu,
-  sources = sources,                   # every database query read: SQL and a digest of its rows
+  sources = sources,                   # every query whose rows reach the gpkg: SQL and a digest of its rows
   dem_source = dem_source,
   md5_files = stats::setNames(unname(tools::md5sum(written)), basename(written)),
   software = software,

@@ -134,3 +134,29 @@ New guards, each fired on a mutated copy (scratchpad `mutate2.R`, copies under a
 | cpu NA | `!is.na(meta$cpu)` |
 | one channel-buffer cell (not a lake) set to 0, count moved | `all(v_in[buf_cell] == 1L)` |
 | control | 0 failing tests; renders |
+
+## Code-check round 2 (2026-10-19)
+
+11 findings (planning/active/review-round2.md), 7 inside or next to a round-1 fix. All fixed:
+- The limit now names the lakes and wetlands. They are added with no distance test, and 4,086 of
+  their cells lie more than 1,000 m from a seed stream.
+- CLAUDE.md is restated: guards cover the numbers and their premises, the method description follows
+  the code, and the checks skip on CI and CRAN.
+- fwapg is cited at the commit link's run recorded, plus the date its tables were read.
+- The flag guards use `isFALSE()`, and the string guards are `has1()`. Before, NA or an absent
+  field passed.
+- The test's header and name are fwapg-only.
+- Script comments fixed, and `git describe --match` restricts to version tags.
+- Captions give the lake fill colour.
+- The run time is the `fl_valley_confine()` call.
+- Rosgen's "maximum".
+- The data-section layer names now match the captions.
+
+Mechanism (round 2): claims written from the member in view, not the set the code defines. Round 1
+reworded the flagged sentence rather than re-listing the set, so the same defect reappeared one step
+over.
+
+Proofs (scratchpad `mutate3.R`): `link_dirty` NA, flooded `dirty` NA, link `dirty` NA and
+`dirty_also` NA each fire `isFALSE()`. With `cpu`, `doi_from` or `read_at` absent, `has1()` fires.
+The control renders, with 0 failing tests. No rebuild was needed: none of the fixes changes what
+the script records.
