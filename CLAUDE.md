@@ -96,9 +96,11 @@ tests/testthat/          — unit tests for each fl_* function
 
   `test-vignette_data.R` fails when a bundled file no longer matches, and, where it can reach them
   (it skips on CI and CRAN), when an fwapg query or MRDEM-30 has moved. Context layers from the shared
-  database are not checked. Numbers the vignette computes from the bundle are pinned by its md5;
-  its `stopifnot()` refuses a missing or malformed meta value and guards each sentence's premise; its description of the method follows `R/fl_valley_confine.R`, and its
-  literature figures (Hall's R², Nagel's 7) are cited, not guarded.
+  database are not checked. Numbers the vignette computes from the bundle are pinned by its md5.
+  Its `stopifnot()` checks the form of every meta field the article prints, and the premises of the
+  answer, the settings, the flood-level comparison, the lake and channel cells and the software
+  citations. The method description follows `R/fl_valley_confine.R`; the geography and the map
+  descriptions are not guarded; literature figures (Hall's R², Nagel's 7) are cited, not guarded.
   Run the script from a committed tree, because its commit is the article's citation.
 - **25 m TRIM resampled to 10 m** is not real 10 m detail — note this when comparing TRIM-derived outputs to true 10 m or 1 m lidar.
 - **1 m lidar reveals anthropogenic barriers** ("pop-ups") — diagnostic value beyond floodplain area itself.

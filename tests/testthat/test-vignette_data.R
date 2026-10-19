@@ -120,7 +120,7 @@ test_that("every fwapg query of the Parsnip bundle is unchanged since it was bui
   # fwapg sources only: the map's context layers come from a second database
   # (PG_*_SHARE), which this test does not check
   src <- meta$sources[meta$sources$db == "fwapg", ]
-  expect_gt(nrow(src), 0)
+  expect_setequal(src$name, c("aoi", "streams", "lakes", "wetlands", "named_streams"))
   for (i in seq_len(nrow(src))) {
     expect_identical(digest(conn, src$sql[i]), src$digest[i],
                      info = paste(src$name[i], "has moved in the database.", regen_pars))
@@ -131,6 +131,8 @@ test_that("the Parsnip DEM's source is unchanged since it was built", {
   skip_on_cran()
   skip_on_ci()
   meta <- pars_meta()
+  expect_true(is.character(meta$dem_source$url) && length(meta$dem_source$url) == 1L)
+  expect_true(is.character(meta$dem_source$etag) && length(meta$dem_source$etag) == 1L)
   h <- tryCatch(curlGetHeaders(meta$dem_source$url), error = function(e) NULL)
   skip_if(is.null(h) || attr(h, "status") != 200L, "MRDEM-30 is not reachable")
   etag <- sub("^etag:\\s*", "", trimws(grep("^etag:", h, ignore.case = TRUE, value = TRUE)), ignore.case = TRUE)

@@ -82,7 +82,7 @@ pc <- function(v, d = 1) paste0(formatC(100 * v, format = "f", digits = d), " %"
 lst <- function(v) if (length(v) < 2) v else paste(paste(v[-length(v)], collapse = ", "), "and", v[length(v)])
 # one value, present and not empty
 has1 <- function(x) length(x) == 1L && !is.na(x) && nzchar(x)
-is_sha <- function(x) has1(x) && grepl("^[0-9a-f]{40}$", x)
+fits <- function(x, re) has1(x) && grepl(re, x)
 
 # Each sentence below reads these as true; a rebuild that breaks one must change the prose.
 stopifnot(
@@ -91,7 +91,8 @@ stopifnot(
   nrow(streams) > 0, min(streams$stream_order) == 3, all(c("access", "channel_width") %in% names(streams)),
   all(streams$access %in% c(1L, 2L)),
   # "every setting but the flood factor is the package default": what fl_valley_confine() itself defaults to
-  all(names(args) %in% names(fm)),
+  setequal(names(args), flooded::fl_params()$parameter), all(names(args) %in% names(fm)),
+  all(vapply(args, function(a) is.numeric(a) && length(a) == 1L && is.finite(a), logical(1))),
   all(vapply(setdiff(names(args), "flood_factor"), function(a) isTRUE(args[[a]] == eval(fm[[a]])), logical(1))),
   # the call shown under "Data and how it was built" types flood_factor = 4
   ff == 4,
@@ -105,14 +106,25 @@ stopifnot(
   all(waterbodies$waterbody_type %in% c("L", "W")), sum(wb_cell) > 0, all(v_in[wb_cell] == 1L),
   # "and the cells whose centre lies inside a stream's channel width": every one is floodplain
   all(v_in[buf_cell] == 1L), sum(buf_cell) > 0,
-  # every value the data and software sections print
-  all(vapply(c("flooded", "link", "fresh"), function(p) has1(sw_row(p)$release), logical(1))),
-  all(vapply(c("flooded", "link", "fresh", "fwapg"), function(p) is_sha(sw_row(p)$commit), logical(1))),
-  is_sha(sw_row("link")$commit_also), has1(meta$link_run_date),
-  length(meta$vca_seconds) == 1L, isTRUE(meta$vca_seconds > 0), has1(sw_row("flooded")$concept_doi),
-  has1(sw_row("link")$concept_doi), has1(sw_row("flooded")$doi_from),
+  # every meta value the article prints, in the form it prints it (the list is every `meta$`,
+  # `sw_row()$` and `args$` field this file reads)
+  all(vapply(c("flooded", "link", "fresh", "fwapg"), function(p) {
+    r <- sw_row(p)
+    nrow(r) == 1L && fits(r$url, "^https://") && fits(r$repo, "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$") &&
+      fits(r$commit, "^[0-9a-f]{40}$")
+  }, logical(1))),
+  all(vapply(c("flooded", "link", "fresh"), function(p) fits(sw_row(p)$release, "^v[0-9]+[.][0-9]+[.][0-9]+$"),
+             logical(1))),
+  fits(sw_row("link")$commit_also, "^[0-9a-f]{40}$"),
+  fits(sw_row("flooded")$concept_doi, "^10[.]5281/zenodo[.][0-9]+$"),
+  fits(sw_row("link")$concept_doi, "^10[.]5281/zenodo[.][0-9]+$"),
+  fits(sw_row("flooded")$doi_from, "^v[0-9]+[.][0-9]+[.][0-9]+$"),
   isFALSE(sw_row("flooded")$dirty), isFALSE(sw_row("link")$dirty), isFALSE(sw_row("link")$dirty_also),
-  has1(meta$cpu), has1(meta$fwapg_read$read_at)
+  fits(meta$link_run_date, "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"),
+  fits(as.character(meta$fwapg_read$read_at), "^[0-9]{4}-[0-9]{2}-[0-9]{2}T"),
+  has1(meta$cpu), is.numeric(meta$vca_seconds), length(meta$vca_seconds) == 1L,
+  isTRUE(is.finite(meta$vca_seconds) && meta$vca_seconds > 0),
+  is.numeric(area_at), all(is.finite(area_at)), identical(names(area_at), names(meta$fp_cells))
 )
 ```
 

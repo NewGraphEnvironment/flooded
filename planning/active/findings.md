@@ -179,3 +179,43 @@ inside or next to round 2's fixes. All are fixed:
 
 Proofs (scratchpad `mutate4.R`): each of the 8 mutations fires its guard, and the control renders
 with 0 failing tests.
+
+## Code-check round 4 (2026-10-19), and the enumeration that ended the loop
+
+Round 4 found every sentence of the article true. Its 5 findings were about guards, 2 of them
+inside round 3's fixes:
+- CLAUDE.md's "refuses a missing or malformed meta value and guards each sentence's premise" was
+  false: it widened a quantifier again.
+- The guard comment said "every value printed", but `url` and `repo` were unchecked.
+- The settings guard was a subset test, so a missing setting passed.
+- The fwapg test looped over the rows present, so a dropped `streams` row passed.
+- The DEM test skipped, instead of failing, on an absent URL.
+
+Fixes:
+- `setequal()` on the settings, with each one numeric and finite.
+- A form check (`fits()`) on every printed meta field: url, repo, commit, release, DOI, `doi_from`,
+  dates, CPU, seconds, areas.
+- `expect_setequal()` on the five fwapg sources.
+- The DEM URL and ETag are asserted before fetching.
+- CLAUDE.md names the guarded set by its members, and says what is not guarded.
+
+Mutation proofs for the test changes (scratchpad `mutate5.R`): a dropped `streams` row and an
+absent DEM URL each fail their test.
+
+**The enumeration that ended the loop** (`planning/active/enumerate_guards.R`):
+- The fields the article reads are extracted from the Rmd source by regex, not listed by hand:
+  every `meta$`, `sw_row()$` and `args$` field, plus `commit` and `repo` for each package, which
+  `commit_link()` reads. That gives 37 fields.
+- Each field was set to NA and then removed, one at a time, in a copy, and the article's setup and
+  load chunks were run each time.
+- All 74 mutations stopped the chunk. The control on the restored meta passed.
+
+The mechanism the rounds kept finding was a set described by the member in view, with each fix
+re-worded in place. It is closed for guards by deriving the field list from the source. For
+sentences, round 4 found all of them true.
+
+Review spend:
+- 6 review agents: the plan review and code-check rounds 1 to 4.
+- One more than the usual five, because rounds 2, 3 and 4 each found defects inside the previous
+  round's fixes.
+- Findings by round: 13, 11, 4, 5.
