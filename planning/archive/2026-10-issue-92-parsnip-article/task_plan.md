@@ -17,8 +17,9 @@
 regeneration history (0.5.0 / 0.7.0 / #87), a "Cached inputs" section mid-article, a dated
 timing on superseded inputs, typed numbers (5,597 km², 6.3 %, 83–122 s), a count of NA-area
 segments with an fwapg#33 link, and two tables a sentence could carry. It never states how much
-floodplain it maps. Rewrite it to NGE's article standard (soul `writing.md` at da23ae5, soul#466 /
-#471 / #40 applied by hand), using knowledge's chinook rearing article as the mechanical model.
+floodplain it maps. Rewrite it to NGE's article standard, with its pending rules on tables, side
+analyses and software citation applied by hand, using a worked example in another NGE package as the
+mechanical model.
 
 Baseline (measured): 960 body words, 441 file lines, 2 figures, 2 tables.
 Forecast: ~500–600 body words, 2 figures, 0 tables.
@@ -125,7 +126,7 @@ trout can reach. Every one of those numbers is computed inline.
       (in scratch copies).
 
 ## Phase 3: Rewrite `vignettes/pars-floodplain.Rmd`
-- [x] Apply the outline above, with `echo = FALSE` throughout, as in the chinook article.
+- [x] Apply the outline above, with `echo = FALSE` throughout, as in the worked example.
 - [x] Compute every number inline. Formatting helpers live in the load chunk.
 - [x] Add a `stopifnot()` for each claim's premise. Among them:
       - the flood-factor areas rise with the factor;

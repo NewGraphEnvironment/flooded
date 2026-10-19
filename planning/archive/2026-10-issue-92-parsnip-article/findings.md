@@ -34,11 +34,12 @@ Rewrite it as a data-product article:
 
 ## Standard read (2026-10-19)
 
-- soul `writing.md` at origin/main (da23ae5 bullets: open with the answer; plain phrase over a term;
-  list every check with the way it points), `readme.md` rule 9, `pkgdown-publishing.md` (no
-  footnotes), `r-packages.md` Vignettes (no `\@ref`, data-raw only, stopifnot per quoted number,
-  bundle carries provenance), soul#466 / #471 / #40 bodies, knowledge's chinook rearing article
-  (vignette, data script, test) as the mechanical model.
+- NGE's conventions for articles and package vignettes: open with the answer; headings are the
+  reader's questions; a plain phrase over a term; list every check with the way it points; tables
+  and figures earn their place; no footnotes or `\@ref`; data from `data-raw/` only; `stopifnot()`
+  per quoted number; the bundle carries provenance; software named, linked and cited (concept DOI,
+  last release at or before the build, commit). A worked example in another NGE package was the
+  mechanical model.
 - DataCite (client cern.zenodo): flooded concept 10.5281/zenodo.23302790 (v0.8.2, v0.8.3);
   link concept 10.5281/zenodo.23264990 (v0.63.0-v0.65.1 listed; v0.66.x not indexed). fresh: none.
 - link: `v0.66.0...ee21eb1` and `v0.66.0...a17e917` are "ahead"; `v0.66.1...a17e917` is "behind",
