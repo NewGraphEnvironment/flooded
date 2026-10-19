@@ -60,6 +60,11 @@ area_at <- meta$fp_area_ha
 # lakes and wetlands, burned as fl_valley_confine() burns them (by cell centre)
 wb_r <- terra::rasterize(terra::vect(waterbodies), valleys, field = 1L, background = 0L)
 wb_cell <- terra::values(wb_r)[, 1] == 1L & !is.na(v_in)
+# the channel buffer fl_valley_confine() burns (half the channel width either side, by cell centre)
+has_w <- !is.na(streams$channel_width) & streams$channel_width > 0
+buf <- sf::st_buffer(streams[has_w, ], dist = streams$channel_width[has_w] / 2)
+buf_cell <- terra::values(terra::rasterize(terra::vect(buf), valleys, field = 1L, background = 0L))[, 1] == 1L &
+  !is.na(v_in)
 sw <- meta$software
 sw_row <- function(p) sw[sw$package == p, ]
 commit_link <- function(p) {
@@ -93,8 +98,12 @@ stopifnot(
   area_at[["7"]] > area_at[[as.character(ff)]],
   # "it adds the lakes and wetlands": every lake and wetland cell inside the boundary is floodplain
   all(waterbodies$waterbody_type %in% c("L", "W")), all(v_in[wb_cell] == 1L),
-  # the software section's citations
-  !anyNA(sw_row("flooded")$concept_doi), !anyNA(sw_row("link")$concept_doi), !isTRUE(sw_row("flooded")$dirty)
+  # "and the cells whose centre lies inside a stream's channel width": every one is floodplain
+  all(v_in[buf_cell] == 1L), sum(buf_cell) > 0,
+  # the software section's citations, and the run time's machine
+  !anyNA(sw$release[sw$package != "fwapg"]), !anyNA(sw_row("flooded")$concept_doi),
+  !anyNA(sw_row("link")$concept_doi), !anyNA(sw_row("flooded")$doi_from),
+  !isTRUE(sw_row("flooded")$dirty), !isTRUE(sw_row("link")$dirty_also), !is.na(meta$cpu)
 )
 ```
 
@@ -112,11 +121,11 @@ where the Parsnip River flows north into Williston Reservoir.
 The map starts from the `r cell_m` m cells that pass four tests:
 
 - the slope is at most `r args$slope_threshold` %;
-- the cell is within `r n0(args$max_width / 2 / 1000)` km of a stream in a straight line;
+- the cell is within `r n0(args$max_width / 2)` m of a stream in a straight line;
 - it is close to a stream by a distance that counts steep ground as farther (a cost under
   `r n0(args$cost_threshold)`);
 - it lies below a water level `r ff` times the stream's bankfull depth above the stream, spread
-  across the valley from the streams. Bankfull depth is estimated from each stream's upstream area
+  across the valley from the streams. Bankfull depth is estimated from a stream's upstream area
   and mean annual precipitation, through Hall et al.'s regression for channel width
   [@hall_etal2007Predictingriver].
 
@@ -131,7 +140,7 @@ The streams are those of order 3 and up that bull trout can reach in the `defaul
 of [`link`](`r sw_row("link")$url`), the R package that models fish access and habitat on BC's
 stream network.
 
-```{r map-floodplain, fig.cap = paste0("Floodplain at flood factor ", ff, " (green) over a hillshade of the elevation model, with the streams it was mapped from (blue), lakes and wetlands (light blue), resource roads (grey), railways (black, dashed), parks (light green), First Nations reserves (grey, marked with a diamond and named) and the watershed group boundary (black). Roads other than resource roads are left off at this scale.")}
+```{r map-floodplain, fig.cap = paste0("Floodplain at flood factor ", ff, " (green) over a hillshade of the elevation model, with the streams it was mapped from (blue), lakes and wetlands (light blue), resource roads (grey), railways (black, dashed), parks and protected areas (light green), First Nations reserves (grey, marked with a diamond and named) and the watershed group boundary (black). Roads other than resource roads are left off at this scale.")}
 hill <- terra::shade(
   terra::terrain(dem, "slope", unit = "radians"),
   terra::terrain(dem, "aspect", unit = "radians")
@@ -171,8 +180,9 @@ if (!is.null(reserves) && nrow(reserves) > 0L) label_reserves(reserves, 0.9)
 
 ## Which flood level should I use?
 
-`flooded` has three preset levels: 2, 4 and 6 times bankfull depth. A factor of 2 gives Rosgen's
-flood-prone width, which roughly matches a 50-year flood stage or less
+`flooded` has three preset levels: 2, 4 and 6 times bankfull depth. A factor of 2 follows Rosgen's
+definition of flood-prone width, twice the bankfull depth, which roughly matches a 50-year flood
+stage or less
 [@nagel_etal2014LandscapeScale]. `flooded` calls 4 the functional floodplain and 6 the valley
 bottom; those names are its own reading, not a published one. This article uses `r ff`. For valley
 extent on 30 m elevation models, Nagel et al. found a factor of 7 the most appropriate.
@@ -189,7 +199,7 @@ wetlands, and sits against roads, railways, reserves and parks.
 
 The map does not record which test, or which step of the tidying, left a cell out.
 
-```{r map-detail, fig.cap = "The south-east corner of the watershed group, around Arctic Lake: floodplain (green), streams (blue) with named streams labelled, lakes and wetlands (light blue), all roads (grey), railways (black, dashed), parks (light green) and First Nations reserves (grey, named)."}
+```{r map-detail, fig.cap = "The south-east corner of the watershed group, around Arctic Lake: floodplain (green), streams (blue) with named streams labelled, lakes and wetlands (light blue), roads and trails (grey), railways (black, dashed), parks and protected areas (light green) and First Nations reserves (grey, named)."}
 e <- sf::st_bbox(aoi)
 inset_bbox <- sf::st_bbox(c(
   xmin = unname(e["xmin"] + (e["xmax"] - e["xmin"]) * 0.55),
@@ -237,17 +247,17 @@ if (!is.null(res_i)) label_reserves(res_i, 1.0)
 
 This map has not been compared with floodplain mapped on the ground. Its water level rests on Hall
 et al.'s channel-width regression, which explains about half the variation in width (R² = 0.47)
-across 1,951 sites in the Columbia River basin [@hall_etal2007Predictingriver], and on a conversion
+across 1,951 field measurements in the Columbia River basin [@hall_etal2007Predictingriver], and on a conversion
 from width to depth fitted in a single Idaho basin. The flood factor multiplies whatever error those
 carry.
 
 ## What should you know before using it?
 
 - **It maps terrain, not floods.** No discharge, flood routing or return period goes into it; the
-  flood factor sets a level relative to each stream's bankfull depth.
-- **It starts only from the streams it is given.** Ground beside a smaller stream, or one bull
-  trout cannot reach, is in the map only through its slope, distance and height relative to those
-  streams.
+  flood factor sets a level relative to the streams' bankfull depth.
+- **It starts only from the streams it is given.** A smaller stream, or one bull trout cannot reach,
+  does not seed the map; ground beside it is in the map only as measured from those streams and
+  through the tidying.
 - **It works on `r cell_m` m cells.** Nothing narrower than a cell is resolved.
 
 ## Data and how it was built
@@ -279,7 +289,7 @@ The results can be downloaded:
 [`pars_valleys.tif`](https://github.com/NewGraphEnvironment/flooded/raw/main/inst/vignette-data/pars_valleys.tif)
 (the floodplain grid) and
 [`pars_dem.tif`](https://github.com/NewGraphEnvironment/flooded/raw/main/inst/vignette-data/pars_dem.tif)
-(the elevation model, rounded to whole metres; the floodplain was mapped from the unrounded values).
+(the elevation model, truncated to whole metres; the floodplain was mapped from the unrounded values).
 
 ## Software and how to cite it
 
@@ -289,8 +299,8 @@ The results can be downloaded:
 - [`link`](`r sw_row("link")$url`) `r sw_row("link")$release`, modelled at commit
   `r commit_link("link")` and recomputed at `r recompute_link`: which streams bull trout can reach.
   DOI [`r sw_row("link")$concept_doi`](https://doi.org/`r sw_row("link")$concept_doi`).
-- [`fresh`](`r sw_row("fresh")$url`) `r sw_row("fresh")$version`, which has no release, at commit
-  `r commit_link("fresh")`: the stream network modelling engine `link` runs on.
+- [`fresh`](`r sw_row("fresh")$url`) `r sw_row("fresh")$release`, at commit `r commit_link("fresh")`:
+  the stream network modelling engine `link` runs on.
 - [fwapg](`r sw_row("fwapg")$url`), at commit `r commit_link("fwapg")`: the Freshwater Atlas in
   PostgreSQL, with upstream area and precipitation.
 
@@ -300,7 +310,8 @@ Cite `flooded` as:
 cat(format(utils::citation("flooded"), style = "text"), sep = "\n\n")
 ```
 
-and by its DOI, which covers every release and resolves to the latest:
+and by its DOI, which covers its releases from `r sw_row("flooded")$doi_from` on and resolves to the
+latest:
 <https://doi.org/`r sw_row("flooded")$concept_doi`>.
 
 ## References

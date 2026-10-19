@@ -27,8 +27,9 @@ come from link's `default` configuration, schema `fresh_default`:
 - **`fresh_default` holds one provincial run at a time**; the next overwrites it. A pinned id that
   no longer matches stops the script: update it deliberately, with `inst/NOTICE.md`.
 - **The fwapg tables carry no load stamp** (`provenance.source_artifact` stamps only the channel-width
-  table), so nothing pins them; `pars_meta.rds` records the row counts read, and a digest of every
-  query's rows that `tests/testthat/test-vignette_data.R` checks against the database (#92).
+  table), so nothing pins them. `pars_meta.rds` records the row counts read, and a digest of the rows
+  of every fwapg query that reaches the bundle, which `tests/testthat/test-vignette_data.R` checks
+  against the database when it can reach it (#92).
 
 ## The lookup gap (fwapg#33)
 

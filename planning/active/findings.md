@@ -107,3 +107,30 @@ The forecast was 500-600 body words, and the result missed it by about 60 %. Fou
 - The new "How good is it?" section (B3).
 - The software section, with release, commit and DOI per package.
 - Map captions that do a legend's job.
+
+## Code-check round 1 (2026-10-19) and its proofs
+
+Round 1 found 13 issues (planning/active/review-round1.md), all fixed. Sentences:
+- "rounded" became "truncated": `as.int` truncates.
+- fresh is cited by its tag v0.39.0, which is identical to e247ca1.
+- The DOI covers releases "from v0.8.2 on", computed from DataCite.
+- Captions say "roads and trails" and "parks and protected areas".
+- "each stream's" was dropped: the 8 NA-area segments seed nothing.
+- The "only through" limit now names the tidying.
+- Rosgen's definition is applied, not his width.
+- "1,951 field measurements".
+- 1,000 m printed in metres.
+
+Overstated claims in CLAUDE.md, the research note and the script header were restated by their
+definition. Script: paged tag lookup, recompute `link_dirty`, CPU fallback, `doi_from`.
+
+New guards, each fired on a mutated copy (scratchpad `mutate2.R`, copies under a folder named `flooded`):
+
+| mutation | fired |
+|---|---|
+| fresh release NA | `!anyNA(sw$release[...])` |
+| flooded `doi_from` NA | `!anyNA(doi_from)` |
+| recompute dirty | `!isTRUE(dirty_also)` |
+| cpu NA | `!is.na(meta$cpu)` |
+| one channel-buffer cell (not a lake) set to 0, count moved | `all(v_in[buf_cell] == 1L)` |
+| control | 0 failing tests; renders |
