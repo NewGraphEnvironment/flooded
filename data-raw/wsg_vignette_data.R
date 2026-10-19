@@ -17,10 +17,12 @@
 #                           factor, a digest of the rows of every query whose
 #                           rows are written to the gpkg, the MRDEM-30 ETag,
 #                           the md5 of every file written, and the software
-#                           (release, commit, concept DOI) the build rests on
+#                           the build rests on (release, commit, and concept
+#                           DOI where Zenodo archives one)
 #
-# tests/testthat/test-vignette_data.R fails when a written file, an fwapg query
-# or the MRDEM-30 file no longer matches what is recorded here, so the article
+# tests/testthat/test-vignette_data.R fails when a written file no longer
+# matches what is recorded here and, where it can reach them (it skips on CI and
+# CRAN), when an fwapg query or the MRDEM-30 file has moved, so the article
 # cannot go on quoting a superseded run. Context layers read from the shared
 # database are digested but not checked. Run this from a committed tree: the commit it
 # records is the article's citation of flooded.

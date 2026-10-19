@@ -160,3 +160,22 @@ Proofs (scratchpad `mutate3.R`): `link_dirty` NA, flooded `dirty` NA, link `dirt
 `dirty_also` NA each fire `isFALSE()`. With `cpu`, `doi_from` or `read_at` absent, `has1()` fires.
 The control renders, with 0 failing tests. No rebuild was needed: none of the fixes changes what
 the script records.
+
+## Code-check round 3 (2026-10-19)
+
+The enumeration covered 54 set and quantity phrases: 50 hold, and 4 findings were made, 3 of them
+inside or next to round 2's fixes. All are fixed:
+- Stream labels now sit on their lines, as one merged line per name with `st_point_on_surface()`
+  (0 m off the line, where they were 1.3-3.0 km off), with a white halo.
+- Guards now refuse:
+  - an absent column (`access`, `channel_width`, `waterbody_type`) and an empty layer;
+  - a missing or empty release, a malformed commit or `commit_also`, and an absent
+    `link_run_date` or `vca_seconds`.
+- CLAUDE.md: numbers computed from the bundle are pinned by its md5, and the guards refuse missing
+  meta values and test premises.
+- The script header carries the skip qualifier and "concept DOI where Zenodo archives one".
+- Rosgen: "borrows the multiplier of Rosgen's flood-prone width, which he measured at twice the
+  maximum bankfull depth".
+
+Proofs (scratchpad `mutate4.R`): each of the 8 mutations fires its guard, and the control renders
+with 0 failing tests.

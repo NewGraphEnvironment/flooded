@@ -92,12 +92,12 @@ tests/testthat/          — unit tests for each fl_* function
   - the VCA arguments and the floodplain cells at flood factors 2, 4, 6 and 7;
   - a Postgres digest of every query whose rows reach the gpkg;
   - the MRDEM-30 ETag and the md5 of each file it writes;
-  - the software: release, commit, and concept DOI from DataCite.
+  - the software: release, commit, and concept DOI from DataCite where Zenodo archives one.
 
   `test-vignette_data.R` fails when a bundled file no longer matches, and, where it can reach them
   (it skips on CI and CRAN), when an fwapg query or MRDEM-30 has moved. Context layers from the shared
-  database are not checked. The vignette's `stopifnot()` guards the numbers it prints and the
-  premises behind them; its description of the method follows `R/fl_valley_confine.R`, and its
+  database are not checked. Numbers the vignette computes from the bundle are pinned by its md5;
+  its `stopifnot()` refuses a missing or malformed meta value and guards each sentence's premise; its description of the method follows `R/fl_valley_confine.R`, and its
   literature figures (Hall's R², Nagel's 7) are cited, not guarded.
   Run the script from a committed tree, because its commit is the article's citation.
 - **25 m TRIM resampled to 10 m** is not real 10 m detail — note this when comparing TRIM-derived outputs to true 10 m or 1 m lidar.

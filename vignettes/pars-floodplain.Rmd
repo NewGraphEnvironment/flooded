@@ -82,12 +82,14 @@ pc <- function(v, d = 1) paste0(formatC(100 * v, format = "f", digits = d), " %"
 lst <- function(v) if (length(v) < 2) v else paste(paste(v[-length(v)], collapse = ", "), "and", v[length(v)])
 # one value, present and not empty
 has1 <- function(x) length(x) == 1L && !is.na(x) && nzchar(x)
+is_sha <- function(x) has1(x) && grepl("^[0-9a-f]{40}$", x)
 
 # Each sentence below reads these as true; a rebuild that breaks one must change the prose.
 stopifnot(
   # "streams of order 3 and up that bull trout can reach in link's default configuration"
   identical(meta$species, "BT"), identical(meta$link_config, "default"), isFALSE(meta$link_dirty),
-  min(streams$stream_order) == 3, all(streams$access %in% c(1L, 2L)),
+  nrow(streams) > 0, min(streams$stream_order) == 3, all(c("access", "channel_width") %in% names(streams)),
+  all(streams$access %in% c(1L, 2L)),
   # "every setting but the flood factor is the package default": what fl_valley_confine() itself defaults to
   all(names(args) %in% names(fm)),
   all(vapply(setdiff(names(args), "flood_factor"), function(a) isTRUE(args[[a]] == eval(fm[[a]])), logical(1))),
@@ -99,11 +101,15 @@ stopifnot(
   identical(as.numeric(scen$flood_factor), c(2, 4, 6)), "7" %in% names(area_at),
   area_at[["7"]] > area_at[[as.character(ff)]],
   # "it adds the lakes and wetlands": every lake and wetland cell inside the boundary is floodplain
-  all(waterbodies$waterbody_type %in% c("L", "W")), all(v_in[wb_cell] == 1L),
+  nrow(waterbodies) > 0, "waterbody_type" %in% names(waterbodies),
+  all(waterbodies$waterbody_type %in% c("L", "W")), sum(wb_cell) > 0, all(v_in[wb_cell] == 1L),
   # "and the cells whose centre lies inside a stream's channel width": every one is floodplain
   all(v_in[buf_cell] == 1L), sum(buf_cell) > 0,
-  # the software section's citations, and the run time's machine
-  !anyNA(sw$release[sw$package != "fwapg"]), has1(sw_row("flooded")$concept_doi),
+  # every value the data and software sections print
+  all(vapply(c("flooded", "link", "fresh"), function(p) has1(sw_row(p)$release), logical(1))),
+  all(vapply(c("flooded", "link", "fresh", "fwapg"), function(p) is_sha(sw_row(p)$commit), logical(1))),
+  is_sha(sw_row("link")$commit_also), has1(meta$link_run_date),
+  length(meta$vca_seconds) == 1L, isTRUE(meta$vca_seconds > 0), has1(sw_row("flooded")$concept_doi),
   has1(sw_row("link")$concept_doi), has1(sw_row("flooded")$doi_from),
   isFALSE(sw_row("flooded")$dirty), isFALSE(sw_row("link")$dirty), isFALSE(sw_row("link")$dirty_also),
   has1(meta$cpu), has1(meta$fwapg_read$read_at)
@@ -183,9 +189,9 @@ if (!is.null(reserves) && nrow(reserves) > 0L) label_reserves(reserves, 0.9)
 
 ## Which flood level should I use?
 
-`flooded` has three preset levels: 2, 4 and 6 times bankfull depth. A factor of 2 follows Rosgen's
-definition of flood-prone width, twice the maximum bankfull depth, which roughly matches a 50-year flood
-stage or less
+`flooded` has three preset levels: 2, 4 and 6 times bankfull depth. A factor of 2 borrows the
+multiplier of Rosgen's flood-prone width, which he measured at twice the maximum bankfull depth and
+which roughly matches a 50-year flood stage or less
 [@nagel_etal2014LandscapeScale]. `flooded` calls 4 the functional floodplain and 6 the valley
 bottom; those names are its own reading, not a published one. This article uses `r ff`. For valley
 extent on 30 m elevation models, Nagel et al. found a factor of 7 the most appropriate.
@@ -238,10 +244,16 @@ aoi_i <- crop_sf(aoi)
 if (!is.null(aoi_i)) plot(sf::st_geometry(aoi_i), border = "black", lwd = 1.5, add = TRUE)
 ns_i <- crop_sf(named_streams)
 if (!is.null(ns_i)) {
-  # one label per name, at the middle of its first segment
-  dedup <- ns_i[!duplicated(ns_i$gnis_name), ]
-  pts <- suppressWarnings(sf::st_centroid(sf::st_geometry(dedup)))
-  text(sf::st_coordinates(pts), labels = dedup$gnis_name, cex = 0.5, font = 3, col = "#0d3a6c")
+  # one label per name, at a point on its line inside the inset
+  by_name <- lapply(split(sf::st_geometry(ns_i), ns_i$gnis_name), function(g) sf::st_line_merge(sf::st_union(g)))
+  pts <- do.call(c, lapply(by_name, function(g) suppressWarnings(sf::st_point_on_surface(g))))
+  xy <- sf::st_coordinates(pts)
+  hx <- par("cxy")[1] * 0.5 * 0.05
+  hy <- par("cxy")[2] * 0.5 * 0.05
+  for (d in list(c(-1, 0), c(1, 0), c(0, -1), c(0, 1))) {
+    text(xy[, 1] + d[1] * hx, xy[, 2] + d[2] * hy, labels = names(by_name), cex = 0.5, font = 3, col = "white")
+  }
+  text(xy, labels = names(by_name), cex = 0.5, font = 3, col = "#0d3a6c")
 }
 if (!is.null(res_i)) label_reserves(res_i, 1.0)
 ```
