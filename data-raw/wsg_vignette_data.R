@@ -446,7 +446,7 @@ tags <- vapply(get_json("https://api.github.com/repos/NewGraphEnvironment/link/t
                function(x) x$name, character(1))
 tags <- grep("^v[0-9]+\\.[0-9]+\\.[0-9]+$", tags, value = TRUE)
 later <- tags[package_version(sub("^v", "", tags)) > package_version(run$link_version)]
-next_tag <- if (length(later)) later[which.min(package_version(sub("^v", "", later)))] else NA
+next_tag <- if (length(later)) later[order(package_version(sub("^v", "", later)))][1] else NA
 for (sha in c(run$link_sha, rc$link_sha)) {
   if (!tag_at_or_before("NewGraphEnvironment/link", link_tag, sha)) {
     stop("link ", link_tag, " is not at or before ", sha, call. = FALSE)
