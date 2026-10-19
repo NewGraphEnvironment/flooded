@@ -4,7 +4,8 @@ Version: 0.8.3
 Date: 2026-10-17
 Authors@R: c(
     person("Allan", "Irvine", , "al@newgraphenvironment.com", role = c("aut", "cre"),
-           comment = c(ORCID = "0000-0002-3495-2128")),
+           comment = c(ORCID = "0000-0002-3495-2128",
+                       affiliation = "New Graph Environment Ltd.")),
     person("Devin", "Cairns", role = "cph",
            comment = "Valley Confinement Algorithm (MIT license, Blue Geosimulation)"),
     person("Simon", "Norris", role = "cph",

@@ -4,11 +4,12 @@
 # ------------------------------------------------
  
 cff-version: 1.2.0
-message: 'To cite package "flooded" in publications use:'
+message: If you use flooded, please cite it as below.
 type: software
 license: MIT
 title: 'flooded: Map Floodplains from an Elevation Model and a Stream Network'
 version: 0.8.3
+doi: 10.5281/zenodo.23302790
 abstract: Maps floodplains and unconfined valley bottoms from a digital elevation
   model and a stream network with the Valley Confinement Algorithm (VCA), keeping
   ground that is gentle, near a stream in both straight-line and slope-weighted distance,
@@ -23,7 +24,24 @@ authors:
   given-names: Allan
   email: al@newgraphenvironment.com
   orcid: https://orcid.org/0000-0002-3495-2128
-- name: New Graph Environment Ltd.
+  affiliation: New Graph Environment Ltd.
+preferred-citation:
+  title: 'flooded: Map Floodplains from an Elevation Model and a Stream Network'
+  authors:
+  - family-names: Irvine
+    given-names: Allan
+    email: al@newgraphenvironment.com
+    orcid: https://orcid.org/0000-0002-3495-2128
+    affiliation: New Graph Environment Ltd.
+  version: 0.8.3
+  date-released: '2026-10-17'
+  url: https://newgraphenvironment.github.io/flooded/
+  repository-code: https://github.com/NewGraphEnvironment/flooded
+  license: MIT
+  doi: 10.5281/zenodo.23302790
+  type: software
+  publisher:
+    name: New Graph Environment Ltd.
 repository-code: https://github.com/NewGraphEnvironment/flooded
 url: https://newgraphenvironment.github.io/flooded/
 date-released: '2026-10-17'
@@ -32,4 +50,5 @@ contact:
   given-names: Allan
   email: al@newgraphenvironment.com
   orcid: https://orcid.org/0000-0002-3495-2128
+  affiliation: New Graph Environment Ltd.
 
