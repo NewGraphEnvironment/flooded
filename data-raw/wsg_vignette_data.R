@@ -163,10 +163,18 @@ sources <- data.frame(name = character(), db = character(), sql = character(), d
 digest_sql <- function(sql) {
   sprintf("SELECT md5(string_agg(md5(t::text), '' ORDER BY md5(t::text))) AS d FROM (%s) t", sql)
 }
-read_source <- function(con, name, db, sql) {
+# Rows and digest come from one snapshot. `sql_record` is what meta keeps,
+# when the SQL itself is too long to be worth storing.
+read_source <- function(con, name, db, sql, sql_record = sql) {
+  DBI::dbBegin(con)
+  ok <- FALSE
+  on.exit(if (!ok) DBI::dbRollback(con))
+  DBI::dbExecute(con, "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
   x <- sf::st_read(con, query = sql, quiet = TRUE)
   d <- DBI::dbGetQuery(con, digest_sql(sql))$d
-  sources[nrow(sources) + 1L, ] <<- list(name, db, sql, if (is.na(d)) "empty" else d)
+  DBI::dbCommit(con)
+  ok <- TRUE
+  sources[nrow(sources) + 1L, ] <<- list(name, db, sql_record, if (is.na(d)) "empty" else d)
   x
 }
 
@@ -188,7 +196,7 @@ if (is.na(DBI::dbGetQuery(conn, "SELECT to_regclass('fresh_default.log') AS t")$
        "persists to.", call. = FALSE)
 }
 run <- DBI::dbGetQuery(conn, sprintf(
-  "SELECT run_id, run_uid, run_label, date_end, config_name, config_hash, link_version,
+  "SELECT run_id, run_uid, run_label, date_end, config_name, config_hash, link_version, fresh_sha,
           link_sha, link_dirty, fresh_version, fresh_dirty, crate_version, fwapg_sha
      FROM fresh_default.log
     WHERE watershed_group_code = '%s'
@@ -358,7 +366,8 @@ context_source <- character()
 for (nm in context_names) {
   # A query error (not an empty result) is what sends a layer to the fallback.
   layer <- if (inherits(conn_ctx, "try-error")) conn_ctx else
-    try(read_source(conn_ctx, nm, "share", sprintf(context_sql[[nm]], intersect_clause())),
+    try(read_source(conn_ctx, nm, "share", sprintf(context_sql[[nm]], intersect_clause()),
+                    sql_record = sprintf(context_sql[[nm]], "<intersects the aoi layer's geometry>")),
         silent = TRUE)
   if (!inherits(layer, "try-error")) {
     context_source[[nm]] <- "database"
@@ -433,21 +442,32 @@ tag_at_or_before <- function(repo, tag, sha) {
   st %in% c("ahead", "identical")
 }
 link_tag <- paste0("v", run$link_version)
+tags <- vapply(get_json("https://api.github.com/repos/NewGraphEnvironment/link/tags?per_page=100"),
+               function(x) x$name, character(1))
+tags <- grep("^v[0-9]+\\.[0-9]+\\.[0-9]+$", tags, value = TRUE)
+later <- tags[package_version(sub("^v", "", tags)) > package_version(run$link_version)]
+next_tag <- if (length(later)) later[which.min(package_version(sub("^v", "", later)))] else NA
 for (sha in c(run$link_sha, rc$link_sha)) {
   if (!tag_at_or_before("NewGraphEnvironment/link", link_tag, sha)) {
     stop("link ", link_tag, " is not at or before ", sha, call. = FALSE)
   }
+  if (!is.na(next_tag) && tag_at_or_before("NewGraphEnvironment/link", next_tag, sha)) {
+    stop("link ", next_tag, " is also at or before ", sha, ", so ", link_tag,
+         " is not its last release", call. = FALSE)
+  }
 }
-fresh_desc <- utils::packageDescription("fresh")
 software <- data.frame(
   package = c("flooded", "link", "fresh", "fwapg"),
   url = c("https://www.newgraphenvironment.com/flooded/", "https://www.newgraphenvironment.com/link/",
           "https://www.newgraphenvironment.com/fresh/", "https://smnorris.github.io/fwapg/"),
   release = c(flooded_tag, link_tag, NA, NA),
-  commit = c(flooded_sha, run$link_sha, fresh_desc$RemoteSha %||% NA_character_, run$fwapg_sha),
+  # commits link at: github.com/<repo>/commit/<commit>
+  repo = c("NewGraphEnvironment/flooded", "NewGraphEnvironment/link", "NewGraphEnvironment/fresh",
+           "NewGraphEnvironment/fwapg"),
+  commit = c(flooded_sha, run$link_sha, run$fresh_sha, run$fwapg_sha),
   # link's access and mapping codes come from its recompute, at a later commit
   commit_also = c(NA, rc$link_sha, NA, NA),
-  version = c(as.character(utils::packageVersion("flooded")), run$link_version, fresh_desc$Version, NA),
+  version = c(as.character(utils::packageVersion("flooded")), run$link_version, run$fresh_version, NA),
   dirty = c(flooded_dirty, run$link_dirty, NA, NA)
 )
 
@@ -484,7 +504,7 @@ hd <- curl::curl_fetch_memory(dem_url, handle = curl::new_handle(nobody = TRUE))
 if (hd$status_code != 200L) stop("HTTP ", hd$status_code, " from ", dem_url, call. = FALSE)
 hdr <- curl::parse_headers_list(hd$headers)
 dem_source <- list(url = dem_url, etag = hdr[["etag"]], last_modified = hdr[["last-modified"]])
-dem <- fl_dem_aoi(streams, buffer = 2000)
+dem <- fl_dem_aoi(streams, source = paste0("/vsicurl/", dem_url), buffer = 2000)
 terra::writeRaster(
   terra::as.int(dem), out("dem.tif"),
   overwrite = TRUE,
@@ -513,17 +533,18 @@ run_vca <- function(ff) {
 }
 # Floodplain inside the watershed group boundary, measured as the article
 # measures it: valley cells after cropping and masking to the boundary.
-in_aoi_ha <- function(v) {
+in_aoi_cells <- function(v) {
   v <- terra::mask(terra::crop(v, terra::vect(aoi)), terra::vect(aoi))
-  sum(terra::values(v) == 1L, na.rm = TRUE) * prod(terra::res(v)) / 1e4
+  as.integer(sum(terra::values(v) == 1L, na.rm = TRUE))
 }
 vca_seconds <- system.time(valleys <- run_vca(flood_factor))[["elapsed"]]
-fp_area_ha <- stats::setNames(in_aoi_ha(valleys), flood_factor)
+fp_cells <- stats::setNames(in_aoi_cells(valleys), flood_factor)
 for (ff in flood_factors_also) {
   message("  and at flood factor ", ff, " (area only) ...")
-  fp_area_ha[[as.character(ff)]] <- in_aoi_ha(run_vca(ff))
+  fp_cells[[as.character(ff)]] <- in_aoi_cells(run_vca(ff))
 }
-fp_area_ha <- fp_area_ha[order(as.numeric(names(fp_area_ha)))]
+fp_cells <- fp_cells[order(as.numeric(names(fp_cells)))]
+fp_area_ha <- fp_cells * prod(terra::res(valleys)) / 1e4
 message("  floodplain inside ", wsg, " (ha) by flood factor: ",
         paste(names(fp_area_ha), round(fp_area_ha, 1), sep = " = ", collapse = ", "))
 cpu <- tryCatch(system2("sysctl", c("-n", "machdep.cpu.brand_string"), stdout = TRUE),
@@ -566,7 +587,8 @@ gpkg <- gpkg_final
 written <- c(gpkg, out("dem.tif"), out("valleys.tif"))
 meta <- c(meta, list(
   vca_args = vca_args,                 # flood_factor plus every other criterion at its default
-  fp_area_ha = fp_area_ha,             # floodplain inside the boundary, by flood factor
+  fp_cells = fp_cells,                 # floodplain cells inside the boundary, by flood factor
+  fp_area_ha = fp_area_ha,             # the same, in hectares
   vca_seconds = unname(vca_seconds),   # fl_valley_confine() at flood_factor, one run
   vca_threads = terra::terraOptions(print = FALSE)$threads,
   cpu = cpu,
