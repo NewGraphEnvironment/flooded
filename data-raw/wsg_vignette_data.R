@@ -8,18 +8,21 @@
 #                             aoi, streams, waterbodies, floodplain,
 #                             railways, roads, reserves, parks,
 #                             named_streams
-#   <wsg>_dem.tif           MRDEM-30 clip cropped to streams + 2 km buffer
+#   <wsg>_dem.tif           MRDEM-30 clip cropped to streams + 2 km buffer,
+#                           truncated to whole metres (the model runs on the
+#                           unrounded values)
 #   <wsg>_valleys.tif       fl_valley_confine() binary output (1=valley)
-#   <wsg>_meta.rds          what the article states and where it came from:
-#                           the link run, where the context layers came from,
-#                           the arguments and floodplain area at each flood
-#                           factor, a digest of every source read and the md5
-#                           of every file written, and the software (version,
-#                           commit, concept DOI) the build rests on
+#   <wsg>_meta.rds          the link run, where the context layers came from,
+#                           the arguments and floodplain cells at each flood
+#                           factor, a digest of the rows of every query whose
+#                           rows are written to the gpkg, the MRDEM-30 ETag,
+#                           the md5 of every file written, and the software
+#                           (release, commit, concept DOI) the build rests on
 #
-# tests/testthat/test-vignette_data.R fails when a written file or a database
-# source no longer matches the digest recorded here, so the article cannot go
-# on quoting a superseded run. Run this from a committed tree: the commit it
+# tests/testthat/test-vignette_data.R fails when a written file, an fwapg query
+# or the MRDEM-30 file no longer matches what is recorded here, so the article
+# cannot go on quoting a superseded run. Context layers read from the shared
+# database are digested but not checked. Run this from a committed tree: the commit it
 # records is the article's citation of flooded.
 #
 # Bundling the sf layers into a single multi-layer gpkg matches how QGIS
@@ -213,7 +216,7 @@ if (!identical(run$run_id, run_id)) {
        ". Update `run_id` if rebuilding from the newer run is intended.", call. = FALSE)
 }
 rc <- DBI::dbGetQuery(conn, sprintf(
-  "SELECT recompute_id, date_start, date_end, link_version, link_sha
+  "SELECT recompute_id, date_start, date_end, link_version, link_sha, link_dirty
      FROM fresh_default.log_recompute
     WHERE watershed_group_code = '%s'
     ORDER BY date_start DESC LIMIT 1", wsg))
@@ -433,34 +436,44 @@ DBI::dbDisconnect(conn)
 
 # ---- 4b. Software the build rests on, and how to cite it ------------------
 
-# Each package is cited by its concept DOI (all versions), its last release at
-# or before the build, and the commit the build used. link's version is the one
-# its run recorded; the GitHub compare API confirms that release's tag is at or
-# before both commits. fresh has no release; fwapg is an external tool.
+# Each package is cited by its concept DOI, its last release at or before the
+# build, and the commit the build used. link's and fresh's versions are the ones
+# the link run recorded; the GitHub compare API confirms that each version's tag
+# is at or before the commits, and the next tag is not. fwapg is an external tool.
 tag_at_or_before <- function(repo, tag, sha) {
   st <- get_json(sprintf("https://api.github.com/repos/%s/compare/%s...%s", repo, tag, sha))$status
   st %in% c("ahead", "identical")
 }
-link_tag <- paste0("v", run$link_version)
-tags <- vapply(get_json("https://api.github.com/repos/NewGraphEnvironment/link/tags?per_page=100"),
-               function(x) x$name, character(1))
-tags <- grep("^v[0-9]+\\.[0-9]+\\.[0-9]+$", tags, value = TRUE)
-later <- tags[package_version(sub("^v", "", tags)) > package_version(run$link_version)]
-next_tag <- if (length(later)) later[order(package_version(sub("^v", "", later)))][1] else NA
-for (sha in c(run$link_sha, rc$link_sha)) {
-  if (!tag_at_or_before("NewGraphEnvironment/link", link_tag, sha)) {
-    stop("link ", link_tag, " is not at or before ", sha, call. = FALSE)
+repo_tags <- function(repo) {
+  out <- character()
+  for (page in 1:50) {
+    x <- get_json(sprintf("https://api.github.com/repos/%s/tags?per_page=100&page=%d", repo, page))
+    if (length(x) == 0L) return(grep("^v[0-9]+\\.[0-9]+\\.[0-9]+$", out, value = TRUE))
+    out <- c(out, vapply(x, function(t) t$name, character(1)))
   }
-  if (!is.na(next_tag) && tag_at_or_before("NewGraphEnvironment/link", next_tag, sha)) {
-    stop("link ", next_tag, " is also at or before ", sha, ", so ", link_tag,
-         " is not its last release", call. = FALSE)
-  }
+  stop("more than 5,000 tags in ", repo, call. = FALSE)
 }
+last_release <- function(repo, version, shas) {
+  tag <- paste0("v", version)
+  tags <- repo_tags(repo)
+  later <- tags[package_version(sub("^v", "", tags)) > package_version(version)]
+  next_tag <- if (length(later)) later[order(package_version(sub("^v", "", later)))][1] else NA
+  for (sha in shas) {
+    if (!tag_at_or_before(repo, tag, sha)) stop(repo, " ", tag, " is not at or before ", sha, call. = FALSE)
+    if (!is.na(next_tag) && tag_at_or_before(repo, next_tag, sha)) {
+      stop(repo, " ", next_tag, " is also at or before ", sha, ", so ", tag, " is not its last release",
+           call. = FALSE)
+    }
+  }
+  tag
+}
+link_tag <- last_release("NewGraphEnvironment/link", run$link_version, c(run$link_sha, rc$link_sha))
+fresh_tag <- last_release("NewGraphEnvironment/fresh", run$fresh_version, run$fresh_sha)
 software <- data.frame(
   package = c("flooded", "link", "fresh", "fwapg"),
   url = c("https://www.newgraphenvironment.com/flooded/", "https://www.newgraphenvironment.com/link/",
           "https://www.newgraphenvironment.com/fresh/", "https://smnorris.github.io/fwapg/"),
-  release = c(flooded_tag, link_tag, NA, NA),
+  release = c(flooded_tag, link_tag, fresh_tag, NA),
   # commits link at: github.com/<repo>/commit/<commit>
   repo = c("NewGraphEnvironment/flooded", "NewGraphEnvironment/link", "NewGraphEnvironment/fresh",
            "NewGraphEnvironment/fwapg"),
@@ -468,7 +481,8 @@ software <- data.frame(
   # link's access and mapping codes come from its recompute, at a later commit
   commit_also = c(NA, rc$link_sha, NA, NA),
   version = c(as.character(utils::packageVersion("flooded")), run$link_version, run$fresh_version, NA),
-  dirty = c(flooded_dirty, run$link_dirty, NA, NA)
+  dirty = c(flooded_dirty, run$link_dirty, NA, NA),
+  dirty_also = c(NA, rc$link_dirty, NA, NA)
 )
 
 # Concept DOIs. Zenodo registers each release's DOI with DataCite, and a
@@ -487,11 +501,22 @@ concept_of <- function(pkg) {
   }))
   unique(rel)
 }
+# the earliest release each concept DOI holds a version of
+first_archived <- function(pkg) {
+  v <- unlist(lapply(recs, function(r) {
+    t <- r$attributes$titles
+    if (length(t) > 0L && grepl(sprintf("^(NewGraphEnvironment/)?%s:", pkg), t[[1]]$title)) r$attributes$version
+  }))
+  v <- grep("^v?[0-9]+\\.[0-9]+\\.[0-9]+$", v, value = TRUE)
+  paste0("v", min(package_version(sub("^v", "", v))))
+}
 software$concept_doi <- NA_character_
+software$doi_from <- NA_character_
 for (pkg in c("flooded", "link")) {
   d <- concept_of(pkg)
   if (length(d) != 1L) stop("DataCite gives ", length(d), " concept DOIs for ", pkg, call. = FALSE)
   software$concept_doi[software$package == pkg] <- d
+  software$doi_from[software$package == pkg] <- first_archived(pkg)
 }
 dois <- list(source = doi_url, retrieved = format(Sys.Date()))
 
@@ -549,7 +574,7 @@ message("  floodplain inside ", wsg, " (ha) by flood factor: ",
         paste(names(fp_area_ha), round(fp_area_ha, 1), sep = " = ", collapse = ", "))
 cpu <- tryCatch(system2("sysctl", c("-n", "machdep.cpu.brand_string"), stdout = TRUE),
                 error = function(e) NA_character_, warning = function(w) NA_character_)
-if (length(cpu) != 1L) cpu <- unname(Sys.info()[["machine"]])
+if (length(cpu) != 1L || is.na(cpu)) cpu <- unname(Sys.info()[["machine"]])
 terra::writeRaster(
   valleys, out("valleys.tif"),
   overwrite = TRUE,
