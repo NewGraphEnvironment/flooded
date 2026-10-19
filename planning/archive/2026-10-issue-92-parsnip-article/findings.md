@@ -220,3 +220,30 @@ Review spend:
 - One more than the usual five, because rounds 2, 3 and 4 each found defects inside the previous
   round's fixes.
 - Findings by round: 13, 11, 4, 5.
+
+## Citation (added to PR #95, 2026-10-19)
+
+Follows `/citation-cff`, and keeps the Zenodo concept DOI 10.5281/zenodo.23302790.
+- **Authors:** the firm is publisher only; Irvine carries it as his affiliation.
+- **`CITATION.cff`:** authors are Irvine alone. A `preferred-citation` names the firm as publisher,
+  with the DOI.
+- **`inst/CITATION`:** the firm is the organization, with the version and the DOI.
+- **The workflow:** it runs the skill's recipe, plus the DOI and a message that names it. Run
+  locally, its R line reproduces `CITATION.cff` byte for byte.
+- **`.Rbuildignore`:** excludes `CITATION.cff` and `pkgdown/`. `R CMD check` is down to one note,
+  "unable to verify current time".
+
+The flood-level table is restored at the user's request: tables suit parallel items whose facts sort
+into columns.
+
+Citation code-check:
+- **Round 1:** 6 findings, all fixed.
+- **Round 2:** 7 findings, 5 inside round-1 fixes:
+  - The round-1 sentence on 30 m data was unsupported by the primary source, and was dropped.
+    flooded#96 was filed for the same reading in the package docs.
+  - The DOI-coverage guard compared version numbers, and its versions came from a DataCite search
+    that misses records. Zenodo's API now gives each concept DOI's archived versions (flooded 8 from
+    v0.6.4; link 11, to v0.66.5), and the guard requires the cited release to be among them. It
+    fires when the release is absent and when the column is absent.
+  - The message now names the DOI.
+- **Round 3:** results below.

@@ -86,8 +86,6 @@ fits <- function(x, re) has1(x) && grepl(re, x)
 
 # Each sentence below reads these as true; a rebuild that breaks one must change the prose.
 stopifnot(
-  # "here 4 is ..., and 6 ...": the article names these two factors by number
-  ff == 4, all(c("4", "6") %in% names(meta$fp_cells)),
   # "streams of order 3 and up that bull trout can reach in link's default configuration"
   identical(meta$species, "BT"), identical(meta$link_config, "default"), isFALSE(meta$link_dirty),
   nrow(streams) > 0, min(streams$stream_order) == 3, all(c("access", "channel_width") %in% names(streams)),
@@ -120,11 +118,10 @@ stopifnot(
   fits(sw_row("link")$commit_also, "^[0-9a-f]{40}$"),
   fits(sw_row("flooded")$concept_doi, "^10[.]5281/zenodo[.][0-9]+$"),
   fits(sw_row("link")$concept_doi, "^10[.]5281/zenodo[.][0-9]+$"),
-  # "DOI for all versions": the release each cites is one the DOI archives
+  # "DOI for all versions": the release each cites is one Zenodo archives under that DOI
   all(vapply(c("flooded", "link"), function(p) {
     r <- sw_row(p)
-    fits(r$doi_from, "^v[0-9]+[.][0-9]+[.][0-9]+$") &&
-      package_version(sub("^v", "", r$release)) >= package_version(sub("^v", "", r$doi_from))
+    has1(r$release) && r$release %in% unlist(r$archived)
   }, logical(1))),
   # the citation printed under "Cite flooded as" names the DOI for all versions listed above it
   grepl(sw_row("flooded")$concept_doi, paste(cite_text, collapse = " "), fixed = TRUE),
@@ -219,11 +216,11 @@ lv <- data.frame(
   `Flood factor` = names(area_at),
   `Named for` = c(
     "Flood-prone width: roughly a 50-year flood stage or less",
-    "Functional floodplain (used here)",
+    "Functional floodplain",
     "Valley bottom, including terraces",
     "Valley extent on 30 m elevation models"),
   `Where the level comes from` = c(
-    "Rosgen's multiplier, twice the maximum bankfull depth [@nagel_etal2014LandscapeScale]",
+    "Rosgen's multiplier, twice the maximum bankfull depth [Rosgen, as cited in @nagel_etal2014LandscapeScale]",
     "`flooded`'s preset",
     "`flooded`'s preset",
     "Recommended for 30 m data [@nagel_etal2014LandscapeScale]"),
@@ -233,8 +230,7 @@ lv <- data.frame(
 knitr::kable(lv, format = "pipe", row.names = FALSE, align = c("c", "l", "l", "r"), caption = "Flood levels and the Parsnip's floodplain at each.")
 ```
 
-The names come from finer elevation data. On a 30 m model the same factor maps less ground: here 4
-is a conservative functional floodplain, and 6 comes close to a functional floodplain. Going from `r ff` to 7 adds
+Going from `r ff` to 7 adds
 `r pc(area_at[["7"]] / area_at[[as.character(ff)]] - 1)` to the area.
 
 ## How do I read it up close?
