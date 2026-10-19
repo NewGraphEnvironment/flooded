@@ -4,7 +4,7 @@
 # ------------------------------------------------
  
 cff-version: 1.2.0
-message: If you use flooded, please cite it as below.
+message: If you use flooded, please cite it using the metadata from this file.
 type: software
 license: MIT
 title: 'flooded: Map Floodplains from an Elevation Model and a Stream Network'
