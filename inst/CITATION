@@ -8,5 +8,5 @@ bibentry(
   version = meta$Version,
   note = paste("Version", meta$Version),
   url = if (is.null(meta$URL)) NULL else strsplit(meta$URL, ",\\s*")[[1]][1],
-  doi = "10.5281/zenodo.23302790"
+  doi = meta$`Config/DOI`
 )

@@ -56,5 +56,6 @@ Suggests:
 Remotes:
     NewGraphEnvironment/gdalcubes@newgraph,
     NewGraphEnvironment/fresh
+Config/DOI: 10.5281/zenodo.23302790
 Config/testthat/edition: 3
 VignetteBuilder: knitr
