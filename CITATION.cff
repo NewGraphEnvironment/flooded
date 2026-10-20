@@ -8,7 +8,7 @@ message: If you use flooded, please cite it by its DOI, 10.5281/zenodo.23302790.
 type: software
 license: MIT
 title: 'flooded: Map Floodplains from an Elevation Model and a Stream Network'
-version: 0.8.3
+version: 0.8.4
 doi: 10.5281/zenodo.23302790
 abstract: Maps floodplains and unconfined valley bottoms from a digital elevation
   model and a stream network with the Valley Confinement Algorithm (VCA), keeping
@@ -33,8 +33,8 @@ preferred-citation:
     email: al@newgraphenvironment.com
     orcid: https://orcid.org/0000-0002-3495-2128
     affiliation: New Graph Environment Ltd.
-  version: 0.8.3
-  date-released: '2026-10-17'
+  version: 0.8.4
+  date-released: '2026-10-20'
   url: https://newgraphenvironment.github.io/flooded/
   repository-code: https://github.com/NewGraphEnvironment/flooded
   license: MIT
@@ -44,7 +44,7 @@ preferred-citation:
     name: New Graph Environment Ltd.
 repository-code: https://github.com/NewGraphEnvironment/flooded
 url: https://newgraphenvironment.github.io/flooded/
-date-released: '2026-10-17'
+date-released: '2026-10-20'
 contact:
 - family-names: Irvine
   given-names: Allan
