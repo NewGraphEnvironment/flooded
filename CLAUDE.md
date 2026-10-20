@@ -102,6 +102,9 @@ tests/testthat/          — unit tests for each fl_* function
   citations. The method description follows `R/fl_valley_confine.R`; the geography and the map
   descriptions are not guarded; literature figures (Hall's R², Nagel's 7) are cited, not guarded.
   Run the script from a committed tree, because its commit is the article's citation.
+- **Citation carries the Zenodo concept DOI (10.5281/zenodo.23302790).** Regenerate `CITATION.cff` by
+  running the R block in `.github/workflows/update-citation-cff.yaml`, not `/citation-cff`'s recipe, which
+  drops the DOI and resets the message. `inst/CITATION` carries the same DOI for `citation("flooded")`.
 - **25 m TRIM resampled to 10 m** is not real 10 m detail — note this when comparing TRIM-derived outputs to true 10 m or 1 m lidar.
 - **1 m lidar reveals anthropogenic barriers** ("pop-ups") — diagnostic value beyond floodplain area itself.
 - **Channel-width buffer auto-detect** from streams sf. DEM correction only — the buffer is a coarse-DEM gap-filler, not an ecological feature.
