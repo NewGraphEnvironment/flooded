@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">flooded</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -18,7 +18,7 @@
       <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/pars-floodplain.html">Watershed-scale floodplain delineation — Parsnip River Watershed Group</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/pars-floodplain.html">Floodplains of the Parsnip River watershed group</a></li>
     <li><a class="dropdown-item" href="../articles/stac-dem.html">Bring your own DEM via STAC</a></li>
     <li><a class="dropdown-item" href="../articles/valley-confinement.html">Valley confinement from DEM and stream network</a></li>
   </ul></li>
@@ -34,9 +34,23 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/NewGraphEnvironment/flooded/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/NewGraphEnvironment/flooded/blob/v0.8.4/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.8.4" id="flooded-084">flooded 0.8.4<a class="anchor" aria-label="anchor" href="#flooded-084"></a></h2>
+<ul><li>The bundled stream data come from the tables <code>link</code> builds with its <code>default</code> configuration, with upstream area and precipitation from fwapg, instead of bcfishpass’s views (<a href="https://github.com/NewGraphEnvironment/flooded/issues/87" class="external-link">#87</a>). This covers <code>inst/testdata/streams.gpkg</code> and the <code>streams</code> layer of <code>inst/vignette-data/pars.gpkg</code>. The build scripts pin the <code>link</code> run they read and stop when it has moved. <strong>The shipped columns change:</strong>
+<ul><li>
+<code>segmented_stream_id</code> (character) is replaced by <code>id_segment</code> (integer), which is unique only together with the new <code>watershed_group_code</code> column;</li>
+<li>
+<code>spawning</code> and <code>rearing</code> are logical, not integer codes, so <code>fl_valley_join(cols = NULL)</code> now picks them up on the bundled tile;</li>
+<li>
+<code>linear_feature_id</code> is added, and rows are ordered by <code>blue_line_key</code> and <code>downstream_route_measure</code>.</li>
+</ul><code>inst/NOTICE.md</code> credits each column to its source. A bcfishpass credit remains for access and habitat, because <code>link</code>’s <code>default</code> configuration applies bcfishpass’s override tables.</li>
+<li>The Parsnip article is rewritten to open with its answer: 40,640 ha of floodplain at flood factor 4, 7.3 % of the watershed group (<a href="https://github.com/NewGraphEnvironment/flooded/issues/92" class="external-link">#92</a>). Every number in it is computed from the article’s data, which its data script pins by digest, and a check fails when a quoted claim stops holding. A table gives the floodplain area at flood factors 2, 4, 6 and 7.</li>
+<li>
+<code>flooded</code> is cited with its Zenodo concept DOI, 10.5281/zenodo.23302790, which <code>citation("flooded")</code> now prints. <code>CITATION.cff</code> names the maintainer as the only author and New Graph Environment Ltd. as publisher.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.8.3" id="flooded-083">flooded 0.8.3<a class="anchor" aria-label="anchor" href="#flooded-083"></a></h2>
 <ul><li>

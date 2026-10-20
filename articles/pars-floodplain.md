@@ -1,159 +1,132 @@
-# Watershed-scale floodplain delineation — Parsnip River Watershed Group
+# Floodplains of the Parsnip River watershed group
 
-This vignette runs the `flooded` pipeline on the Parsnip River Watershed
-Group (`PARS`, 5,597 km², north-eastern BC) and demonstrates the
-AOI-driven helper
-[`flooded::fl_dem_aoi()`](https://newgraphenvironment.github.io/flooded/reference/fl_dem_aoi.md).
+[`flooded`](https://www.newgraphenvironment.com/flooded/) is an R
+package that maps floodplains from an elevation model and a stream
+network. This article runs it over the Parsnip River watershed group,
+5,597 km² of British Columbia between Prince George and Mackenzie, where
+the Parsnip River flows north into Williston Reservoir.
 
-The Parsnip River Watershed Group sits between Prince George and
-Mackenzie, BC. The Parsnip River flows north and enters the southern arm
-of Williston Reservoir at Mackenzie, joining the Peace River system.
-From there the drainage runs Peace → Slave → Mackenzie River, ultimately
-discharging to the Arctic Ocean via the Mackenzie Delta.
+**The answer.** At flood factor 4, `flooded` maps **40,640 ha of
+floodplain**, 7.3 % of the watershed group, along 2,314 km of streams of
+order 3 and up that bull trout can reach.
 
-## Why floodplains
+## What does the map show?
 
-Floodplains are the low-lying, periodically inundated lands flanking a
-stream — the parts of the valley that water reclaims when discharge
-exceeds bankfull. They store flood water and dissipate flood energy,
-recharge shallow groundwater, sort sediment, and host the off-channel
-ponds, side channels, sloughs, lakes, and wetlands that drive
-disproportionate ecological productivity per unit area. For salmonids in
-particular, floodplain habitat — slow-water margins, beaver complexes,
-off-channel rearing — is often the limiting factor for freshwater
-survival, especially through winter low-flow and high-flow refugia.
-Mapping the *extent* of the floodplain at watershed scale is therefore
-the first step in scoping where restoration, protection, or flood-risk
-planning has the most leverage.
+The map starts from the 30 m cells that pass four tests:
 
-## Modelling parameters
+- the slope is at most 9 %;
+- the cell is within 1,000 m of a stream in a straight line;
+- it is close to a stream by a distance that counts steep ground as
+  farther (a cost under 2,500);
+- it lies below a water level 4 times the stream’s bankfull depth above
+  the stream, spread across the valley from the streams. Bankfull depth
+  is estimated from a stream’s upstream area and mean annual
+  precipitation, through Hall et al.’s regression for channel width
+  (Hall et al. 2007).
 
-[`flooded::fl_valley_confine()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_confine.md)
-combines four masks — slope, distance from stream, cost-distance through
-the terrain, and a bankfull flood model — and applies morphological
-cleanup (closing, hole-fill, patch removal) before returning a binary
-valley raster. The algorithm is adapted from the [USDA Valley
-Confinement Algorithm](https://github.com/Ecotrust/BlueGeo) (Nagel et
-al. 2014) (BlueGeo R port by Devin Cairns, MIT) and the
-[bcfishpass](https://github.com/smnorris/bcfishpass) lateral habitat
-assembly (Simon Norris, Apache 2.0). The bankfull flood model follows
-the regional regression of Hall et al. (2007). The parameter legend
-(units, defaults, citations, ecological effect) lives in
-[`flooded::fl_params()`](https://newgraphenvironment.github.io/flooded/reference/fl_params.md).
+It then closes small gaps, fills holes under 0.25 ha, drops patches
+under 0.5 ha and smooths edges with a majority filter, so a cell can be
+in without passing every test, or out despite passing them. Last, it
+adds the lakes and wetlands the streams flow through, which make up 20.4
+% of the floodplain, and the cells whose centre lies inside a stream’s
+channel width. Every setting but the flood factor is the package
+default.
 
-This run uses the **`ff04`** scenario from
-[`flooded::fl_scenarios()`](https://newgraphenvironment.github.io/flooded/reference/fl_scenarios.md)
-— *functional floodplain*, the recurrent-inundation footprint. The
-active parameter values are shown in the table below.
+The streams are those of order 3 and up that bull trout can reach in the
+`default` configuration of
+[`link`](https://www.newgraphenvironment.com/link/), the R package that
+models fish access and habitat on BC’s stream network.
 
-On a 30 m DEM, `ff04` is a *conservative* functional floodplain: Nagel
-et al. put the resolution equivalent nearer `ff07`. In practice the
-difference is small here — measured on the 0.7.0 inputs, corrected
-`ff04` through `ff07` spanned only 6.3% of mapped area on this
-watershed, because at 30 m the slope and cost-distance criteria bind
-before the flood mask does.
+![Floodplain at flood factor 4 (green) over a hillshade of the elevation
+model, with the streams it was mapped from (blue), lakes and wetlands
+(pale green, outlined in blue), resource roads (grey), railways (black,
+dashed), parks and protected areas (light green), First Nations reserves
+(grey, marked with a diamond and named) and the watershed group boundary
+(black). Roads other than resource roads are left off at this
+scale.](pars-floodplain_files/figure-html/map-floodplain-1.png)
 
-The cached outputs below were regenerated for `flooded` 0.5.0, which
-corrected a units defect in the bankfull regression (flooded#49): the
-mapped extent went from 48,603.1 ha to 41,142.9 ha, a loss of 15.3%.
-They were regenerated again for 0.7.0, which projects MRDEM-30 onto a
-fixed 30 m grid aligned to multiples of 30 m instead of a grid GDAL
-chose (30.54 m here), and pins the datum step between MRDEM-30 and BC
-Albers (flooded#67). The extent was then 40,888.2 ha, 0.6% less, and the
-DEM 14.1 rather than 20.9 million cells. They were regenerated once more
-when the streams moved from bcfishpass to the tables link builds
-(flooded#87): 9,386 segments where there were 8,436, over about the same
-length, and an extent of 40,969.3 ha, 0.2% more, on the same DEM.
+Floodplain at flood factor 4 (green) over a hillshade of the elevation
+model, with the streams it was mapped from (blue), lakes and wetlands
+(pale green, outlined in blue), resource roads (grey), railways (black,
+dashed), parks and protected areas (light green), First Nations reserves
+(grey, marked with a diamond and named) and the watershed group boundary
+(black). Roads other than resource roads are left off at this scale.
 
-| parameter | value | unit | effect | source |
-|:---|---:|:---|:---|:---|
-| flood_factor | 4 | dimensionless | Higher = deeper flood; more floodplain | (Nagel et al. 2014; Hall et al. 2007) |
-| slope_threshold | 9 | percent | Higher = more valley floor included | (Nagel et al. 2014) |
-| max_width | 2000 | metres | Analysis corridor width | (Nagel et al. 2014) |
-| cost_threshold | 2500 | dimensionless | Higher = valley extends further up hillslopes | (Nagel et al. 2014) |
+## Which flood level should I use?
 
-Active parameter values for the Parsnip River Watershed Group run.
-`flood_factor = 4` (`ff04`); other values are package defaults from
-[`flooded::fl_params()`](https://newgraphenvironment.github.io/flooded/reference/fl_params.md).
-{.table}
+`flooded` has three preset levels, 2, 4 and 6 times bankfull depth; the
+names it gives 4 and 6 are its own reading, not a published one. The
+table adds 7 and gives the Parsnip’s floodplain at each level, with
+every other setting unchanged. This article uses 4.
 
-The package ships three pre-baked scenarios (table below). They differ
-only in `flood_factor`; all other parameters are held constant so output
-differences isolate the ecological signal.
+| Flood factor | Named for | Where the level comes from | Floodplain (ha) |
+|:--:|:---|:---|---:|
+| 2 | Flood-prone width: roughly a 50-year flood stage or less | Rosgen’s multiplier, twice the maximum bankfull depth (Rosgen 1994, 1996, as cited in Nagel et al. 2014) | 38,516 |
+| 4 | Functional floodplain | `flooded`’s preset | 40,640 |
+| 6 | Valley bottom, including terraces | `flooded`’s preset | 42,371 |
+| 7 | Valley extent on 30 m elevation models | Recommended for 30 m data (Nagel et al. 2014) | 43,155 |
 
-| scenario_id | flood_factor | description | ecological_process | source |
-|:---|---:|:---|:---|:---|
-| ff02 | 2 | Flood-prone width / active channel margin | Rosgen flood-prone width approximating 50-yr flood stage. Captures the zone of frequent inundation and active channel migration. Sits below Hall’s field-validated ff=3, so it is the conservative end of the ladder on a 10m DEM. | (Nagel et al. 2014) |
-| ff04 | 4 | Functional floodplain | Historical floodplain extent where nutrient exchange and LWD recruitment occur. Hall et al. found ff=3 best fit on 10m DEM; ff=4 compensates for 25m TRIM vertical smoothing. On 30m MRDEM Nagel’s resolution equivalent is nearer ff=7, so ff04 is a conservative functional floodplain there rather than a centred one. | (Hall et al. 2007; Nagel et al. 2014) |
-| ff06 | 6 | Valley bottom extent | Full depositional zone including terraces. Nagel et al. recommended ff=5-7 for valley bottom mapping. Wider than functional floodplain — includes areas not regularly influenced by high flows. On 30m MRDEM this is also close to the resolution-equivalent functional floodplain, so read it against the DEM resolution rather than as a fixed ecological class. | (Nagel et al. 2014) |
+Flood levels and the Parsnip’s floodplain at each. {.table}
 
-Pre-baked flood-factor scenarios shipped with the package. Switch by
-passing `flood_factor =` to
-[`flooded::fl_valley_confine()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_confine.md).
-{.table}
+Going from 4 to 7 adds 6.2 % to the area.
 
-For a side-by-side comparison of all three scenarios on a smaller reach,
-see the [valley-confinement
-vignette](https://newgraphenvironment.github.io/flooded/articles/valley-confinement.html).
+## How do I read it up close?
 
-## Cached inputs
+The south-east corner holds the Parsnip’s headwaters around Arctic Lake,
+on the divide between Arctic and Pacific drainage. At this scale the
+floodplain follows individual channels, lakes and wetlands, and sits
+against roads, railways, reserves and parks.
 
-The vignette renders against pre-computed outputs from
-`data-raw/wsg_vignette_data.R` so it builds fast and doesn’t touch the
-network or database. Direct downloads of the cached Parsnip River
-Watershed Group bundle from the repo (open in QGIS or any GDAL-aware
-tool):
+The map does not record which test, or which step of the tidying, left a
+cell out.
 
-- [`pars.gpkg`](https://github.com/NewGraphEnvironment/flooded/raw/main/inst/vignette-data/pars.gpkg)
-  — vectors: `aoi`, `streams`, `waterbodies`, `floodplain`, `railways`,
-  `roads`, `reserves`, `parks`, `named_streams`
-- [`pars_dem.tif`](https://github.com/NewGraphEnvironment/flooded/raw/main/inst/vignette-data/pars_dem.tif)
-  — MRDEM-30 clip (Int16)
-- [`pars_valleys.tif`](https://github.com/NewGraphEnvironment/flooded/raw/main/inst/vignette-data/pars_valleys.tif)
-  —
-  [`fl_valley_confine()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_confine.md)
-  binary output
+![The south-east corner of the watershed group, around Arctic Lake:
+floodplain (green), streams (blue) with named streams labelled, lakes
+and wetlands (pale green, outlined in blue), roads and trails (grey),
+railways (black, dashed), parks and protected areas (light green) and
+First Nations reserves (grey,
+named).](pars-floodplain_files/figure-html/map-detail-1.png)
 
-## DEM
+The south-east corner of the watershed group, around Arctic Lake:
+floodplain (green), streams (blue) with named streams labelled, lakes
+and wetlands (pale green, outlined in blue), roads and trails (grey),
+railways (black, dashed), parks and protected areas (light green) and
+First Nations reserves (grey, named).
 
-The underlying elevation data is
-[MRDEM-30](https://open.canada.ca/data/en/dataset/18752265-bda3-498c-a4ba-9dfe68cb98da),
-NRCan’s 30 m Medium-Resolution Digital Elevation Model — a single
-Cloud-Optimized GeoTIFF covering all of Canada, hosted on public S3 with
-no authentication required, integrated from LidarBC where lidar coverage
-exists with Copernicus TanDEM-X / CDEM-derived fallback elsewhere.
-[`flooded::fl_dem_aoi()`](https://newgraphenvironment.github.io/flooded/reference/fl_dem_aoi.md)
-reads it via `/vsicurl/`, so the only bytes transferred are those
-intersecting the AOI — bandwidth scales with the AOI, not with the COG
-size.
+## How good is it?
 
-## Streams and waterbodies
+This map has not been compared with floodplain mapped on the ground. Its
+water level rests on Hall et al.’s channel-width regression, which
+explains about half the variation in width (R² = 0.47) across 1,951
+field measurements in the Columbia River basin (Hall et al. 2007), and
+on a conversion from width to depth fitted in a single Idaho basin. The
+flood factor multiplies whatever error those carry.
 
-Streams are the segments of order 3 and up that
-[link](https://www.newgraphenvironment.com/link/)’s `default`
-configuration models as accessible to bull trout, from link `0.66.0`
-(run of 2026-10-17). Upstream area and mean annual precipitation
-upstream come from [fwapg](https://smnorris.github.io/fwapg/). 8 of the
-9,386 segments have no upstream area, because fwapg’s
-stream-to-watershed lookup has no row for them
-([fwapg#33](https://github.com/NewGraphEnvironment/fwapg/issues/33)).
+## What should you know before using it?
 
-Waterbodies (lakes + wetlands) come from
-`whse_basemapping.fwa_lakes_poly` and
-`whse_basemapping.fwa_wetlands_poly` joined on `waterbody_key` — only
-those physically anchored to the streams above are pulled in. They feed
-`flooded::fl_valley_confine(waterbodies = ...)` so the final valley
-raster fills lake / wetland cells the gradient and cost-distance masks
-would otherwise carve donut holes around.
+- **It maps terrain, not floods.** No discharge, flood routing or return
+  period goes into it; the flood factor sets a level relative to the
+  streams’ bankfull depth.
+- **It starts only from the streams it is given.** A smaller stream, or
+  one bull trout cannot reach, does not seed the map; ground beside it
+  is in the map only as measured from those streams, through the
+  tidying, or as part of a lake or wetland they flow through.
+- **It works on 30 m cells.** Nothing narrower than a cell is resolved.
 
-## Valley confinement
+## Data and how it was built
 
-[`flooded::fl_valley_confine()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_confine.md)
-runs the full VCA pipeline on the cached DEM, streams, and waterbodies.
-On the Parsnip River Watershed Group at 30 m (~14 Mcells) it took 83 to
-122 s of wall time on an Apple M1 Max, with other work on the machine
-(flooded 0.8.1, on the 8,436 segments the streams had before
-flooded#87).
+The elevation model is Natural Resources Canada’s
+[MRDEM-30](https://open.canada.ca/data/en/dataset/18752265-bda3-498c-a4ba-9dfe68cb98da).
+The streams are BC Freshwater Atlas segments from `link`’s run of
+2026-10-17, with upstream area and mean annual precipitation from
+[fwapg](https://smnorris.github.io/fwapg/); lakes, wetlands and named
+streams are from the atlas too. Roads and trails, railways, reserves,
+and parks and protected areas are from the BC Data Catalogue. The data
+were built by
+[`data-raw/wsg_vignette_data.R`](https://github.com/NewGraphEnvironment/flooded/blob/main/data-raw/wsg_vignette_data.R),
+which ran the call below; the
+[`fl_valley_confine()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_confine.md)
+call took 2.2 minutes (Apple M1 Max):
 
 ``` r
 
@@ -163,53 +136,49 @@ valleys <- flooded::fl_valley_confine(
   area_field = "upstream_area_ha",
   precip = flooded::fl_stream_rasterize(streams, dem, field = "map_upstream"),
   waterbodies = waterbodies,
-  flood_factor = 4   # ff04 — functional floodplain
+  flood_factor = 4
 )
-floodplain <- flooded::fl_valley_poly(valleys)
 ```
 
-## Floodplain map — full WSG
+The results can be downloaded:
+[`pars.gpkg`](https://github.com/NewGraphEnvironment/flooded/raw/main/inst/vignette-data/pars.gpkg)
+(the floodplain, streams, lakes and wetlands, and the map layers),
+[`pars_valleys.tif`](https://github.com/NewGraphEnvironment/flooded/raw/main/inst/vignette-data/pars_valleys.tif)
+(the floodplain grid) and
+[`pars_dem.tif`](https://github.com/NewGraphEnvironment/flooded/raw/main/inst/vignette-data/pars_dem.tif)
+(the elevation model, truncated to whole metres; the floodplain was
+mapped from the unrounded values).
 
-![Parsnip River Watershed Group unconfined valleys (green) over MRDEM-30
-hillshade. Parks (light green polygon), First Nations reserves (light
-grey polygon, black diamond marker at centroid + label), accessible
-order 3+ streams in blue, lakes and wetlands in light blue, forest
-service / resource roads grey, railways black-dashed, watershed boundary
-heavy black.](pars-floodplain_files/figure-html/map-floodplain-1.png)
+## Software and how to cite it
 
-Parsnip River Watershed Group unconfined valleys (green) over MRDEM-30
-hillshade. Parks (light green polygon), First Nations reserves (light
-grey polygon, black diamond marker at centroid + label), accessible
-order 3+ streams in blue, lakes and wetlands in light blue, forest
-service / resource roads grey, railways black-dashed, watershed boundary
-heavy black.
+- [`flooded`](https://www.newgraphenvironment.com/flooded/) v0.8.3, at
+  commit
+  [4005f97](https://github.com/NewGraphEnvironment/flooded/commit/4005f979ad194e7253d1fb3b673d2cfe83b7ca7e):
+  the floodplain model. DOI for all versions:
+  [10.5281/zenodo.23302790](https://doi.org/10.5281/zenodo.23302790).
+- [`link`](https://www.newgraphenvironment.com/link/) v0.66.0, modelled
+  at commit
+  [ee21eb1](https://github.com/NewGraphEnvironment/link/commit/ee21eb1371cbc4d7a2d598f8bbeeaeb0534d7994)
+  and recomputed at
+  [a17e917](https://github.com/NewGraphEnvironment/link/commit/a17e91773b283b021811f8b5b76b887d5f4c16e4):
+  which streams bull trout can reach. DOI for all versions:
+  [10.5281/zenodo.23264990](https://doi.org/10.5281/zenodo.23264990).
+- [`fresh`](https://www.newgraphenvironment.com/fresh/) v0.39.0, at
+  commit
+  [e247ca1](https://github.com/NewGraphEnvironment/fresh/commit/e247ca19a7803982dc7e5f55dbbf377dfc85d007):
+  the stream network modelling engine `link` runs on.
+- [fwapg](https://smnorris.github.io/fwapg/), at commit
+  [f9718cb](https://github.com/NewGraphEnvironment/fwapg/commit/f9718cb739d376155641f484456eb2a93ce2f481)
+  as `link`’s run recorded it: the Freshwater Atlas in PostgreSQL.
+  Upstream area and precipitation were read from its tables on
+  2026-10-19.
 
-## Detail map — south-east corner
+Cite `flooded` as:
 
-The full-WSG view compresses a lot of detail. Cropping to the
-south-eastern corner — the headwaters of the Parsnip River, where Arctic
-Lake Provincial Park sits on the continental divide between Arctic Ocean
-and Pacific Ocean drainages — shows the per-reach floodplain pattern,
-individual channels, lakes / wetlands, and the named First Nations
-reserves at full resolution. Streams just inside the Parsnip River
-Watershed Group here drain north via Williston Reservoir → Peace → Slave
-→ Mackenzie to the Arctic; a short distance south of the divide, streams
-drain into the Fraser and out to the Pacific.
-
-![South-east corner of the Parsnip River Watershed Group at full
-resolution — the headwaters around Arctic Lake on the continental
-divide. Parks (light green), First Nations reserves (light grey polygon
-with black diamond marker + formal english_name label at centroid),
-waterbodies, valleys, named streams (italic blue labels), roads (grey),
-railways (black
-dashed).](pars-floodplain_files/figure-html/map-detail-1.png)
-
-South-east corner of the Parsnip River Watershed Group at full
-resolution — the headwaters around Arctic Lake on the continental
-divide. Parks (light green), First Nations reserves (light grey polygon
-with black diamond marker + formal english_name label at centroid),
-waterbodies, valleys, named streams (italic blue labels), roads (grey),
-railways (black dashed).
+Irvine A (2026). *flooded: Map Floodplains from an Elevation Model and a
+Stream Network*. New Graph Environment Ltd.
+<doi:10.5281/zenodo.23302790> <https://doi.org/10.5281/zenodo.23302790>.
+Version 0.8.4, <https://github.com/NewGraphEnvironment/flooded>.
 
 ## References
 

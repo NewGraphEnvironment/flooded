@@ -1,5 +1,37 @@
 # Changelog
 
+## flooded 0.8.4
+
+- The bundled stream data come from the tables `link` builds with its
+  `default` configuration, with upstream area and precipitation from
+  fwapg, instead of bcfishpass’s views
+  ([\#87](https://github.com/NewGraphEnvironment/flooded/issues/87)).
+  This covers `inst/testdata/streams.gpkg` and the `streams` layer of
+  `inst/vignette-data/pars.gpkg`. The build scripts pin the `link` run
+  they read and stop when it has moved. **The shipped columns change:**
+  - `segmented_stream_id` (character) is replaced by `id_segment`
+    (integer), which is unique only together with the new
+    `watershed_group_code` column;
+  - `spawning` and `rearing` are logical, not integer codes, so
+    `fl_valley_join(cols = NULL)` now picks them up on the bundled tile;
+  - `linear_feature_id` is added, and rows are ordered by
+    `blue_line_key` and `downstream_route_measure`.
+
+  `inst/NOTICE.md` credits each column to its source. A bcfishpass
+  credit remains for access and habitat, because `link`’s `default`
+  configuration applies bcfishpass’s override tables.
+- The Parsnip article is rewritten to open with its answer: 40,640 ha of
+  floodplain at flood factor 4, 7.3 % of the watershed group
+  ([\#92](https://github.com/NewGraphEnvironment/flooded/issues/92)).
+  Every number in it is computed from the article’s data, which its data
+  script pins by digest, and a check fails when a quoted claim stops
+  holding. A table gives the floodplain area at flood factors 2, 4, 6
+  and 7.
+- `flooded` is cited with its Zenodo concept DOI,
+  10.5281/zenodo.23302790, which `citation("flooded")` now prints.
+  `CITATION.cff` names the maintainer as the only author and New Graph
+  Environment Ltd. as publisher.
+
 ## flooded 0.8.3
 
 - [`fl_valley_join()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_join.md)’s
