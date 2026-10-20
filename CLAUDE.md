@@ -78,7 +78,7 @@ tests/testthat/          — unit tests for each fl_* function
   site 77% of pop-ups fail the 1 m **slope** test, not the flood test. The build script now
   records the share and the page states it.
 - **The STAC catalog is `stac-elevation-bc`, asset `dem`** (formerly `stac-dem-bc`, asset `image`;
-  renamed upstream in rtj#229). The old collection returns zero items, not an error.
+  renamed upstream). The old collection returns zero items, not an error.
 - **Bundled streams come from link's `fresh_default` tables, pinned to one run (#87).**
   `data-raw/network_extract.R` and `data-raw/wsg_vignette_data.R` stop unless `fresh_default.log`
   holds the `run_id` they name, because the next provincial link run overwrites the schema; change
