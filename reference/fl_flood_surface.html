@@ -103,10 +103,10 @@ callers carry are converted before the coefficients are applied:</p>
 <p>When <code>precip = NULL</code> (default), the precipitation term drops out — the
 multiplier is exactly <code>1</code> — and flood depth depends only on contributing
 area. Supplying precipitation matters: on the bundled test data it raises
-predicted depth by ~2.4x (2.366 averaged over stream cells).</p>
+predicted depth by ~2.4x (2.36 averaged over stream cells).</p>
 <p>The equation predicts a <em>fitted index</em>, not a surveyed channel. Hall's
 regression has an R2 of 0.47, and its widths run well below independent
-estimates such as bcfishpass's — 5.7 m against 31.3 m for the Bulkley.
+estimates such as fwapg's <code>channel_width</code> — 5.7 m against 31.3 m for the Bulkley.
 <code>flood_factor</code> is what scales the index onto a mapped footprint.</p>
 <p>Passing anything other than upstream area in hectares (channel width, for
 instance) silently produces a plausible-looking but wrong flood surface;

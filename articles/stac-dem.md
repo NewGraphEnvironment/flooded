@@ -12,8 +12,8 @@ provincial lidar DEMs.
 The 10 m runs below execute live when this page is built. The lidar
 steps need the STAC endpoint and about 20 minutes of processing, so
 their code is shown as you would run it, and their results come from
-`data-raw/stac_dem_vignette_data.R`, last run from `flooded` 0.6.2
-source (1ea1ae5) on 2026-10-08. When this page is built, the two 10 m
+`data-raw/stac_dem_vignette_data.R`, last run from `flooded` 0.8.3
+source (407ee26) on 2026-10-17. When this page is built, the two 10 m
 runs are checked against the 10 m counts that script recorded, and a
 note appears beside the comparison if they differ. That check catches
 changes to the 10 m pipeline; it cannot see a change that only shows at
@@ -88,7 +88,7 @@ valleys_10m <- fl_valley_confine(
 n_10m <- sum(values(valleys_10m) == 1, na.rm = TRUE)
 cat("10 m DEM valley cells:", n_10m, "/", ncell(valleys_10m),
     "(", round(100 * n_10m / ncell(valleys_10m), 1), "%)\n")
-#> 10 m DEM valley cells: 28727 / 518400 ( 5.5 %)
+#> 10 m DEM valley cells: 28726 / 518400 ( 5.5 %)
 ```
 
 ## Fetch 1 m lidar DEM from STAC
@@ -210,7 +210,7 @@ cat(stac_res, "m DEM valley cells:", n_stac, "/", ncell(valleys_stac),
     round(100 * n_stac / ncell(valleys_stac), 1), "%)\n")
 ```
 
-    #> 5 m DEM valley cells: 186675 / 2073600 cells in the tile, no-lidar cells included ( 9 %)
+    #> 5 m DEM valley cells: 186607 / 2073600 cells in the tile, no-lidar cells included ( 9 %)
 
 ## Compare
 
@@ -230,14 +230,14 @@ area_stac <- sum(values(valleys_stac_10) == 1, na.rm = TRUE) *
 cat("Valley area (bundled 10 m DEM):", round(area_10m, 2), "km²\n")
 #> Valley area (bundled 10 m DEM): 2.87 km²
 cat("Valley area (STAC", stac_res, "m DEM):", round(area_stac, 2), "km²\n")
-#> Valley area (STAC 5 m DEM): 4.67 km²
+#> Valley area (STAC 5 m DEM): 4.66 km²
 ```
 
 The lidar maps more valley bottom than the resampled TRIM DEM. The two
 mostly agree where the 10 m run finds floodplain, and the lidar adds to
 it along both the tributaries and the main stem. The 2019 lidar flight
 covers about 78% of the test area. The rest is upland: only 32 of the
-28,727 10 m floodplain cells fall outside the lidar, so the missing
+28,726 10 m floodplain cells fall outside the lidar, so the missing
 coverage has almost no effect on this comparison.
 
 ``` r
@@ -363,7 +363,7 @@ cat("1 m DEM valley cells:", format(n_1m, big.mark = ","), "/",
     round(100 * n_1m / ncell(valleys_1m), 1), "%)\n")
 ```
 
-    #> 1 m DEM valley cells: 3,096,003 / 1.4e+07 cells in the site, no-lidar cells included ( 22.1 %)
+    #> 1 m DEM valley cells: 3,094,921 / 1.4e+07 cells in the site, no-lidar cells included ( 22.1 %)
 
 Run the resampled 10 m DEM over the same site for comparison:
 
@@ -457,10 +457,10 @@ data.frame(
 | Metric                                         | Value    |
 |:-----------------------------------------------|:---------|
 | Floodplain area (25 m TRIM)                    | 205.9 ha |
-| Floodplain area (1 m lidar)                    | 310.3 ha |
+| Floodplain area (1 m lidar)                    | 310.2 ha |
 | Floodplain only at 25 m (pop-ups)              | 19.8 ha  |
 | Pop-ups as % of 25 m floodplain with 1 m lidar | 9.6%     |
-| Floodplain found only at 1 m                   | 124.3 ha |
+| Floodplain found only at 1 m                   | 124.2 ha |
 
 The “pop-ups” are floodplain at 25 m that the 1 m run excludes. The
 table does not say why:

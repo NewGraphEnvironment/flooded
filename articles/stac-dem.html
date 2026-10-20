@@ -82,7 +82,7 @@ collection of BC provincial lidar DEMs.</p>
 steps need the STAC endpoint and about 20 minutes of processing, so
 their code is shown as you would run it, and their results come from
 <code>data-raw/stac_dem_vignette_data.R</code>, last run from
-<code>flooded</code> 0.6.2 source (1ea1ae5) on 2026-10-08. When this
+<code>flooded</code> 0.8.3 source (407ee26) on 2026-10-17. When this
 page is built, the two 10 m runs are checked against the 10 m counts
 that script recorded, and a note appears beside the comparison if they
 differ. That check catches changes to the 10 m pipeline; it cannot see a
@@ -151,7 +151,7 @@ baseline.</p>
 <span><span class="va">n_10m</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/values.html" class="external-link">values</a></span><span class="op">(</span><span class="va">valleys_10m</span><span class="op">)</span> <span class="op">==</span> <span class="fl">1</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"10 m DEM valley cells:"</span>, <span class="va">n_10m</span>, <span class="st">"/"</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">ncell</a></span><span class="op">(</span><span class="va">valleys_10m</span><span class="op">)</span>,</span>
 <span>    <span class="st">"("</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="fl">100</span> <span class="op">*</span> <span class="va">n_10m</span> <span class="op">/</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">ncell</a></span><span class="op">(</span><span class="va">valleys_10m</span><span class="op">)</span>, <span class="fl">1</span><span class="op">)</span>, <span class="st">"%)\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; 10 m DEM valley cells: 28727 / 518400 ( 5.5 %)</span></span></code></pre></div>
+<span><span class="co">#&gt; 10 m DEM valley cells: 28726 / 518400 ( 5.5 %)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="fetch-1-m-lidar-dem-from-stac">Fetch 1 m lidar DEM from STAC<a class="anchor" aria-label="anchor" href="#fetch-1-m-lidar-dem-from-stac"></a>
@@ -264,7 +264,7 @@ fast enough for a watershed-scale run. For production work, set
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="va">stac_res</span>, <span class="st">"m DEM valley cells:"</span>, <span class="va">n_stac</span>, <span class="st">"/"</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">ncell</a></span><span class="op">(</span><span class="va">valleys_stac</span><span class="op">)</span>,</span>
 <span>    <span class="st">"cells in the tile, no-lidar cells included ("</span>,</span>
 <span>    <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="fl">100</span> <span class="op">*</span> <span class="va">n_stac</span> <span class="op">/</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">ncell</a></span><span class="op">(</span><span class="va">valleys_stac</span><span class="op">)</span>, <span class="fl">1</span><span class="op">)</span>, <span class="st">"%)\n"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; 5 m DEM valley cells: 186675 / 2073600 cells in the tile, no-lidar cells included ( 9 %)</span></span></code></pre>
+<pre><code><span><span class="co">#&gt; 5 m DEM valley cells: 186607 / 2073600 cells in the tile, no-lidar cells included ( 9 %)</span></span></code></pre>
 </div>
 <div class="section level2">
 <h2 id="compare">Compare<a class="anchor" aria-label="anchor" href="#compare"></a>
@@ -281,12 +281,12 @@ fast enough for a watershed-scale run. For production work, set
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Valley area (bundled 10 m DEM):"</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="va">area_10m</span>, <span class="fl">2</span><span class="op">)</span>, <span class="st">"km²\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Valley area (bundled 10 m DEM): 2.87 km²</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Valley area (STAC"</span>, <span class="va">stac_res</span>, <span class="st">"m DEM):"</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="va">area_stac</span>, <span class="fl">2</span><span class="op">)</span>, <span class="st">"km²\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Valley area (STAC 5 m DEM): 4.67 km²</span></span></code></pre></div>
+<span><span class="co">#&gt; Valley area (STAC 5 m DEM): 4.66 km²</span></span></code></pre></div>
 <p>The lidar maps more valley bottom than the resampled TRIM DEM. The
 two mostly agree where the 10 m run finds floodplain, and the lidar adds
 to it along both the tributaries and the main stem. The 2019 lidar
 flight covers about 78% of the test area. The rest is upland: only 32 of
-the 28,727 10 m floodplain cells fall outside the lidar, so the missing
+the 28,726 10 m floodplain cells fall outside the lidar, so the missing
 coverage has almost no effect on this comparison.</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">1</span><span class="op">)</span>, mar <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">4</span>, <span class="fl">2</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
@@ -396,7 +396,7 @@ at full 1 m resolution.</p>
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">ncell</a></span><span class="op">(</span><span class="va">valleys_1m</span><span class="op">)</span>, big.mark <span class="op">=</span> <span class="st">","</span><span class="op">)</span>,</span>
 <span>    <span class="st">"cells in the site, no-lidar cells included ("</span>,</span>
 <span>    <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="fl">100</span> <span class="op">*</span> <span class="va">n_1m</span> <span class="op">/</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">ncell</a></span><span class="op">(</span><span class="va">valleys_1m</span><span class="op">)</span>, <span class="fl">1</span><span class="op">)</span>, <span class="st">"%)\n"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; 1 m DEM valley cells: 3,096,003 / 1.4e+07 cells in the site, no-lidar cells included ( 22.1 %)</span></span></code></pre>
+<pre><code><span><span class="co">#&gt; 1 m DEM valley cells: 3,094,921 / 1.4e+07 cells in the site, no-lidar cells included ( 22.1 %)</span></span></code></pre>
 <p>Run the resampled 10 m DEM over the same site for comparison:</p>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dem_site_10m</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/crop.html" class="external-link">crop</a></span><span class="op">(</span><span class="va">dem_10m</span>, <span class="va">site_ext</span><span class="op">)</span></span>
@@ -486,7 +486,7 @@ has no 2019 lidar.
 </tr>
 <tr class="even">
 <td align="left">Floodplain area (1 m lidar)</td>
-<td align="left">310.3 ha</td>
+<td align="left">310.2 ha</td>
 </tr>
 <tr class="odd">
 <td align="left">Floodplain only at 25 m (pop-ups)</td>
@@ -498,7 +498,7 @@ has no 2019 lidar.
 </tr>
 <tr class="odd">
 <td align="left">Floodplain found only at 1 m</td>
-<td align="left">124.3 ha</td>
+<td align="left">124.2 ha</td>
 </tr>
 </tbody>
 </table>

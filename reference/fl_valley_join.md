@@ -174,13 +174,13 @@ j <- fl_valley_join(valleys, attributed, streams, group = "blue_line_key",
 #> ℹ 48 cells tied between claiming groups - assigned to the lowest key.
 j$check
 #>     valley_cells attributed_cells          missing            extra 
-#>            28727            28727                0                0 
+#>            28726            28726                0                0 
 
 # Floodplain beside a wide channel (ha): one owner per cell, then any claimer
 cell_ha <- prod(terra::res(valleys)) / 1e4
 c(nearest = sum(j$nearest$wide) * cell_ha, any = sum(j$any$wide) * cell_ha)
 #> nearest     any 
-#>  190.55  260.82 
+#>  190.55  260.81 
 
 # Joining on the key instead credits each blue line's whole floodplain
 wide_keys <- unique(streams$blue_line_key[streams$wide])
@@ -188,7 +188,7 @@ by_key <- terra::cells(valleys, terra::vect(
   attributed[attributed$blue_line_key %in% wide_keys, ]
 ))
 length(unique(by_key[, "cell"])) * cell_ha
-#> [1] 263.85
+#> [1] 263.84
 
 # Map it
 r <- terra::rast(valleys)

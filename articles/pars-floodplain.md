@@ -48,9 +48,10 @@ active parameter values are shown in the table below.
 
 On a 30 m DEM, `ff04` is a *conservative* functional floodplain: Nagel
 et al. put the resolution equivalent nearer `ff07`. In practice the
-difference is small here — corrected `ff04` through `ff07` span only
-6.3% of mapped area on this watershed, because at 30 m the slope and
-cost-distance criteria bind before the flood mask does.
+difference is small here — measured on the 0.7.0 inputs, corrected
+`ff04` through `ff07` spanned only 6.3% of mapped area on this
+watershed, because at 30 m the slope and cost-distance criteria bind
+before the flood mask does.
 
 The cached outputs below were regenerated for `flooded` 0.5.0, which
 corrected a units defect in the bankfull regression (flooded#49): the
@@ -58,8 +59,11 @@ mapped extent went from 48,603.1 ha to 41,142.9 ha, a loss of 15.3%.
 They were regenerated again for 0.7.0, which projects MRDEM-30 onto a
 fixed 30 m grid aligned to multiples of 30 m instead of a grid GDAL
 chose (30.54 m here), and pins the datum step between MRDEM-30 and BC
-Albers (flooded#67). The extent is now 40,888.2 ha, 0.6% less, and the
-DEM 14.1 rather than 20.9 million cells.
+Albers (flooded#67). The extent was then 40,888.2 ha, 0.6% less, and the
+DEM 14.1 rather than 20.9 million cells. They were regenerated once more
+when the streams moved from bcfishpass to the tables link builds
+(flooded#87): 9,386 segments where there were 8,436, over about the same
+length, and an extent of 40,969.3 ha, 0.2% more, on the same DEM.
 
 | parameter | value | unit | effect | source |
 |:---|---:|:---|:---|:---|
@@ -125,8 +129,14 @@ size.
 
 ## Streams and waterbodies
 
-Streams are habitat segments modelled as accessible to bull trout from
-[bcfishpass](https://github.com/smnorris/bcfishpass).
+Streams are the segments of order 3 and up that
+[link](https://www.newgraphenvironment.com/link/)’s `default`
+configuration models as accessible to bull trout, from link `0.66.0`
+(run of 2026-10-17). Upstream area and mean annual precipitation
+upstream come from [fwapg](https://smnorris.github.io/fwapg/). 8 of the
+9,386 segments have no upstream area, because fwapg’s
+stream-to-watershed lookup has no row for them
+([fwapg#33](https://github.com/NewGraphEnvironment/fwapg/issues/33)).
 
 Waterbodies (lakes + wetlands) come from
 `whse_basemapping.fwa_lakes_poly` and
@@ -141,7 +151,9 @@ would otherwise carve donut holes around.
 [`flooded::fl_valley_confine()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_confine.md)
 runs the full VCA pipeline on the cached DEM, streams, and waterbodies.
 On the Parsnip River Watershed Group at 30 m (~14 Mcells) it took 83 to
-122 s of wall time on an Apple M1 Max, with other work on the machine.
+122 s of wall time on an Apple M1 Max, with other work on the machine
+(flooded 0.8.1, on the 8,436 segments the streams had before
+flooded#87).
 
 ``` r
 

@@ -72,7 +72,7 @@
 </blockquote>
 <p>flooded maps floodplains from terrain: the low, gently sloping ground beside streams. It reads terrain rather than modelling flood flows, so it is quick to run over large areas for screening and planning. From a 30 m elevation model it maps the valley floors of a whole watershed group, as in the map below. From 1 m lidar it also picks out raised ground across a valley floor, such as road and rail grades, dykes and fill, that can cut a floodplain off from its river.</p>
 <p><img src="reference/figures/readme-pars.png" alt="Map of the Parsnip River watershed group over a grey hillshade. A blue floodplain follows the Parsnip River and its larger tributaries along the valley floors, with lakes and wetlands in the south-east; the mountain slopes between them carry none." width="100%"></p>
-<p><em>Floodplain (flood factor 4) of the Parsnip River watershed group, BC, from the 30 m MRDEM-30 elevation model, modelled on streams of order 3 and up that bull trout can reach. How access is modelled: link’s <a href="https://www.newgraphenvironment.com/link/articles/pars-habitat-connectivity.html" class="external-link">Parsnip habitat and connectivity</a> article.</em></p>
+<p><em>Floodplain (flood factor 4) of the Parsnip River watershed group, BC, from the 30 m MRDEM-30 elevation model, modelled on streams of order 3 and up that bull trout can reach according to the <code>default</code> configuration of <a href="https://www.newgraphenvironment.com/link/" class="external-link">link</a>.</em></p>
 <div class="section level2">
 <h2 id="how-it-works">How it works<a class="anchor" aria-label="anchor" href="#how-it-works"></a>
 </h2>
@@ -207,9 +207,9 @@
 <ul>
 <li>Code adapted from <a href="https://github.com/bluegeo/bluegeo" class="external-link">BlueGeo</a> (Devin Cairns, MIT) and <a href="https://smnorris.github.io/bcfishpass/" class="external-link">bcfishpass</a> (Simon Norris, Apache 2.0), following the <a href="https://www.fs.usda.gov/rm/boise/AWAE/projects/valley_confinement.shtml" class="external-link">USDA VCA Toolbox</a>. Parameters and flood levels: <a href="https://github.com/NewGraphEnvironment/flooded/blob/main/inst/notes/methodology.md" class="external-link">methodology</a>. What the output can be used to claim: <a href="https://github.com/NewGraphEnvironment/flooded/blob/main/inst/notes/floodplain_interpretation.md" class="external-link">floodplain interpretation</a>.</li>
 <li>
-<a href="https://smnorris.github.io/fwapg/" class="external-link">fwapg</a> (Simon Norris): the BC Freshwater Atlas in PostgreSQL, with upstream area and <a href="https://climatebc.ca/" class="external-link">ClimateBC</a> mean annual precipitation on every stream segment.</li>
+<a href="https://smnorris.github.io/fwapg/" class="external-link">fwapg</a> (Simon Norris): the BC Freshwater Atlas in PostgreSQL, with upstream area, <a href="https://climatebc.ca/" class="external-link">ClimateBC</a> mean annual precipitation and channel width on its stream segments.</li>
 <li>NRCan’s <a href="https://open.canada.ca/data/en/dataset/18752265-bda3-498c-a4ba-9dfe68cb98da" class="external-link">MRDEM-30</a> elevation model.</li>
-<li>Bundled data: BC’s 25 m TRIM DEM, the Freshwater Atlas, bcfishpass stream attributes and access, ClimateBC precipitation and BC lidar, with licences in <a href="https://github.com/NewGraphEnvironment/flooded/blob/main/inst/NOTICE.md" class="external-link"><code>inst/NOTICE.md</code></a>. Moving it to our own link-built tables is <a href="https://github.com/NewGraphEnvironment/flooded/issues/87" class="external-link">#87</a>.</li>
+<li>Bundled data: BC’s 25 m TRIM DEM, the Freshwater Atlas, stream access and habitat modelled by <a href="https://www.newgraphenvironment.com/link/" class="external-link">link</a> (which applies bcfishpass’s barrier and habitat override tables), ClimateBC precipitation and BC lidar, with licences in <a href="https://github.com/NewGraphEnvironment/flooded/blob/main/inst/NOTICE.md" class="external-link"><code>inst/NOTICE.md</code></a>.</li>
 </ul>
 </div>
 <div class="section level2">

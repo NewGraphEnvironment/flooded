@@ -1,21 +1,23 @@
 # Valley confinement from DEM and stream network
 
 This vignette walks through the full `flooded` pipeline on a section of
-Neexdzii Kwah (Bulkley River) near Topley, BC. The test data covers ~8
+Neexdzii Kwah (Bulkley River) near Topley, BC. The test data covers ~5
 km of mainstem plus tributaries (Richfield Creek, Cesford Creek, Robert
 Hatch Creek) at 10 m resolution.
 
-The bundled stream network is filtered to order 4+ coho potential
-habitat (`bcfishpass.streams_co_vw`). This focuses the floodplain
-delineation on the mainstem corridor and major tributaries — the streams
-most relevant to restoration planning and where investment has the
-greatest impact on higher-value salmon habitat. Filtering also
-constrains the analysis-of-interest (AOI) for practical downstream
-applications like orthophoto acquisition and review, where cost control
-matters. All watershed tributaries contribute to floodplain health, but
-a bring-your-own-DEM tool benefits from demonstrating the pipeline on a
-focused corridor. See `data-raw/network_extract.R` for the extraction
-script.
+The bundled stream network is filtered to order 4+ streams that coho can
+reach, as modelled by
+[link](https://www.newgraphenvironment.com/link/)’s `default`
+configuration, with upstream area and precipitation from fwapg. This
+focuses the floodplain delineation on the mainstem corridor and major
+tributaries — the streams most relevant to restoration planning and
+where investment has the greatest impact on higher-value salmon habitat.
+Filtering also constrains the analysis-of-interest (AOI) for practical
+downstream applications like orthophoto acquisition and review, where
+cost control matters. All watershed tributaries contribute to floodplain
+health, but a bring-your-own-DEM tool benefits from demonstrating the
+pipeline on a focused corridor. See `data-raw/network_extract.R` for the
+extraction script.
 
 ## Load data
 
@@ -44,7 +46,7 @@ cat("Streams:", nrow(streams), "segments\n")
 cat("Upstream area range:", range(streams$upstream_area_ha), "ha\n")
 #> Upstream area range: 1928.765 110337.4 ha
 cat("Mean annual precip range:", range(streams$map_upstream), "mm\n")
-#> Mean annual precip range: 526 587 mm
+#> Mean annual precip range: 512 585 mm
 ```
 
 ``` r
@@ -111,7 +113,7 @@ surface at stream cells.
 
 precip_r <- fl_stream_rasterize(streams, dem, field = "map_upstream")
 cat("Precip at stream cells:", range(values(precip_r), na.rm = TRUE), "mm\n")
-#> Precip at stream cells: 526 587 mm
+#> Precip at stream cells: 512 585 mm
 ```
 
 ## Step 3: Individual mask components
@@ -202,7 +204,7 @@ streams, and identifies cells below the flood surface (Figure
 flood <- fl_flood_model(dem, stream_r, flood_factor = 6, precip = precip_r,
                         max_width = 2000)
 cat("Flooded cells:", sum(values(flood[["flooded"]]) == 1, na.rm = TRUE), "\n")
-#> Flooded cells: 30571
+#> Flooded cells: 30559
 ```
 
 ``` r
@@ -245,7 +247,7 @@ valleys <- fl_valley_confine(
 n_valley <- sum(values(valleys) == 1, na.rm = TRUE)
 cat("Valley cells:", n_valley, "/", ncell(valleys),
     "(", round(100 * n_valley / ncell(valleys), 1), "%)\n")
-#> Valley cells: 28727 / 518400 ( 5.5 %)
+#> Valley cells: 28726 / 518400 ( 5.5 %)
 ```
 
 ``` r
@@ -317,7 +319,7 @@ flooded_mask <- flood[["flooded"]]
 flooded_mask <- ifel(is.na(flooded_mask), 0L, flooded_mask)
 assembled <- fl_flood_assemble(connected, flooded_mask)
 cat("Assembled cells:", sum(values(assembled) == 1, na.rm = TRUE), "\n")
-#> Assembled cells: 32670
+#> Assembled cells: 32661
 ```
 
 ## Adding waterbodies and channel buffer
@@ -436,7 +438,7 @@ cat("Without precip:", n_no, "cells (",
 #> Without precip: 19838 cells ( 3.8 %)
 cat("With precip:   ", n_valley, "cells (",
     round(100 * n_valley / ncell(dem), 1), "%)\n")
-#> With precip:    28727 cells ( 5.5 %)
+#> With precip:    28726 cells ( 5.5 %)
 ```
 
 ## Flood factor scenarios
@@ -512,7 +514,7 @@ for (id in names(results)) {
               scenarios$flood_factor[scenarios$scenario_id == id],
               n * cell_area / 1e4))
 }
-#> ff02   (ff=2): 203.8 ha
+#> ff02   (ff=2): 203.7 ha
 #> ff04   (ff=4): 249.8 ha
 #> ff06   (ff=6): 304.8 ha
 ```
@@ -591,7 +593,7 @@ boundary.
 
 Near a confluence, ground legitimately belongs to more than one
 floodplain, so the rows overlap rather than partitioning the valley. On
-this tile the parts sum to roughly 2.4 times the whole:
+this tile the parts sum to roughly 2.2 times the whole:
 
 ``` r
 
@@ -669,10 +671,10 @@ attr(by_stream, "fl_fallback_cells")
 ## Performance
 
 On the Parsnip River watershed group (a 3,749 x 3,761 cell grid at 30 m,
-8,436 stream segments), one
+8,436 stream segments before flooded#87), one
 [`fl_valley_confine()`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_confine.md)
-call took 83 to 122 s of wall time on an Apple M1 Max with terra 1.9.50,
-with other work on the machine. Whether
+call took 83 to 122 s of wall time on an Apple M1 Max with flooded 0.8.1
+and terra 1.9.50, with other work on the machine. Whether
 `terra::terraOptions(threads = )` speeds it up could not be separated
 from that load; see the Performance section of
 [`?fl_valley_confine`](https://newgraphenvironment.github.io/flooded/reference/fl_valley_confine.md).

@@ -18,10 +18,8 @@ none.](reference/figures/readme-pars.png)
 
 *Floodplain (flood factor 4) of the Parsnip River watershed group, BC,
 from the 30 m MRDEM-30 elevation model, modelled on streams of order 3
-and up that bull trout can reach. How access is modelled: link’s
-[Parsnip habitat and
-connectivity](https://www.newgraphenvironment.com/link/articles/pars-habitat-connectivity.html)
-article.*
+and up that bull trout can reach according to the `default`
+configuration of [link](https://www.newgraphenvironment.com/link/).*
 
 ## How it works
 
@@ -158,18 +156,18 @@ cover change) → floodplains (watershed groups) → stac_floodplains_bc
   What the output can be used to claim: [floodplain
   interpretation](https://github.com/NewGraphEnvironment/flooded/blob/main/inst/notes/floodplain_interpretation.md).
 - [fwapg](https://smnorris.github.io/fwapg/) (Simon Norris): the BC
-  Freshwater Atlas in PostgreSQL, with upstream area and
-  [ClimateBC](https://climatebc.ca/) mean annual precipitation on every
-  stream segment.
+  Freshwater Atlas in PostgreSQL, with upstream area,
+  [ClimateBC](https://climatebc.ca/) mean annual precipitation and
+  channel width on its stream segments.
 - NRCan’s
   [MRDEM-30](https://open.canada.ca/data/en/dataset/18752265-bda3-498c-a4ba-9dfe68cb98da)
   elevation model.
-- Bundled data: BC’s 25 m TRIM DEM, the Freshwater Atlas, bcfishpass
-  stream attributes and access, ClimateBC precipitation and BC lidar,
-  with licences in
+- Bundled data: BC’s 25 m TRIM DEM, the Freshwater Atlas, stream access
+  and habitat modelled by
+  [link](https://www.newgraphenvironment.com/link/) (which applies
+  bcfishpass’s barrier and habitat override tables), ClimateBC
+  precipitation and BC lidar, with licences in
   [`inst/NOTICE.md`](https://github.com/NewGraphEnvironment/flooded/blob/main/inst/NOTICE.md).
-  Moving it to our own link-built tables is
-  [\#87](https://github.com/NewGraphEnvironment/flooded/issues/87).
 
 ## Citation
 

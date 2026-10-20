@@ -199,13 +199,13 @@ refused.</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> 48 cells tied between claiming groups - assigned to the lowest key.</span>
 <span class="r-in"><span><span class="va">j</span><span class="op">$</span><span class="va">check</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     valley_cells attributed_cells          missing            extra </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>            28727            28727                0                0 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>            28726            28726                0                0 </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Floodplain beside a wide channel (ha): one owner per cell, then any claimer</span></span></span>
 <span class="r-in"><span><span class="va">cell_ha</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/prod.html" class="external-link">prod</a></span><span class="op">(</span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">res</a></span><span class="op">(</span><span class="va">valleys</span><span class="op">)</span><span class="op">)</span> <span class="op">/</span> <span class="fl">1e4</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>nearest <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">j</span><span class="op">$</span><span class="va">nearest</span><span class="op">$</span><span class="va">wide</span><span class="op">)</span> <span class="op">*</span> <span class="va">cell_ha</span>, any <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">j</span><span class="op">$</span><span class="va">any</span><span class="op">$</span><span class="va">wide</span><span class="op">)</span> <span class="op">*</span> <span class="va">cell_ha</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> nearest     any </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  190.55  260.82 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  190.55  260.81 </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Joining on the key instead credits each blue line's whole floodplain</span></span></span>
 <span class="r-in"><span><span class="va">wide_keys</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">streams</span><span class="op">$</span><span class="va">blue_line_key</span><span class="op">[</span><span class="va">streams</span><span class="op">$</span><span class="va">wide</span><span class="op">]</span><span class="op">)</span></span></span>
@@ -213,7 +213,7 @@ refused.</p>
 <span class="r-in"><span>  <span class="va">attributed</span><span class="op">[</span><span class="va">attributed</span><span class="op">$</span><span class="va">blue_line_key</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="va">wide_keys</span>, <span class="op">]</span></span></span>
 <span class="r-in"><span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">by_key</span><span class="op">[</span>, <span class="st">"cell"</span><span class="op">]</span><span class="op">)</span><span class="op">)</span> <span class="op">*</span> <span class="va">cell_ha</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 263.85</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 263.84</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Map it</span></span></span>
 <span class="r-in"><span><span class="va">r</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="va">valleys</span><span class="op">)</span></span></span>
