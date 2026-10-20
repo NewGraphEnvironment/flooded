@@ -7,18 +7,18 @@
 #
 # Crops a ~6km section of Neexdzii Kwah (Bulkley River) near Topley, BC from
 # the BULK watershed group DEM used by bcfishpass lateral habitat modelling.
-# Stream network comes from data-raw/network_extract.R (see that file for
-# how the streams were queried from bcfishpass).
+# The airbc stream network geojson below sets the crop extent only. The bundled
+# streams.gpkg and waterbodies.gpkg are written by data-raw/network_extract.R,
+# from link's tables.
 #
 # Prerequisites:
 #   - bcfishpass BULK DEM at the path below (from lateral habitat pipeline)
-#   - Stream network geojson from airbc repo
+#   - Stream network geojson from airbc repo (for the crop extent)
 #   - R packages: terra, sf, here
 #
 # Output:
 #   inst/testdata/dem.tif      — 10m DEM cropped to stream extent + 1km buffer
 #   inst/testdata/slope.tif    — percent slope derived from cropped DEM
-#   inst/testdata/streams.gpkg — stream network in BC Albers (EPSG:3005)
 
 library(terra)
 library(sf)
@@ -64,8 +64,6 @@ slope <- tan(slope * pi / 180) * 100
 message("Writing outputs to ", out_dir, "...")
 terra::writeRaster(dem, file.path(out_dir, "dem.tif"), overwrite = TRUE)
 terra::writeRaster(slope, file.path(out_dir, "slope.tif"), overwrite = TRUE)
-sf::st_write(streams, file.path(out_dir, "streams.gpkg"),
-             delete_dsn = TRUE, quiet = TRUE)
 
 # --- Summary ---
 message("\nTest data summary:")
@@ -73,7 +71,5 @@ message("  DEM:     ", file.path(out_dir, "dem.tif"), " (",
         round(file.size(file.path(out_dir, "dem.tif")) / 1e6, 1), " MB)")
 message("  Slope:   ", file.path(out_dir, "slope.tif"), " (",
         round(file.size(file.path(out_dir, "slope.tif")) / 1e6, 1), " MB)")
-message("  Streams: ", file.path(out_dir, "streams.gpkg"), " (",
-        round(file.size(file.path(out_dir, "streams.gpkg")) / 1e3, 1), " KB)")
 message("  Extent:  ", paste(round(as.vector(terra::ext(dem))), collapse = ", "),
         " (EPSG:3005)")

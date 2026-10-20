@@ -249,20 +249,20 @@ Three specific cautions:
    alternative exists, but the bias is undetectable without local data
    (`vca_parameter_rationale.md`).
 
-Corroborating signal: the package ships two independent channel-width models (bcfishpass/Thorley and
+Corroborating signal: the package ships two independent channel-width models (fwapg/Thorley and
 Hall) that disagree for the same stream and are documented as not interchangeable. Two credible
 models giving different answers is the field telling you the uncertainty is real.
 
 ## 8. Which regression does what
 
-| | **Hall / VCA** | **bcfishpass `channel_width`** |
+| | **Hall / VCA** | **fwapg `channel_width`** |
 |---|---|---|
 | Where | `fl_flood_surface.R:101-103` | the `channel_buffer` branch of `fl_valley_confine()` |
 | Computed in-package? | **yes** | no — a precomputed column |
 | Drives | the flood surface — criterion 4 | a `channel_width/2` buffer OR'd in after cleanup |
 | If removed | model collapses | loses a sub-pixel sliver along the channel |
 
-Hall does the science. bcfishpass `channel_width` is a DEM gap-fill: at 10–30 m a 20 m river can miss
+Hall does the science. fwapg's `channel_width` is a DEM gap-fill: at 10–30 m a 20 m river can miss
 cell centres entirely, and the buffer stamps the channel back in. It never touches the flood
 calculation.
 

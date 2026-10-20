@@ -19,12 +19,14 @@ knitr::opts_chunk$set(
 ```
 
 This vignette walks through the full `flooded` pipeline on a section of
-Neexdzii Kwah (Bulkley River) near Topley, BC. The test data covers ~8 km of
+Neexdzii Kwah (Bulkley River) near Topley, BC. The test data covers ~5 km of
 mainstem plus tributaries (Richfield Creek, Cesford Creek, Robert Hatch Creek)
 at 10 m resolution.
 
-The bundled stream network is filtered to order 4+ coho potential habitat
-(`bcfishpass.streams_co_vw`). This focuses the floodplain delineation on the
+The bundled stream network is filtered to order 4+ streams that coho can
+reach, as modelled by [link](https://www.newgraphenvironment.com/link/)'s
+`default` configuration, with upstream area and precipitation from fwapg. This
+focuses the floodplain delineation on the
 mainstem corridor and major tributaries — the streams most relevant to
 restoration planning and where investment has the greatest impact on
 higher-value salmon habitat. Filtering also constrains the analysis-of-interest
@@ -445,7 +447,7 @@ relabels the output without moving a boundary.
 
 Near a confluence, ground legitimately belongs to more than one floodplain, so
 the rows overlap rather than partitioning the valley. On this tile the parts sum
-to roughly 2.4 times the whole:
+to roughly 2.2 times the whole:
 
 ```{r attribute-areas}
 areas <- data.frame(
@@ -497,8 +499,9 @@ attr(by_stream, "fl_fallback_cells")
 ## Performance
 
 On the Parsnip River watershed group (a 3,749 x 3,761 cell grid at 30 m, 8,436
-stream segments), one `fl_valley_confine()` call took 83 to 122 s of wall time on
-an Apple M1 Max with terra 1.9.50, with other work on the machine. Whether
+stream segments before flooded#87), one `fl_valley_confine()` call took 83 to 122 s
+of wall time on an Apple M1 Max with flooded 0.8.1 and terra 1.9.50, with other work
+on the machine. Whether
 `terra::terraOptions(threads = )` speeds it up could not be separated from that
 load; see the Performance section of `?fl_valley_confine`.
 

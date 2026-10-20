@@ -1,0 +1,233 @@
+# Findings — Build the bundled and vignette data from our link-built tables, not bcfishpass (#87)
+
+## Issue context
+
+**If we do it:** the stream data flooded ships comes from tables we build with link, so its attributes and access flags follow our own model and its provenance is ours to state. fwapg and bcfishpass stay credited for what they provide and for the adapted code. **If we never do:** the bundled data stays a copy of bcfishpass output, with bcfishpass's ODbL attribution in `inst/NOTICE.md`, and the README figure's access model is described by reference to bcfishpass.
+
+## Where bcfishpass is read today
+
+- `data-raw/network_extract.R:53` reads `bcfishpass.streams_co_vw` for the bundled test reach (`inst/testdata/streams.gpkg`).
+- `data-raw/wsg_vignette_data.R:106` reads `bcfishpass.streams_bt_vw` (bull trout accessible, order >= 3) for the Parsnip vignette and the README figure; line 225 reads `bcfishpass.log` for run provenance.
+- `data-raw/stac_dem_vignette_data.R` reuses the bundled test streams.
+
+## Tasks
+
+- [ ] Point each script at link's output tables, with the same network and filters and the columns `upstream_area_ha`, `map_upstream`, `channel_width`, `access`, spawning and rearing.
+- [ ] Re-run the scripts to regenerate `inst/testdata/`, `inst/vignette-data/` and `man/figures/readme-pars.png`.
+- [ ] Update every number that moves: the README example output, the vignette figures, and the stac-dem cell-count guard in `test-vignette_data.R`.
+- [ ] Rewrite `inst/NOTICE.md` and the README's data lines for the new source. fwapg (Freshwater Atlas, upstream area, ClimateBC precipitation) and bcfishpass (adapted code in `LICENSE.note`) stay credited.
+- [ ] Record link's version and run as provenance, in place of `bcfishpass.log`.
+
+Relates to #81, #85.
+
+
+
+## Exploration probes (2026-10-18, read-only)
+
+Probe scripts: `probe_bulk.R`, `probe_bulk2.R` (scratchpad, not committed); the queries are what
+Phase 1 commits as `data-raw/network_extract.R`.
+
+- GitHub was unreachable from this machine 2026-10-17 18:07Z to roughly 19:05Z (TLS handshake
+  timeouts on api.github.com, github.com, githubstatus.com; other hosts fine). Planning waited.
+- link persists to `fresh` (bcfishpass config) and `fresh_default` (default config) in local
+  fwapg. Chosen: `fresh_default`. `fresh_default.log`: PARS run `cypherjob2-20261017T034533.534-1b8d39`,
+  BULK run `cypherjob3-20261017T034609.698-65b431`, both link 0.66.0
+  (`ee21eb1371cbc4d7a2d598f8bbeeaeb0534d7994`), fresh 0.39.0, 2026-10-17.
+- access encoding in link: 0 / 1 (modelled) / 2 (observed), same as bcfishpass; habitat is boolean
+  in `streams_habitat_<sp>`.
+- BULK reach from `fresh_default`: same 50 segments, geometry, groups, `channel_width`,
+  `upstream_area_ha` (max diff 2.9e-11). `map_upstream` differs on 28 of 50 (−17 to +1 mm);
+  access 1 → 2 on one segment; mapping_code and spawning/rearing match.
+- PARS order >= 3 bull-trout accessible: 9,386 segments / 2,314 km vs bundled 8,436 / 2,310 km.
+- Inventory of pinned numbers, columns and bcfishpass mentions: Explore agent report, summarised
+  in the plan's phases (tests, vignettes, README, roxygen, CLAUDE.md, inst/notes, research).
+
+## Errors Encountered
+
+| Error | Resolution |
+|-------|------------|
+| `gh`: TLS handshake timeout (all GitHub hosts) | Background waiter retried every minute; resumed when it answered |
+
+## Phase 1: regenerated test data, old vs new (2026-10-18)
+
+`data-raw/network_extract.R` against link run `cypherjob3-20261017T034609.698-65b431`:
+
+| | old (bcfishpass `streams_co_vw`) | new (link `fresh_default`) |
+|---|---|---|
+| segments | 50 | 50, same WKT for every segment (matched on blk + drm) |
+| columns | 13, `segmented_stream_id` | 14, `id_segment` + `linear_feature_id` |
+| spawning/rearing | integer 1/0 | logical TRUE/FALSE, same pattern (49 / 1) |
+| access | 1 ×14, 2 ×36 | 1 ×13, 2 ×37 |
+| `map_upstream` | bcfishpass's copy | fwapg's; 28 of 50 differ, −17 to +1 mm |
+| `upstream_area_ha` | | max diff 2.9e-11 |
+| `channel_width`, `stream_order`, `gnis_name`, `waterbody_key`, `mapping_code` | | identical |
+| row order | frs_network's | `blue_line_key`, `downstream_route_measure` |
+
+`waterbodies.gpkg` regenerated with identical attributes and 0 m vertex distance (only ring
+order differed), so the committed file is kept rather than churned.
+
+`data-raw/testdata.R` used to write `streams.gpkg` too, from an airbc geojson; it now writes only
+the DEM and slope, so `streams.gpkg` has one producer.
+
+## Plan review and its fixes (2026-10-18)
+
+Review in `review-plan.md`. Verified before acting: link's `default` config applies the bcfishpass
+override tables under ODbL (link `inst/extdata/configs/default/README.md:34`, `NOTICE.md:13`),
+so NOTICE keeps a scoped bcfishpass credit; `fresh_default.log` carries `run_uid`/`run_label`
+(`20261017_004619-3f4c713b` / `provincial-241-default-246`, the same provincial run for BULK and
+PARS) and `config_hash`.
+
+Guards proven to fire (each stops before any write; `streams.gpkg` md5 unchanged):
+- `run_id` set to a run fresh_default does not hold → "fresh_default holds BULK run …, not …"
+- database without the schema (`Sys.setenv(PGDATABASE = "postgres")` inside R; a shell
+  `PGDATABASE=` is overridden by `~/.Renviron`, so the first attempt ran the script normally and
+  rewrote `streams.gpkg` with identical content) → "Database 'postgres' has no fresh_default schema"
+
+## Present-tense numbers re-measured on the new bundled streams
+
+| claim | old data | new data |
+|---|---|---|
+| README example areas (ha) | 264 / 112 / 130 / 50 / 99 | unchanged |
+| README total | 287.27 ha (28,727 cells) | 287.26 ha (28,726 cells) |
+| mean precip depth multiplier over stream cells (`fl_flood_surface.R:41` says 2.366) | 2.368 | 2.363 |
+| Bulkley `map_upstream` (blk 360873822) | 531 | 531 (depth ~1.1 vs ~2.5 m at ff6 holds) |
+| overlap ratio, defaults (test comment says 2.45x) | 2.28 | 2.28 |
+| overlap ratio, vignette run with waterbodies (vignette says ~2.4) | 2.21 | 2.21 |
+| fallback cells, vignette run | 1,643 | 1,643 |
+| Bulkley length in the bundled reach | 5.31 km | 5.31 km (README "5 km" right, vignette "~8 km" wrong) |
+
+The 2.45x and ~2.4 overlap claims were already stale before #87: both data sets give 2.28 / 2.21.
+
+## Parsnip, old vs new (`data-raw/wsg_vignette_data.R`, run `cypherjob2-…1b8d39`)
+
+- 9,386 segments (6,633 modelled, 2,753 observed) against 8,436; 2,313.6 km against 2,310 km.
+- Floodplain 40,888.2 ha → 40,969.3 ha (+0.20%); 454,264 cells in both, 49 only old, 951 only new.
+- `pars_dem.tif` byte-identical in values and grid (3,761 x 3,749, 14.1 Mcells).
+- Waterbodies 664 → 668 (204 lakes, 464 wetlands).
+- Context layers carried over identical (shared database unreachable; user chose carry-over).
+- `aoi` and `named_streams` now from local fwapg: same attributes for the boundary (area equal to
+  3e-6 m²); named streams differ in 7 names and some keys/orders (FWA vintage of the local build).
+- 8 segments have NA `upstream_area_ha`: their `linear_feature_id` has no row in local fwapg's
+  `fwa_streams_watersheds_lut` (edge types 1250/1450, three on the Parsnip River main stem).
+  bcfishpass's `load_streams.sql` uses the same left join and had values, so its lookup had rows
+  these lack. Province-wide 160,877 of 4,699,005 segments lack a row. Filed fwapg#33; shipped as NA.
+- README figure re-rendered at the same 980 x 976 px.
+
+## Phase 4/5 measurements (2026-10-18)
+
+- Suite on the new bundled streams (stac-dem test excluded while its cache rebuilt): 575 passed,
+  1 failed, `test-fl_valley_join.R:384`, the expected `cols = NULL` pick-up of the logical
+  `spawning`/`rearing`. Every pinned number held, including `92L`, the island and no-stream
+  fixtures, and the `cost_threshold = 300` fallback tests.
+- CLAUDE.md test-data facts hold on the new data: 48 ties (old 48), 49 of 50 flags, 5-group
+  `gnis_name`/`blue_line_key` bijection; the 69-patch count comes from `vc_both_paths()`, which
+  passes no precipitation, so its inputs are unchanged.
+- Channel width in the bundled streams was always fwapg's `fwa_stream_networks_channel_width`
+  (bcfishpass's `load_streams.sql` joins the same table), so the notes now name fwapg as the source
+  and keep Thorley et al. 2021 as the model. Order 1 NA holds: 19,184 of 19,740 PARS order-1
+  segments have no width in fwapg; 61,863 of 64,653 in link.
+- Stale before #87 and corrected: overlap ratio "~2.4" / "2.45x" (2.21 / 2.28 on both data sets);
+  "1,643 cells (3.0%)" (3.0% was of the pre-0.5.0 53,635; it is 5.4% of 30,480 now); vignette
+  "~8 km" of mainstem (5.31 km).
+
+## Code-check round 1 (`review-round1.md`)
+
+1. Context fallback fired only on a connection error. With `PG_*_SHARE` empty, `frs_db_conn()`
+   falls through to the standard `PG*` database (fwapg), the four queries fail inside `try()`,
+   and the old code dropped all four layers while recording `"database"`. Reproduced with a
+   harness (script copies writing to scratch, stopping after section 4): old version, empty
+   variables and variables pointed at fwapg → layers `aoi streams waterbodies named_streams`
+   only. Fixed: per-layer source, a query error falls back to the carried layer, no carried layer
+   stops; empty variables skip the connection. New version: all four carried in both scenarios,
+   `context_source` per layer; no previous gpkg → stops.
+2. README "upstream area … on every stream segment" was false (fwapg#33); reworded.
+3. CLAUDE.md reference-docs line still said "bcfishpass vs VCA"; now fwapg/Thorley.
+
+## Phase 3: stac-dem cache (2026-10-18)
+
+`data-raw/stac_dem_vignette_data.R` (frozen copy, `STAC_DEM_TILE_DIR` in the scratchpad) on the new
+bundled streams: `n_10m` 28,727 → 28,726, `n_site_10m` 20,586 (same), `n_5m` 186,675 → 186,607,
+`n_1m` 3,096,003 → 3,094,921, `n_10m_no_lidar` 32, NA fractions and pop-up shares (0.774 / 0.236)
+unchanged. `test-vignette_data.R` 8/8 on the new cache. The script stamps `git_sha` at the end of
+the run (407ee26) rather than when it loaded R/; the R code loaded at its start (80cf2d1) differs
+from 407ee26 in roxygen comments only.
+
+## Code-check round 2 (`review-round2.md`)
+
+Both inside earlier fixes (the guards from the plan review; the origin field from round 1's
+follow-up):
+1. The script deleted the committed `pars.gpkg` before its connection and `run_id` guards, so a
+   guard stop destroyed the only copy of the carried context layers. Reproduced with the harness
+   (`run_id` set wrong): HEAD's version leaves no gpkg. Fixed: the gpkg is built in a tempfile and
+   copied into place after the last layer; the metadata is written after it. Harness: the fix
+   leaves the existing gpkg byte-identical.
+2. `context_carried_from` was one value for a per-layer `context_source`, and its git fallback
+   named a commit even when the working gpkg was uncommitted. Fixed: per layer, inherited when
+   the previous run also carried that layer, else the commit of the previous gpkg only when the
+   working copy is clean, else NA. Harness with a mixed previous meta (railways fetched; roads,
+   reserves, parks carried from two commits and NA): railways NA (scratch is outside git), roads
+   and reserves inherited, parks NA.
+
+Full suite on the new data and caches: 584 passed, 0 failed, 0 skipped (`NOT_CRAN=true`).
+
+## Code-check round 3 (`review-round3.md`): mechanism and enumeration
+
+Mechanism named by the reviewer: **provenance by proxy** — each script inferred an artifact's
+state from a record kept by a different writer (git for the file on disk, the previous meta for
+the previous gpkg, `fresh_default.log` for what the tables hold, a successful connection for the
+tables existing), and treated the artifact as rebuildable from that record, so wiping it looked
+safe. Its enumeration (13 writes, 13 provenance fields; table in `review-round3.md`) left five
+findings, all fixed:
+
+1. `fresh_default.log` is not the last writer: link's recompute rewrites access and mapping codes
+   and logs to `fresh_default.log_recompute` (verified: BULK `m1-…24a90b` 07:14Z, PARS
+   `m1-…1b04b0` 09:20Z, both link `a17e917`, after the modelling runs at `ee21eb1`). Both scripts
+   now pin `recompute_id` too and stop on a newer or unfinished one; meta and NOTICE name it.
+   Guard proven: a wrong `recompute_id` stops before any write.
+2. Upstream area and precipitation are read live from fwapg tables with no pin and no load stamp
+   (`provenance.source_artifact` stamps only the channel-width table). Meta now records the row
+   counts read and the time, and the NA count; `network_extract.R` prints them.
+3. (inside round 2's fix) the origin fallback trusted the working meta when only the gpkg was
+   clean. Now both files must be clean and share their last commit, else NA. Worktree harness:
+   clean → `2ef5c89` inherited for all four; meta changed alone → NA for all four.
+4. (round 1's fix missed one layer) `named_streams` still went through the error-swallowing
+   helper; it now stops on a query error (harness: bad table → stops), and the final copy refuses
+   to replace a gpkg if any previous layer would be lost.
+5. `file.copy()` truncates the target before writing: now copied to `<gpkg>.partial` beside it
+   and renamed into place.
+
+My own pass over the same set (every `st_write`/`writeRaster`/`saveRDS`/delete/copy and every
+provenance field in the five data-raw scripts) found one more instance of one-fact-twice: the
+pinned run ids live in the scripts and in NOTICE; both scripts now point at NOTICE.
+- Full-run worktree harness, previous gpkg with an extra layer: stopped with "would lose layer(s)
+  extra_layer", previous gpkg byte-identical, no `.partial` left. Its message named the tempfile,
+  which R deletes on exit; the rejected gpkg is now kept as `<gpkg>.new` beside the target.
+
+## Code-check round 4 (`review-round4.md`): terminal enumeration
+
+Round 4 re-derived the write and provenance set from the code (grep of every write/delete in the
+five data-raw scripts, every field of both meta files, every run id in NOTICE): it matches round
+3's plus the two writes the fixes added (`.partial` copy/rename, rejected copy). Every row holds
+against the code and the database except four, all fixed:
+
+1. (inside round 2's fix) a layer the previous run carried with an NA origin was credited to the
+   current commit. A/B in a throwaway worktree commit changing gpkg and meta together: code at
+   99a1817 → all four `397849e` (the harness commit); fix → all four NA. Control: a layer the
+   previous run fetched → that commit (`5c519b8`), carried layers keep `2ef5c89`. (A first attempt
+   changed only the meta, which the one-sided check turns to NA regardless; it tested nothing and
+   was redone.)
+2. The recompute guard did not require the recompute to follow the modelling run: now
+   `date_start > run date_end`. Mutation (run end moved into the future) stops; the real BULK
+   extract passes with identical content.
+3. The meta comment credited habitat flags to the recompute; link's `wsg_recompute_one.R`
+   rewrites only `streams_access` and `streams_mapping_code`. Comment corrected (NOTICE was right).
+4. The rejected gpkg was kept in `inst/` (would ship, unignored) with an unchecked copy, and a
+   failed rename left `.partial`. Rejected copy now goes to the tempdir's parent with a checked
+   return; a failed copy or rename removes `.partial` and stops.
+
+The committed Parsnip outputs (99a1817) are unchanged by these fixes: the state they handle does
+not occur in this rebuild (all four layers carried with origin `2ef5c89`).
+
+**Loop ended by enumeration**: write set 15 (13 + 2 added), provenance fields as tabled in
+`review-round4.md`; every row verified or fixed with a harness. Agents this task: inventory
+(Explore), plan review, code-check rounds 1–4 = 6, one over the ~5 bound.

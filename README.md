@@ -15,9 +15,8 @@ and rail grades, dykes and fill, that can cut a floodplain off from its river.
 <img src="man/figures/readme-pars.png" alt="Map of the Parsnip River watershed group over a grey hillshade. A blue floodplain follows the Parsnip River and its larger tributaries along the valley floors, with lakes and wetlands in the south-east; the mountain slopes between them carry none." width="100%" />
 
 *Floodplain (flood factor 4) of the Parsnip River watershed group, BC, from the 30 m MRDEM-30
-elevation model, modelled on streams of order 3 and up that bull trout can reach. How access is
-modelled: link's [Parsnip habitat and connectivity](https://www.newgraphenvironment.com/link/articles/pars-habitat-connectivity.html)
-article.*
+elevation model, modelled on streams of order 3 and up that bull trout can reach according to the
+`default` configuration of [link](https://www.newgraphenvironment.com/link/).*
 
 ## How it works
 
@@ -136,13 +135,13 @@ Land cover change: fresh (network) &rarr; flooded (floodplains) &rarr; drift (la
   Parameters and flood levels: [methodology](https://github.com/NewGraphEnvironment/flooded/blob/main/inst/notes/methodology.md).
   What the output can be used to claim: [floodplain interpretation](https://github.com/NewGraphEnvironment/flooded/blob/main/inst/notes/floodplain_interpretation.md).
 - [fwapg](https://smnorris.github.io/fwapg/) (Simon Norris): the BC Freshwater Atlas in
-  PostgreSQL, with upstream area and [ClimateBC](https://climatebc.ca/) mean annual precipitation
-  on every stream segment.
+  PostgreSQL, with upstream area, [ClimateBC](https://climatebc.ca/) mean annual precipitation
+  and channel width on its stream segments.
 - NRCan's [MRDEM-30](https://open.canada.ca/data/en/dataset/18752265-bda3-498c-a4ba-9dfe68cb98da)
   elevation model.
-- Bundled data: BC's 25 m TRIM DEM, the Freshwater Atlas, bcfishpass stream attributes and access,
-  ClimateBC precipitation and BC lidar, with licences in [`inst/NOTICE.md`](https://github.com/NewGraphEnvironment/flooded/blob/main/inst/NOTICE.md).
-  Moving it to our own link-built tables is [#87](https://github.com/NewGraphEnvironment/flooded/issues/87).
+- Bundled data: BC's 25 m TRIM DEM, the Freshwater Atlas, stream access and habitat modelled by
+  [link](https://www.newgraphenvironment.com/link/) (which applies bcfishpass's barrier and habitat
+  override tables), ClimateBC precipitation and BC lidar, with licences in [`inst/NOTICE.md`](https://github.com/NewGraphEnvironment/flooded/blob/main/inst/NOTICE.md).
 
 ## Citation
 

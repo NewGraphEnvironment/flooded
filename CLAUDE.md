@@ -79,6 +79,14 @@ tests/testthat/          — unit tests for each fl_* function
   records the share and the page states it.
 - **The STAC catalog is `stac-elevation-bc`, asset `dem`** (formerly `stac-dem-bc`, asset `image`;
   renamed upstream in rtj#229). The old collection returns zero items, not an error.
+- **Bundled streams come from link's `fresh_default` tables, pinned to one run (#87).**
+  `data-raw/network_extract.R` and `data-raw/wsg_vignette_data.R` stop unless `fresh_default.log`
+  holds the `run_id` they name, because the next provincial link run overwrites the schema; change
+  `run_id` deliberately. Upstream area and precipitation join from fwapg, whose watershed lookup has
+  no row for some edge 1250/1450 segments (fwapg#33), so 8 Parsnip segments ship NA area. link's
+  `default` config applies bcfishpass's override tables, so `inst/NOTICE.md` keeps a scoped ODbL
+  credit for access and habitat. Context layers (roads, rail, reserves, parks) come from the shared
+  database or are carried over from the previous `pars.gpkg`; `pars_meta.rds` says which.
 - **25 m TRIM resampled to 10 m** is not real 10 m detail — note this when comparing TRIM-derived outputs to true 10 m or 1 m lidar.
 - **1 m lidar reveals anthropogenic barriers** ("pop-ups") — diagnostic value beyond floodplain area itself.
 - **Channel-width buffer auto-detect** from streams sf. DEM correction only — the buffer is a coarse-DEM gap-filler, not an ecological feature.
@@ -208,7 +216,7 @@ tests/testthat/          — unit tests for each fl_* function
 
 ## Reference docs
 
-- [`inst/notes/methodology.md`](inst/notes/methodology.md) — channel-width models (bcfishpass vs VCA), flood-factor scenarios (ff02/ff04/ff06), citations, DEM-resolution compensation
+- [`inst/notes/methodology.md`](inst/notes/methodology.md) — channel-width models (fwapg/Thorley vs VCA), flood-factor scenarios (ff02/ff04/ff06), citations, DEM-resolution compensation
 - [`inst/notes/floodplain_interpretation.md`](inst/notes/floodplain_interpretation.md) — what the model actually maps, what flood factor means, what we can and cannot claim in reports
 - [`inst/research/vca_parameter_rationale.md`](inst/research/vca_parameter_rationale.md) — VCA parameter provenance, verified citations
 
