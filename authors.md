@@ -26,7 +26,7 @@
 ## Citation
 
 Source:
-[`inst/CITATION`](https://github.com/NewGraphEnvironment/flooded/blob/v0.8.4/inst/CITATION)
+[`inst/CITATION`](https://github.com/NewGraphEnvironment/flooded/blob/main/inst/CITATION)
 
 Irvine A (2026). *flooded: Map Floodplains from an Elevation Model and a
 Stream Network*. New Graph Environment Ltd.
