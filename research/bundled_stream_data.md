@@ -1,6 +1,6 @@
 # Bundled stream data: where it comes from and what pins it
 
-**Verified:** 2026-10-18 · **Issues:** #87, #85, fwapg#33 · **Produced by:** `data-raw/network_extract.R`,
+**Verified:** 2026-10-19 · **Issues:** #87, #92, #85, fwapg#33 · **Produced by:** `data-raw/network_extract.R`,
 `data-raw/wsg_vignette_data.R`, read-only SQL against the fwapg database link persists to
 (`planning/archive/2026-10-issue-87-link-sourced-data/`).
 
@@ -27,7 +27,9 @@ come from link's `default` configuration, schema `fresh_default`:
 - **`fresh_default` holds one provincial run at a time**; the next overwrites it. A pinned id that
   no longer matches stops the script: update it deliberately, with `inst/NOTICE.md`.
 - **The fwapg tables carry no load stamp** (`provenance.source_artifact` stamps only the channel-width
-  table), so nothing pins them; `pars_meta.rds` records the row counts read instead.
+  table), so nothing pins them. `pars_meta.rds` records the row counts read, and a digest of the rows
+  of every fwapg query that reaches the bundle, which `tests/testthat/test-vignette_data.R` checks
+  against the database when it can reach it (#92).
 
 ## The lookup gap (fwapg#33)
 
@@ -45,3 +47,11 @@ link's `default` config applies bcfishpass's barrier, crossing-status, observati
 habitat-confirmation override tables, so `access`/habitat/mapping code still contain bcfishpass
 information (ODbL): `inst/NOTICE.md` keeps a scoped credit. CABD (dams) and the ClimateBC-derived
 columns are open questions in #85.
+
+## Where the Parsnip floodplain is measured (#92)
+
+`inst/vignette-data/pars_valleys.tif` covers the streams plus 2 km, which reaches past the watershed
+group's boundary. The article measures the floodplain inside the boundary: 451,557 cells (40,640.1
+ha) at flood factor 4. The whole grid holds 40,969.3 ha, the figure #87 recorded. `pars_meta.rds`
+stores the inside-boundary cell counts at flood factors 2, 4, 6 and 7.
+

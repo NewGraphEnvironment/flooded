@@ -99,8 +99,8 @@ total.
   each step on the bundled reach, and the three flood levels.
 - [Bring your own DEM via STAC](https://newgraphenvironment.github.io/flooded/articles/stac-dem.html):
   25 m provincial data against 1 m lidar.
-- [Watershed-scale floodplain delineation](https://newgraphenvironment.github.io/flooded/articles/pars-floodplain.html):
-  the whole Parsnip watershed group.
+- [Floodplains of the Parsnip River watershed group](https://newgraphenvironment.github.io/flooded/articles/pars-floodplain.html):
+  how much floodplain a whole watershed group holds, and how that changes with the flood level.
 - [floodplains](https://www.newgraphenvironment.com/floodplains/): flooded run over BC watershed
   groups at 30 m, with the land cover change inside each floodplain from 2017 to 2023 attributed
   to fire and harvest.

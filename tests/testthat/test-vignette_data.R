@@ -68,3 +68,73 @@ test_that("stac-dem cached lidar rasters carry the lidar gap as NA (#63)", {
   expect_equal(terra::global(is.na(v5), "sum")[[1]], 115385)
   expect_equal(terra::global(is.na(v1), "sum")[[1]], 11020)
 })
+
+# vignettes/pars-floodplain.Rmd quotes data-raw/wsg_vignette_data.R's bundle. These fail when a
+# bundled file, an fwapg query or the MRDEM-30 file is no longer what pars_meta.rds records, so the
+# article cannot go on quoting a run that has been superseded. The fwapg and MRDEM-30 checks need
+# those sources, so they skip on CI, on CRAN and where the source cannot be reached.
+
+pars_meta <- function() {
+  readRDS(system.file("vignette-data", "pars_meta.rds", package = "flooded", mustWork = TRUE))
+}
+regen_pars <- "Re-run data-raw/wsg_vignette_data.R from a committed tree."
+
+test_that("the Parsnip bundle is the one its meta describes", {
+  meta <- pars_meta()
+  expect_setequal(names(meta$md5_files), c("pars.gpkg", "pars_dem.tif", "pars_valleys.tif"))
+  for (f in names(meta$md5_files)) {
+    p <- system.file("vignette-data", f, package = "flooded", mustWork = TRUE)
+    expect_identical(unname(tools::md5sum(p)), meta$md5_files[[f]], info = paste(f, "changed.", regen_pars))
+  }
+})
+
+test_that("the Parsnip floodplain in meta is the valley grid's, inside the boundary", {
+  meta <- pars_meta()
+  aoi <- sf::st_read(system.file("vignette-data", "pars.gpkg", package = "flooded"), layer = "aoi", quiet = TRUE)
+  v <- terra::rast(system.file("vignette-data", "pars_valleys.tif", package = "flooded"))
+  v <- terra::mask(terra::crop(v, terra::vect(aoi)), terra::vect(aoi))
+  ff <- as.character(meta$vca_args$flood_factor)
+  expect_identical(meta$fp_cells[[ff]], as.integer(sum(terra::values(v) == 1L, na.rm = TRUE)))
+  expect_identical(meta$fp_area_ha, meta$fp_cells * prod(terra::res(v)) / 1e4)
+})
+
+test_that("every fwapg query of the Parsnip bundle is unchanged since it was built", {
+  skip_on_cran()
+  skip_on_ci()
+  skip_if_not_installed("DBI")
+  skip_if_not_installed("fresh")
+  meta <- pars_meta()
+  digest <- function(conn, sql) {
+    d <- DBI::dbGetQuery(conn, sprintf(
+      "SELECT md5(string_agg(md5(t::text), '' ORDER BY md5(t::text))) AS d FROM (%s) t", sql))$d
+    if (is.na(d)) "empty" else d
+  }
+  old <- Sys.getenv("PGCONNECT_TIMEOUT", NA)
+  Sys.setenv(PGCONNECT_TIMEOUT = "5")
+  on.exit(if (is.na(old)) Sys.unsetenv("PGCONNECT_TIMEOUT") else Sys.setenv(PGCONNECT_TIMEOUT = old))
+  conn <- tryCatch(fresh::frs_db_conn(), error = function(e) NULL)
+  skip_if(is.null(conn), "the database the Parsnip bundle was built from is not reachable")
+  on.exit(DBI::dbDisconnect(conn), add = TRUE)
+  skip_if(is.na(DBI::dbGetQuery(conn, "SELECT to_regclass('fresh_default.log') AS t")$t),
+          "the reachable database has no fresh_default schema")
+  # fwapg sources only: the map's context layers come from a second database
+  # (PG_*_SHARE), which this test does not check
+  src <- meta$sources[meta$sources$db == "fwapg", ]
+  expect_setequal(src$name, c("aoi", "streams", "lakes", "wetlands", "named_streams"))
+  for (i in seq_len(nrow(src))) {
+    expect_identical(digest(conn, src$sql[i]), src$digest[i],
+                     info = paste(src$name[i], "has moved in the database.", regen_pars))
+  }
+})
+
+test_that("the Parsnip DEM's source is unchanged since it was built", {
+  skip_on_cran()
+  skip_on_ci()
+  meta <- pars_meta()
+  expect_true(is.character(meta$dem_source$url) && length(meta$dem_source$url) == 1L)
+  expect_true(is.character(meta$dem_source$etag) && length(meta$dem_source$etag) == 1L)
+  h <- tryCatch(curlGetHeaders(meta$dem_source$url), error = function(e) NULL)
+  skip_if(is.null(h) || attr(h, "status") != 200L, "MRDEM-30 is not reachable")
+  etag <- sub("^etag:\\s*", "", trimws(grep("^etag:", h, ignore.case = TRUE, value = TRUE)), ignore.case = TRUE)
+  expect_identical(etag, meta$dem_source$etag, info = paste("MRDEM-30 has changed.", regen_pars))
+})

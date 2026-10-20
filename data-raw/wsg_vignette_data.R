@@ -8,10 +8,24 @@
 #                             aoi, streams, waterbodies, floodplain,
 #                             railways, roads, reserves, parks,
 #                             named_streams
-#   <wsg>_dem.tif           MRDEM-30 clip cropped to streams + 2 km buffer
+#   <wsg>_dem.tif           MRDEM-30 clip cropped to streams + 2 km buffer,
+#                           truncated to whole metres (the model runs on the
+#                           unrounded values)
 #   <wsg>_valleys.tif       fl_valley_confine() binary output (1=valley)
-#   <wsg>_meta.rds          the link run the streams came from, and where the
-#                           context layers came from
+#   <wsg>_meta.rds          the link run, where the context layers came from,
+#                           the arguments and floodplain cells at each flood
+#                           factor, a digest of the rows of every query whose
+#                           rows are written to the gpkg, the MRDEM-30 ETag,
+#                           the md5 of every file written, and the software
+#                           the build rests on (release, commit, and concept
+#                           DOI where Zenodo archives one)
+#
+# tests/testthat/test-vignette_data.R fails when a written file no longer
+# matches what is recorded here and, where it can reach them (it skips on CI and
+# CRAN), when an fwapg query or the MRDEM-30 file has moved, so the article
+# cannot go on quoting a superseded run. Context layers read from the shared
+# database are digested but not checked. Run this from a committed tree: the commit it
+# records is the article's citation of flooded.
 #
 # Bundling the sf layers into a single multi-layer gpkg matches how QGIS
 # expects a per-WSG project bundle and keeps the cache to three files per
@@ -57,6 +71,8 @@
 wsg <- "PARS"                       # any 4-letter BC watershed group code
 species <- "bt"                     # link species code (bull trout)
 min_order <- 3                      # minimum stream order to keep
+flood_factor <- 4                   # written as <wsg>_valleys.tif
+flood_factors_also <- c(2, 6, 7)    # areas only, for the article's flood-level passage
 run_id <- "cypherjob2-20261017T034533.534-1b8d39"   # fresh_default.log, PARS
 recompute_id <- "m1-20261017T092007.555-1b04b0"   # fresh_default.log_recompute, PARS
 # inst/NOTICE.md names these runs and their link version: change them together.
@@ -97,6 +113,12 @@ prev_value <- function(x, nm) {
   if (length(x) == 1L) unname(x) else NA_character_
 }
 
+# git output, or NA when git fails
+git_out <- function(args) {
+  x <- suppressWarnings(system2("git", args, stdout = TRUE))
+  if (!is.null(attr(x, "status"))) NA_character_ else x
+}
+
 # Previous context layers, in case the shared database cannot be reached
 # (section 4), and where each was last fetched from the database: inherited
 # from the previous meta when that run carried it too (NA stays NA), else the
@@ -107,15 +129,11 @@ carried_from <- character()
 prev_layers <- character()
 if (file.exists(gpkg_final)) {
   prev_layers <- sf::st_layers(gpkg_final)$name
-  git1 <- function(args) {
-    x <- suppressWarnings(system2("git", args, stdout = TRUE))
-    if (!is.null(attr(x, "status"))) NA_character_ else x
-  }
   # The previous meta describes the previous gpkg only when both are the
   # committed copies of one commit; otherwise record no origin.
-  clean <- identical(git1(c("status", "--porcelain", "--", gpkg_final, meta_path)), character(0))
-  commit <- git1(c("log", "-1", shQuote("--format=%h %cs"), "--", gpkg_final))
-  same <- identical(commit, git1(c("log", "-1", shQuote("--format=%h %cs"), "--", meta_path)))
+  clean <- identical(git_out(c("status", "--porcelain", "--", gpkg_final, meta_path)), character(0))
+  commit <- git_out(c("log", "-1", shQuote("--format=%h %cs"), "--", gpkg_final))
+  same <- identical(commit, git_out(c("log", "-1", shQuote("--format=%h %cs"), "--", meta_path)))
   if (!clean || !same || length(commit) != 1L) commit <- NA_character_
   pm <- if (!is.na(commit) && file.exists(meta_path)) readRDS(meta_path) else list()
   for (nm in intersect(context_names, sf::st_layers(gpkg_final)$name)) {
@@ -133,6 +151,46 @@ write_layer <- function(x, layer) {
                append = TRUE, quiet = TRUE)
 }
 
+# The software this build is: flooded's commit, and whether the code the run
+# loads differs from it. Checked before anything is written.
+flooded_sha <- git_out(c("rev-parse", "HEAD"))
+flooded_dirty <- length(git_out(c("status", "--porcelain", "--", "R", "DESCRIPTION", "inst/extdata",
+                                  "data-raw/wsg_vignette_data.R"))) > 0L
+flooded_tag <- git_out(c("describe", "--tags", "--abbrev=0", "--match", shQuote("v[0-9]*.[0-9]*.[0-9]*"), "HEAD"))
+if (is.na(flooded_sha)) stop("Not in flooded's git checkout; run from the package root.", call. = FALSE)
+if (flooded_dirty) message("NOTE: R/, DESCRIPTION, inst/extdata or this script differ from ", substr(flooded_sha, 1, 7),
+                           "; meta records the build as dirty.")
+
+# Every query whose rows end up in the bundle is recorded with a digest of
+# those rows, computed by Postgres, so a later test can ask whether the
+# database still holds the same thing.
+sources <- data.frame(name = character(), db = character(), sql = character(), digest = character())
+digest_sql <- function(sql) {
+  sprintf("SELECT md5(string_agg(md5(t::text), '' ORDER BY md5(t::text))) AS d FROM (%s) t", sql)
+}
+# Rows and digest come from one snapshot. `sql_record` is what meta keeps,
+# when the SQL itself is too long to be worth storing.
+read_source <- function(con, name, db, sql, sql_record = sql) {
+  DBI::dbBegin(con)
+  ok <- FALSE
+  on.exit(if (!ok) DBI::dbRollback(con))
+  DBI::dbExecute(con, "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
+  x <- sf::st_read(con, query = sql, quiet = TRUE)
+  d <- DBI::dbGetQuery(con, digest_sql(sql))$d
+  DBI::dbCommit(con)
+  ok <- TRUE
+  sources[nrow(sources) + 1L, ] <<- list(name, db, sql_record, if (is.na(d)) "empty" else d)
+  x
+}
+
+# JSON from a web API, with the HTTP status checked
+get_json <- function(url) {
+  h <- curl::new_handle(useragent = "flooded data-raw (https://github.com/NewGraphEnvironment/flooded)")
+  r <- curl::curl_fetch_memory(url, handle = h)
+  if (r$status_code != 200L) stop("HTTP ", r$status_code, " from ", url, call. = FALSE)
+  jsonlite::fromJSON(rawToChar(r$content), simplifyVector = FALSE)
+}
+
 # ---- 1. WSG boundary ----------------------------------------------------
 
 conn <- fresh::frs_db_conn()
@@ -143,7 +201,7 @@ if (is.na(DBI::dbGetQuery(conn, "SELECT to_regclass('fresh_default.log') AS t")$
        "persists to.", call. = FALSE)
 }
 run <- DBI::dbGetQuery(conn, sprintf(
-  "SELECT run_id, run_uid, run_label, date_end, config_name, config_hash, link_version,
+  "SELECT run_id, run_uid, run_label, date_end, config_name, config_hash, link_version, fresh_sha,
           link_sha, link_dirty, fresh_version, fresh_dirty, crate_version, fwapg_sha
      FROM fresh_default.log
     WHERE watershed_group_code = '%s'
@@ -160,7 +218,7 @@ if (!identical(run$run_id, run_id)) {
        ". Update `run_id` if rebuilding from the newer run is intended.", call. = FALSE)
 }
 rc <- DBI::dbGetQuery(conn, sprintf(
-  "SELECT recompute_id, date_start, date_end, link_version, link_sha
+  "SELECT recompute_id, date_start, date_end, link_version, link_sha, link_dirty
      FROM fresh_default.log_recompute
     WHERE watershed_group_code = '%s'
     ORDER BY date_start DESC LIMIT 1", wsg))
@@ -185,16 +243,10 @@ message("Reading link run ", run$run_id, " (", run$run_label, ", ", run$config_n
 
 message("Fetching ", wsg, " watershed group boundary ...")
 
-aoi <- sf::st_read(
-  conn,
-  query = sprintf(
-    "SELECT watershed_group_code, watershed_group_name, area_ha, geom
+aoi <- read_source(conn, "aoi", "fwapg", sprintf(
+  "SELECT watershed_group_code, watershed_group_name, area_ha, geom
      FROM whse_basemapping.fwa_watershed_groups_poly
-     WHERE watershed_group_code = '%s'",
-    wsg
-  ),
-  quiet = TRUE
-)
+     WHERE watershed_group_code = '%s'", wsg))
 write_layer(aoi, "aoi")
 message(sprintf("  area: %.0f km²", aoi$area_ha[1] / 100))
 
@@ -202,9 +254,7 @@ message(sprintf("  area: %.0f km²", aoi$area_ha[1] / 100))
 
 message(sprintf("Fetching %s order %d+ streams accessible to %s from fresh_default ...",
                 wsg, min_order, toupper(species)))
-streams <- sf::st_read(
-  conn,
-  query = sprintf("
+streams <- read_source(conn, "streams", "fwapg", sprintf("
     SELECT s.id_segment, s.linear_feature_id, s.blue_line_key,
            s.waterbody_key, s.downstream_route_measure, ua.upstream_area_ha,
            p.map_upstream, s.channel_width, s.gnis_name, s.stream_order,
@@ -224,9 +274,7 @@ streams <- sf::st_read(
     WHERE s.watershed_group_code = '%2$s'
       AND a.access_%1$s IN (1, 2)
       AND s.stream_order >= %3$d
-    ORDER BY s.blue_line_key, s.downstream_route_measure", species, wsg, min_order),
-  quiet = TRUE
-)
+    ORDER BY s.blue_line_key, s.downstream_route_measure", species, wsg, min_order))
 stopifnot(!anyDuplicated(streams$id_segment))
 streams <- sf::st_zm(streams)
 # link stores single-part MULTILINESTRINGs; write them as LINESTRING like the
@@ -249,20 +297,12 @@ message(sprintf("Fetching waterbodies on %d distinct waterbody_keys ...",
 
 if (length(wb_keys) > 0L) {
   keys_sql <- paste(wb_keys, collapse = ", ")
-  lakes <- sf::st_read(
-    conn,
-    query = sprintf(
-      "SELECT waterbody_key, geom FROM whse_basemapping.fwa_lakes_poly
-       WHERE waterbody_key IN (%s)", keys_sql),
-    quiet = TRUE
-  )
-  wetlands <- sf::st_read(
-    conn,
-    query = sprintf(
-      "SELECT waterbody_key, geom FROM whse_basemapping.fwa_wetlands_poly
-       WHERE waterbody_key IN (%s)", keys_sql),
-    quiet = TRUE
-  )
+  lakes <- read_source(conn, "lakes", "fwapg", sprintf(
+    "SELECT waterbody_key, geom FROM whse_basemapping.fwa_lakes_poly
+      WHERE waterbody_key IN (%s)", keys_sql))
+  wetlands <- read_source(conn, "wetlands", "fwapg", sprintf(
+    "SELECT waterbody_key, geom FROM whse_basemapping.fwa_wetlands_poly
+      WHERE waterbody_key IN (%s)", keys_sql))
   lakes_min <- sf::st_sf(waterbody_type = rep("L", nrow(lakes)),
                          geom = sf::st_geometry(lakes))
   wetlands_min <- sf::st_sf(waterbody_type = rep("W", nrow(wetlands)),
@@ -331,8 +371,9 @@ context_source <- character()
 for (nm in context_names) {
   # A query error (not an empty result) is what sends a layer to the fallback.
   layer <- if (inherits(conn_ctx, "try-error")) conn_ctx else
-    try(sf::st_read(conn_ctx, query = sprintf(context_sql[[nm]], intersect_clause()),
-                    quiet = TRUE), silent = TRUE)
+    try(read_source(conn_ctx, nm, "share", sprintf(context_sql[[nm]], intersect_clause()),
+                    sql_record = sprintf(context_sql[[nm]], "<intersects the aoi layer's geometry>")),
+        silent = TRUE)
   if (!inherits(layer, "try-error")) {
     context_source[[nm]] <- "database"
     if (nrow(layer) == 0L) {
@@ -354,10 +395,10 @@ for (nm in context_names) {
 if (!inherits(conn_ctx, "try-error")) DBI::dbDisconnect(conn_ctx)
 
 # Named streams come pre-filtered by watershed_group_code — no spatial join.
-named_streams <- sf::st_read(conn, query = sprintf(
+named_streams <- read_source(conn, "named_streams", "fwapg", sprintf(
   "SELECT gnis_name, blue_line_key, stream_order, geom
      FROM whse_basemapping.fwa_named_streams
-    WHERE watershed_group_code = '%s'", wsg), quiet = TRUE)
+    WHERE watershed_group_code = '%s'", wsg))
 if (nrow(named_streams) > 0L) write_layer(sf::st_zm(named_streams), "named_streams")
 message(sprintf("  named streams: %d features", nrow(named_streams)))
 
@@ -395,10 +436,110 @@ meta <- list(link_run_id     = run$run_id,
 
 DBI::dbDisconnect(conn)
 
+# ---- 4b. Software the build rests on, and how to cite it ------------------
+
+# Each package is cited by its last release at or before the build, its concept
+# DOI where Zenodo archives one, and the commit the build used. link's and
+# fresh's versions are the ones the link run recorded; the GitHub compare API
+# confirms that each version's tag is at or before the commits, and the next tag
+# is not. flooded's is the last local version tag before HEAD. fwapg is an
+# external tool, cited by the commit link's run recorded.
+tag_at_or_before <- function(repo, tag, sha) {
+  st <- get_json(sprintf("https://api.github.com/repos/%s/compare/%s...%s", repo, tag, sha))$status
+  st %in% c("ahead", "identical")
+}
+repo_tags <- function(repo) {
+  out <- character()
+  for (page in 1:50) {
+    x <- get_json(sprintf("https://api.github.com/repos/%s/tags?per_page=100&page=%d", repo, page))
+    if (length(x) == 0L) return(grep("^v[0-9]+\\.[0-9]+\\.[0-9]+$", out, value = TRUE))
+    out <- c(out, vapply(x, function(t) t$name, character(1)))
+  }
+  stop("more than 5,000 tags in ", repo, call. = FALSE)
+}
+last_release <- function(repo, version, shas) {
+  tag <- paste0("v", version)
+  tags <- repo_tags(repo)
+  later <- tags[package_version(sub("^v", "", tags)) > package_version(version)]
+  next_tag <- if (length(later)) later[order(package_version(sub("^v", "", later)))][1] else NA
+  for (sha in shas) {
+    if (!tag_at_or_before(repo, tag, sha)) stop(repo, " ", tag, " is not at or before ", sha, call. = FALSE)
+    if (!is.na(next_tag) && tag_at_or_before(repo, next_tag, sha)) {
+      stop(repo, " ", next_tag, " is also at or before ", sha, ", so ", tag, " is not its last release",
+           call. = FALSE)
+    }
+  }
+  tag
+}
+link_tag <- last_release("NewGraphEnvironment/link", run$link_version, c(run$link_sha, rc$link_sha))
+fresh_tag <- last_release("NewGraphEnvironment/fresh", run$fresh_version, run$fresh_sha)
+software <- data.frame(
+  package = c("flooded", "link", "fresh", "fwapg"),
+  url = c("https://www.newgraphenvironment.com/flooded/", "https://www.newgraphenvironment.com/link/",
+          "https://www.newgraphenvironment.com/fresh/", "https://smnorris.github.io/fwapg/"),
+  release = c(flooded_tag, link_tag, fresh_tag, NA),
+  # commits link at: github.com/<repo>/commit/<commit>
+  repo = c("NewGraphEnvironment/flooded", "NewGraphEnvironment/link", "NewGraphEnvironment/fresh",
+           "NewGraphEnvironment/fwapg"),
+  commit = c(flooded_sha, run$link_sha, run$fresh_sha, run$fwapg_sha),
+  # link's access and mapping codes come from its recompute, at a later commit
+  commit_also = c(NA, rc$link_sha, NA, NA),
+  version = c(as.character(utils::packageVersion("flooded")), run$link_version, run$fresh_version, NA),
+  dirty = c(flooded_dirty, run$link_dirty, NA, NA),
+  dirty_also = c(NA, rc$link_dirty, NA, NA)
+)
+
+# Concept DOIs. Zenodo registers each release's DOI with DataCite, and a
+# version record's IsVersionOf relation names its concept DOI.
+doi_url <- paste0("https://api.datacite.org/dois?query=%22New%20Graph%20Environment%22%20OR%20",
+                  "NewGraphEnvironment&client-id=cern.zenodo&page%5Bsize%5D=500")
+recs <- get_json(doi_url)$data
+concept_of <- function(pkg) {
+  hit <- Filter(function(r) {
+    t <- r$attributes$titles
+    length(t) > 0L && grepl(sprintf("^(NewGraphEnvironment/)?%s:", pkg), t[[1]]$title)
+  }, recs)
+  rel <- unlist(lapply(hit, function(r) {
+    vapply(Filter(function(x) identical(x$relationType, "IsVersionOf"), r$attributes$relatedIdentifiers),
+           function(x) x$relatedIdentifier, character(1))
+  }))
+  unique(rel)
+}
+# the releases each concept DOI archives, from Zenodo itself (DataCite's text
+# search misses records); its public API returns at most 25 a page
+zenodo_versions <- function(doi) {
+  id <- sub("^10[.]5281/zenodo[.]", "", doi)
+  out <- character()
+  for (page in 1:40) {
+    x <- get_json(sprintf("https://zenodo.org/api/records?q=parent.id:%s&allversions=true&size=25&page=%d",
+                          id, page))$hits
+    v <- vapply(x$hits, function(h) h$metadata$version %||% NA_character_, character(1))
+    out <- c(out, v)
+    if (length(out) >= x$total || length(v) == 0L) return(out)
+  }
+  stop("more than 1,000 Zenodo versions of ", doi, call. = FALSE)
+}
+software$concept_doi <- NA_character_
+software$archived <- I(rep(list(character()), nrow(software)))
+for (pkg in c("flooded", "link")) {
+  d <- concept_of(pkg)
+  if (length(d) != 1L) stop("DataCite gives ", length(d), " concept DOIs for ", pkg, call. = FALSE)
+  software$concept_doi[software$package == pkg] <- d
+  software$archived[[which(software$package == pkg)]] <- zenodo_versions(d)
+}
+dois <- list(source = doi_url, archived_from = "https://zenodo.org/api/records?q=parent.id:<id>&allversions=true",
+             retrieved = format(Sys.Date()))
+
 # ---- 5. MRDEM-30 clip via fl_dem_aoi() ----------------------------------
 
 message("Fetching MRDEM-30 clip (heaviest network step) ...")
-dem <- fl_dem_aoi(streams, buffer = 2000)
+# fl_dem_aoi()'s default source; its ETag changes whenever the file does
+dem_url <- "https://canelevation-dem.s3.ca-central-1.amazonaws.com/mrdem-30/mrdem-30-dtm.tif"
+hd <- curl::curl_fetch_memory(dem_url, handle = curl::new_handle(nobody = TRUE))
+if (hd$status_code != 200L) stop("HTTP ", hd$status_code, " from ", dem_url, call. = FALSE)
+hdr <- curl::parse_headers_list(hd$headers)
+dem_source <- list(url = dem_url, etag = hdr[["etag"]], last_modified = hdr[["last-modified"]])
+dem <- fl_dem_aoi(streams, source = paste0("/vsicurl/", dem_url), buffer = 2000)
 terra::writeRaster(
   terra::as.int(dem), out("dem.tif"),
   overwrite = TRUE,
@@ -414,14 +555,36 @@ message(sprintf("  %d x %d cells (%.1f Mcells)",
 message("Running fl_valley_confine() with waterbodies ...")
 terra::terraOptions(threads = max(1L, parallel::detectCores() - 2L))
 
-valleys <- fl_valley_confine(
-  dem = dem,
-  streams = streams,
-  area_field = "upstream_area_ha",
-  precip = fl_stream_rasterize(streams, dem, field = "map_upstream"),
-  waterbodies = waterbodies,
-  flood_factor = 4   # ff04 — functional floodplain (recurrent inundation)
-)
+# Every criterion at its package default (fl_params()), except the flood
+# factor. Recorded so the article states the values the run used.
+p <- fl_params()
+vca_args <- stats::setNames(as.list(p$default), p$parameter)
+vca_args$flood_factor <- flood_factor
+precip <- fl_stream_rasterize(streams, dem, field = "map_upstream")
+run_vca <- function(ff) {
+  do.call(fl_valley_confine, c(list(dem = dem, streams = streams, area_field = "upstream_area_ha",
+                                    precip = precip, waterbodies = waterbodies),
+                               utils::modifyList(vca_args, list(flood_factor = ff))))
+}
+# Floodplain inside the watershed group boundary, measured as the article
+# measures it: valley cells after cropping and masking to the boundary.
+in_aoi_cells <- function(v) {
+  v <- terra::mask(terra::crop(v, terra::vect(aoi)), terra::vect(aoi))
+  as.integer(sum(terra::values(v) == 1L, na.rm = TRUE))
+}
+vca_seconds <- system.time(valleys <- run_vca(flood_factor))[["elapsed"]]
+fp_cells <- stats::setNames(in_aoi_cells(valleys), flood_factor)
+for (ff in flood_factors_also) {
+  message("  and at flood factor ", ff, " (area only) ...")
+  fp_cells[[as.character(ff)]] <- in_aoi_cells(run_vca(ff))
+}
+fp_cells <- fp_cells[order(as.numeric(names(fp_cells)))]
+fp_area_ha <- fp_cells * prod(terra::res(valleys)) / 1e4
+message("  floodplain inside ", wsg, " (ha) by flood factor: ",
+        paste(names(fp_area_ha), round(fp_area_ha, 1), sep = " = ", collapse = ", "))
+cpu <- tryCatch(system2("sysctl", c("-n", "machdep.cpu.brand_string"), stdout = TRUE),
+                error = function(e) NA_character_, warning = function(w) NA_character_)
+if (length(cpu) != 1L || is.na(cpu)) cpu <- unname(Sys.info()[["machine"]])
 terra::writeRaster(
   valleys, out("valleys.tif"),
   overwrite = TRUE,
@@ -454,6 +617,23 @@ if (!file.copy(gpkg, partial, overwrite = TRUE) || !file.rename(partial, gpkg_fi
 }
 unlink(gpkg)
 gpkg <- gpkg_final
+
+# What the article states, and what the test checks the bundle against.
+written <- c(gpkg, out("dem.tif"), out("valleys.tif"))
+meta <- c(meta, list(
+  vca_args = vca_args,                 # flood_factor plus every other criterion at its default
+  fp_cells = fp_cells,                 # floodplain cells inside the boundary, by flood factor
+  fp_area_ha = fp_area_ha,             # the same, in hectares
+  vca_seconds = unname(vca_seconds),   # fl_valley_confine() at flood_factor, one run
+  vca_threads = terra::terraOptions(print = FALSE)$threads,
+  cpu = cpu,
+  sources = sources,                   # every query whose rows reach the gpkg: SQL and a digest of its rows
+  dem_source = dem_source,
+  md5_files = stats::setNames(unname(tools::md5sum(written)), basename(written)),
+  software = software,
+  dois = dois,
+  built = format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
+))
 saveRDS(meta, meta_path)
 
 # ---- 7. Report cache size -----------------------------------------------
