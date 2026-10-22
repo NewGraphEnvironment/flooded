@@ -172,6 +172,12 @@ tests/testthat/          — unit tests for each fl_* function
   *gaps between* scenarios do not, and not predictably — on the bundled 10 m tile
   `ff06`–`ff04` widened 12.5% -> 23.9% while `ff04`–`ff02` narrowed 48.6% -> 25.1%, and on the
   Parsnip WSG at 30 m the corrected `ff06`–`ff04` gap is only 4.6% (#52).
+  Before editing sections 4 or 9 of `inst/notes/floodplain_interpretation.md`, list every
+  quantifier in the passage and name the population each one covers. Its figures come from
+  partial runs across datasets, resolutions, versions and clipped or raw grids, so "across the
+  figures here" covers gaps as well as measurements. #52 took six review rounds on four paragraphs:
+  every fix that widened a quantifier broke, and every fix that narrowed one held
+  (`planning/archive/2026-09-issue-52-proportional-claims/`).
 - **Coverage needs a fallback** — `fl_valley_confine()` adds cells after intersecting its masks
   (cleanup, channel buffer, and waterbodies, the last with no spatial filter), so criteria-based
   attribution orphans them. `fl_valley_attribute(complete = TRUE)` assigns those to the nearest
