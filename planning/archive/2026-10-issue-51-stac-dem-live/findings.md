@@ -81,7 +81,7 @@ returns `NotFoundError: Collection stac-dem-bc does not exist`, and an `rstac` s
 returns **zero features, not an error**, so the build script failed one step later at
 `stac_image_collection()` ("Input does not include any STAC items"). The collection is now
 `stac-elevation-bc` with the DEM under asset `dem` (was `image`), a deliberate restructure
-(rtj#229; rtj#322 tracks the registration script still naming the old one). The same two 2019 1 m
+(an internal issue; an internal issue tracks the registration script still naming the old one). The same two 2019 1 m
 items exist under their old ids; the collection now also holds 2018 1 m and 2000-era 2 m Albers
 tiles over this area, so the 2019 `datetime` filter is what keeps the selection identical.
 

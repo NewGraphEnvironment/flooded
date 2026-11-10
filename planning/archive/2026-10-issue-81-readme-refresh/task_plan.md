@@ -2,7 +2,7 @@
 
 The core example is current (v0.7.2; `area_field` and the corrected regression), but the README covers only the core call. The functions that make flooded usable at watershed scale are not mentioned.
 
-Reframed against soul `conventions/readme.md` (soul#416, 2026-10-15): a summary opening with no
+Reframed against soul `conventions/readme.md` (an internal issue, 2026-10-15): a summary opening with no
 function names, a figure of real output from committed code, a tiny example with real output,
 sections in a fixed order, and nothing another file already keeps.
 

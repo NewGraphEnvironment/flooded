@@ -336,5 +336,5 @@ Remaining before this memo is cited in a report:
 
 Rebuild or re-query the store with
 `restoration_wedzin_kwa_2024/scripts/rag_build.R`; it is also cached at `s3://fresh-bc/rag/`
-(see NewGraphEnvironment/rtj#194). Ollama must be running for semantic search — `ollama serve` —
+(see an internal issue). Ollama must be running for semantic search — `ollama serve` —
 though BM25 works without it and was enough to settle item 1.

@@ -94,7 +94,7 @@ framing, but it is the same sentence family as README:57.
   - 4.67 / 2.87 km2, 310.3 / 205.9 ha, 19.8 ha, 9.6% and 124.3 ha;
   - the previous 6.26 / 5.46 and 36.1 ha / 9.7% (taken from `main`);
   - the cache is 13.1 KB;
-  - rtj#229's title matches the rename.
+  - An internal issue's title matches the rename.
 
 ## Notes (not defects in this diff)
 

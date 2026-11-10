@@ -219,7 +219,7 @@ would not be.
 - **Lint:** longest line in any changed `R/` or `tests/` file is 107
   (`test-fl_valley_confine.R`), under the `.lintr` 120 limit.
 - **Round 1's three findings** are closed: the raster branch now warns (`:190`), the `waterbodies`
-  regex is anchored on "waterbodies" (`:185`), and `CLAUDE.md` is tracked in soul#135.
+  regex is anchored on "waterbodies" (`:185`), and `CLAUDE.md` is tracked in an internal issue.
 - **Round 2's three findings** are closed: `DESCRIPTION:45` is `testthat (>= 3.1.5)`, the notes
   pointer is prose and accurate, and the type check sits inside `if (inherits(streams, "sf"))` at
   `:175`.

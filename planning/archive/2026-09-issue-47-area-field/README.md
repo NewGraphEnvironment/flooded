@@ -10,7 +10,7 @@ the `floodplains` driver keeps running while it migrates. No published result wa
 caller passed the right column under the wrong name.
 
 Shipped as **0.6.0**, commits `184eb22` (tests) → `4e9c88e` (implementation) → `1b089de` (release).
-Follow-ups: **#53** (remove the shim), **NewGraphEnvironment/soul#135** (the two-argument call
+Follow-ups: **#53** (remove the shim), **an internal issue** (the two-argument call
 published in `conventions/cartography.md`, which generates every repo's CLAUDE.md).
 
 ## Measurement

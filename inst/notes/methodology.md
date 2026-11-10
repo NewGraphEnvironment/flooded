@@ -229,4 +229,4 @@ ground.
 - Issues: flooded#25 (channel-width clarification), fresh#29 (related, network-side perspective)
 - Vignettes: `valley-confinement`, `stac-dem`, `pars-floodplain`
 - Source-code anchors: `fl_valley_confine()`, `fl_flood_model()`, `fl_flood_surface()`, `fl_scenarios()`, `fl_params()`
-- Soul recipe for this doc: [NewGraphEnvironment/soul#47](https://github.com/NewGraphEnvironment/soul/issues/47)
+- Soul recipe for this doc: an internal issue

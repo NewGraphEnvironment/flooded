@@ -34,7 +34,7 @@ The New Graph website will describe this package from its README (NewGraphEnviro
 
 ## Inputs read at planning (2026-10-15)
 
-- soul `conventions/readme.md` @ 46bead4 (new, soul#416) and `conventions/writing.md` @ 838a76f.
+- soul `conventions/readme.md` @ 46bead4 (new, an internal issue) and `conventions/writing.md` @ 838a76f.
 - Performance note in README:67 and `R/fl_valley_confine.R:97` dates from `5e12c72`
   (2026-03-02, Version 0.0.0.9000).
 - NEWS 0.6.4/0.6.5 timings are attribution timings (`fl_valley_attribute()`), not delineation,
@@ -86,7 +86,7 @@ The New Graph website will describe this package from its README (NewGraphEnviro
   notices ship.
 - G3/G4: Citation points at `CITATION.cff`; NGE Ltd. added as `fnd` only, because `LICENSE`
   names Allan Irvine as copyright holder (operator's call). cffr with `c("aut","cre","fnd")`
-  lists exactly Irvine and NGE Ltd. Convention gap filed as soul#426.
+  lists exactly Irvine and NGE Ltd. Convention gap filed as an internal issue.
 - B1: the opening says where to look, as `stac-dem.Rmd`'s barrier section does; the example
   names its default level (flood factor 6, valley bottom), the figure's legend says flood
   factor 4 without "functional", and the caption says unmodelled streams have no floodplain.

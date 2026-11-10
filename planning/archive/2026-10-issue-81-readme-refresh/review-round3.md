@@ -95,7 +95,7 @@ Every verdict comes from code, data or a primary source, using the commands list
 | 57 | Description clauses (= claims 2-10, 13-16) | as above | OK |
 | 58 | "Ported from the bcfishpass lateral habitat pipeline (Python) with origins in USDA VCA / BlueGeo" | LICENSE.note | OK |
 | 59 | cph roles, with bcfishpass holders as listed | bcfishpass LICENSE line 193-195 | OK |
-| 60 | NGE Ltd. `fnd`; cffr authors Irvine and NGE Ltd. | accepted (soul#426); cffr regenerates identically | OK |
+| 60 | NGE Ltd. `fnd`; cffr authors Irvine and NGE Ltd. | accepted; cffr regenerates identically | OK |
 | 61 | `man/flooded-package.Rd` matches DESCRIPTION | `document()` no diff | OK |
 | **inst/NOTICE.md** ||||
 | 62 | code MIT; adapted code in LICENSE.note | files | OK |

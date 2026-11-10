@@ -49,5 +49,5 @@ Reviewer: code-check subagent, 2026-10-06. Worked in a copy (scratchpad), repo u
 - test-vignette_data.R passes against the package installed to a temp library, run from a temp dir
   with only setup.R + the test file (R CMD check layout); `system.file(mustWork = TRUE)` resolves.
   No R-CMD-check workflow exists, so the test is local-only; pkgdown CI does not need gdalcubes.
-- No duplicate chunk labels in stac-dem.Rmd. rtj#229 resolves to the stac-elevation-bc restructure.
+- No duplicate chunk labels in stac-dem.Rmd. An internal issue resolves to the stac-elevation-bc restructure.
   inst/vignette-data is not build-ignored.

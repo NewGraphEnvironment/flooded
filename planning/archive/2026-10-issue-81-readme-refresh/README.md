@@ -2,7 +2,7 @@
 
 ## Outcome
 
-The README was rewritten to soul `conventions/readme.md` (soul#416), which landed the day this
+The README was rewritten to soul `conventions/readme.md`, which landed the day this
 work started and reshaped the issue. In place of a capability inventory there is now:
 
 - a summary opening that calls the output a screening map, not a field-validated floodplain;
@@ -19,7 +19,7 @@ The rest of the branch:
   added as `fnd`.
 - **Citation.** The citation workflow passes `authors_roles = c("aut", "cre", "fnd")`, so
   `CITATION.cff` lists exactly Allan Irvine and NGE Ltd. With the convention's `cph`, it would also
-  have listed every third-party copyright holder (soul#426).
+  have listed every third-party copyright holder.
 - **Licences.** `inst/NOTICE.md` records the licence of every redistributed dataset. Checking
   them turned up the Digital Road Atlas, which the BC catalogue lists as Access Only, plus two
   unconfirmed licences (the TRIM DEM and ClimateBC precipitation): #85. `LICENSE.note` now ships

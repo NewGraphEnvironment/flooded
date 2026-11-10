@@ -125,7 +125,7 @@ Three findings, all `fragile`; the shim itself came back clean, with the partial
 
 ### Phase 5 — downstream docs
 
-- soul PR NewGraphEnvironment/soul#135, cut in a temp worktree off `origin/main` so no parallel
+- soul PR an internal issue, cut in a temp worktree off `origin/main` so no parallel
   session's checkout was touched. The `flooded/CLAUDE.md` edit is provisional until it merges.
 - Filed #53 to remove the `field` shim, naming the one external caller
   (`floodplains/scripts/floodplain_lcc/02_floodplain_model.R:148`) and recording what removal cannot
